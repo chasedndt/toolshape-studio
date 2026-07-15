@@ -3,7 +3,7 @@
 **Date:** 2026-07-15  
 **Runtime:** Codex  
 **Session:** `2026-07-15_toolshape-studio-vertical-slice`  
-**Status:** MILESTONE 1 VERIFIED / MILESTONE 2 IN PROGRESS
+**Status:** MILESTONES 1-2 VERIFIED / PROGRAM IN PROGRESS
 
 ## Repo-truth baseline
 
@@ -146,6 +146,8 @@ Milestone 1 is verified and committed:
 
 Delivered evidence includes 27 passing tests, strict type checking, a production browser build, real Chrome editor interaction with undo/redo, content-addressed PNG import, SQLite close/reopen recovery, process CLI smoke, verified 540×960 PNG, verified 1080×1920 H.264/AAC MP4, cancellation cleanup, and a clean dependency audit.
 
-The program remains active. The next milestone is durable render-job orchestration and adapter parity for `render`, `job.get`, and `job.cancel`, followed by a thin Tauri host after Rust/MSVC provisioning. MCP, authenticated local IPC, real media proxy ingestion, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestone.
+Milestone 2 is verified and committed in `ede82b7`: durable SQLite render jobs, transactional claims, ordered progress/events, cancellation, bounded retry/recovery, `render`/`job.get`/`job.cancel` adapter parity, trusted FFmpeg compilation, and verified immutable artifact registration. The full suite now passes 39 tests across 10 files, and the real process smoke completed a verified 1080x1920 H.264/AAC artifact.
+
+The program remains active. The next milestone is real media probe/proxy ingestion and stronger schema/security conformance, while the thin Tauri host remains blocked until Rust/MSVC provisioning. MCP, authenticated local IPC, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestones.
 
 Milestone 2 execution details are tracked in [TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md](TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md) and ADR 0007.

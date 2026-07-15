@@ -14,10 +14,10 @@ Persist render intent and job state in SQLite before returning `accepted_job`. P
 Allowed job transitions are explicit:
 
 ```text
-created → queued → running → completed
-                     ├→ cancel_requested → cancelled
-                     └→ retry_scheduled → running | failed
-queued → cancelled
+created -> queued -> running -> completed
+                     |-> cancel_requested -> cancelled
+                     `-> retry_scheduled -> running | failed
+queued -> cancelled
 ```
 
 Interrupted `running` work is recovered to `retry_scheduled` when attempts remain, otherwise `failed`. `cancel_requested` recovers to `cancelled`.
@@ -28,4 +28,3 @@ Interrupted `running` work is recovered to `retry_scheduled` when attempts remai
 - SQLite is the coordination point for the initial single-machine worker model.
 - The browser can queue/review jobs through a memory gateway, while execution requires the trusted local host.
 - Multi-host leases, remote workers, authenticated IPC, and MCP progress mapping remain later compatible layers.
-

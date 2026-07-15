@@ -24,8 +24,16 @@ npm run render:golden
 
 The render worker uses `spawn(binary, args, { shell: false })`, renders to a partial path, verifies the output with FFprobe, and promotes it to the final artifact path only after all checks pass.
 
+Exercise the durable SQLite queue, a separate CLI worker process, artifact registration, and queued cancellation with:
+
+```powershell
+npm run smoke:render-job
+```
+
+The public render envelope accepts only a project asset ID, a project render-preset ID, and a safe logical `.mp4` name. The worker resolves the immutable `content://sha256/...` source beneath its configured content root and compiles FFmpeg arguments inside the trusted render boundary.
+
 ## Current boundary
 
-The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, content-addressed imports, SDK, JSON CLI, rendering, and UI. The UI invokes the same in-process kernel as the SDK/CLI adapters.
+The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, content-addressed imports, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and UI. The UI invokes the same in-process kernel as the SDK/CLI adapters.
 
-Render execution and cancellation are verified directly, but durable render-job orchestration is not yet connected to the public envelope. Authenticated local IPC, MCP, Tauri packaging, real media probe/proxy generation, and signed distribution remain deferred. They must reuse the existing service rather than duplicate domain logic.
+`studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. A real process smoke proves queue, worker claim, progress, FFprobe verification, immutable artifact registration, readback, and queued cancellation. Authenticated local IPC, MCP, Tauri packaging, real media probe/proxy generation, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing service rather than duplicate domain logic.

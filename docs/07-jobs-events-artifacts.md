@@ -1,5 +1,7 @@
 # Jobs, events, and artifacts
 
+**Implementation status (2026-07-15): PARTIAL / DURABLE LOCAL RENDER JOBS VERIFIED.** The Studio seed implements SQLite-backed render jobs, ordered events/progress, transactional claim, cancellation, bounded retry/restart recovery, and verified immutable artifact registration. General persisted outbox delivery, multi-host leases, and non-render job families remain planned.
+
 ## Jobs
 
 Use jobs for transcription, imports, proxy generation, OCR when unavoidable, background removal, generation, batch variants, rendering, analysis, model downloads, sync, and large exports.
@@ -19,6 +21,8 @@ A job must support:
 - retention and deletion status.
 
 Do not keep an MCP invocation open for a long render when a durable job can be returned.
+
+The current Studio render envelope stores typed intent only: project, expected revision, immutable project asset, render preset, and safe logical output name. FFmpeg argument construction and approved-root path resolution occur inside the trusted worker.
 
 ## Artifacts
 

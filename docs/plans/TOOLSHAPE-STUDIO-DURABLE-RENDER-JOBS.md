@@ -3,7 +3,7 @@
 **Date:** 2026-07-15  
 **Runtime:** Codex  
 **Session:** `2026-07-15_toolshape-studio-durable-render-jobs`  
-**Status:** IN PROGRESS
+**Status:** COMPLETE / VERIFIED LOCAL JOB SLICE
 
 ## Repo-truth delta
 
@@ -68,7 +68,7 @@ Implement one production-shaped local render queue that:
 2. Add failing SQLite tests for migration, transitions, competing claims, restart recovery, event order, and artifact durability.
 3. Implement the transport-neutral contracts/gateway and SQLite job repository until focused tests pass.
 4. Add failing render-worker tests for approved-root resolution, completion, artifact registration, cancellation, and failed-output non-registration.
-5. Add SDK/CLI parity and real process smoke for queue → work → get.
+5. Add SDK/CLI parity and real process smoke for queue -> work -> get.
 6. Wire the editor control and extend browser QA to assert an accepted job ID/status.
 7. Run full tests, typecheck, production build, real Chrome QA, real FFmpeg job smoke, audit, validator, and diff checks.
 
@@ -97,3 +97,15 @@ packages/*/tests/*.test.ts
 - Do not claim MCP, Tauri, or crash-proof multi-worker operation beyond the tests actually run.
 - Do not modify the master archive, donor repository, or Toolshape Voice.
 
+## Verification closure
+
+- Kernel, persistence, worker, and adapter behavior: 39 Vitest tests passed across 10 files.
+- Strict TypeScript and the Vite production build passed.
+- Chrome QA invoked the semantic render capability and displayed the accepted queued job.
+- A separate CLI worker process completed job `91c4ef58-d692-4e29-a0e8-fd842d58127f` on its first attempt.
+- FFmpeg/FFprobe 8.1.1 produced and verified H.264/AAC MP4, 1080x1920, 8.000 seconds.
+- Artifact `3bd88df5-3c0b-4e33-8570-5b359f847369` was registered at 196225 bytes with SHA-256 `c31a6ccda1ff111a479de6297a5066ed64584acc9ff0689098ed48381ef1fdb4`.
+- A second queued job was cancelled and the active-render cancellation regression removed final and partial output.
+- Runtime reopen/recovery, process CLI mutation, audit, handover validation, and Git diff checks passed.
+
+This closure verifies a single-machine SQLite coordination model. It does not claim multi-host leases, authenticated IPC, MCP transport, native Tauri hosting, signed packaging, or crash-proof operation under arbitrary process and filesystem failure.

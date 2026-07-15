@@ -1,8 +1,10 @@
 Toolshape Studio/
 ├── 07_LOGS/
 │   ├── Agent-Activity/
+│   │   ├── 2026-07-15-codex-toolshape-studio-durable-render-jobs.md
 │   │   └── 2026-07-15-codex-toolshape-studio-vertical-slice.md
 │   ├── Build-Logs/
+│   │   ├── 2026-07-15-ChaseOS-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md
 │   │   └── Build-Logs-Index.md
 │   └── Daily/
@@ -10,6 +12,7 @@ Toolshape Studio/
 │       └── Daily-Index.md
 ├── 99_ARCHIVE/
 │   └── Documentation-History/
+│       ├── 2026-07-15_toolshape-studio-durable-render-jobs.md
 │       ├── 2026-07-15_toolshape-studio-vertical-slice.md
 │       └── Documentation-History-Index.md
 ├── apps/
@@ -19,6 +22,7 @@ Toolshape Studio/
 │       │   ├── qa-browser.ts
 │       │   ├── render-golden.ts
 │       │   ├── smoke-cli.ts
+│       │   ├── smoke-render-job.ts
 │       │   └── smoke-runtime.ts
 │       ├── src/
 │       │   ├── App.tsx
@@ -48,10 +52,13 @@ Toolshape Studio/
 │   │   ├── 0003-rational-time-model.md
 │   │   ├── 0004-preview-and-headless-renderer.md
 │   │   ├── 0005-ffmpeg-process-boundary.md
-│   │   └── 0006-local-ipc-and-adapters.md
+│   │   ├── 0006-local-ipc-and-adapters.md
+│   │   └── 0007-durable-render-job-lifecycle.md
 │   ├── learning/
+│   │   ├── 2026-07-15-durable-render-jobs.md
 │   │   └── 2026-07-15-vertical-slice.md
 │   ├── plans/
+│   │   ├── TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md
 │   │   └── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
 │   ├── security/
 │   │   └── THREAT-MODEL.md
@@ -133,9 +140,11 @@ Toolshape Studio/
 │   │   │   ├── contracts.ts
 │   │   │   ├── digest.ts
 │   │   │   ├── index.ts
+│   │   │   ├── jobs.ts
 │   │   │   ├── kernel.ts
 │   │   │   └── repository.ts
 │   │   ├── tests/
+│   │   │   ├── jobs.test.ts
 │   │   │   └── kernel.test.ts
 │   │   └── package.json
 │   ├── studio-persistence/
@@ -144,14 +153,17 @@ Toolshape Studio/
 │   │   │   ├── index.ts
 │   │   │   └── sqlite-repository.ts
 │   │   ├── tests/
+│   │   │   ├── jobs-persistence.test.ts
 │   │   │   └── persistence.test.ts
 │   │   └── package.json
 │   ├── studio-render/
 │   │   ├── src/
+│   │   │   ├── durable-jobs.ts
 │   │   │   ├── index.ts
 │   │   │   ├── render-plan.ts
 │   │   │   └── runner.ts
 │   │   ├── tests/
+│   │   │   ├── durable-jobs.test.ts
 │   │   │   └── render-plan.test.ts
 │   │   └── package.json
 │   └── studio-sdk/
