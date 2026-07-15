@@ -3,7 +3,7 @@
 **Date:** 2026-07-15  
 **Runtime:** Codex  
 **Session:** `2026-07-15_toolshape-studio-vertical-slice`  
-**Status:** MILESTONE 1 VERIFIED / PROGRAM IN PROGRESS
+**Status:** MILESTONE 1 VERIFIED / MILESTONE 2 IN PROGRESS
 
 ## Repo-truth baseline
 
@@ -147,3 +147,5 @@ Milestone 1 is verified and committed:
 Delivered evidence includes 27 passing tests, strict type checking, a production browser build, real Chrome editor interaction with undo/redo, content-addressed PNG import, SQLite close/reopen recovery, process CLI smoke, verified 540×960 PNG, verified 1080×1920 H.264/AAC MP4, cancellation cleanup, and a clean dependency audit.
 
 The program remains active. The next milestone is durable render-job orchestration and adapter parity for `render`, `job.get`, and `job.cancel`, followed by a thin Tauri host after Rust/MSVC provisioning. MCP, authenticated local IPC, real media proxy ingestion, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestone.
+
+Milestone 2 execution details are tracked in [TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md](TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md) and ADR 0007.
