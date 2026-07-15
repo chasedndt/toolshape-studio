@@ -1,4 +1,4 @@
-toolshape-harness-native-handover-v2.1-launch-ready/
+Toolshape Studio/
 ├── book/
 │   └── harness-native-software-playbook.md
 ├── diagrams/
