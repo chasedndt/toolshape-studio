@@ -1,4 +1,37 @@
 Toolshape Studio/
+├── 07_LOGS/
+│   ├── Agent-Activity/
+│   │   └── 2026-07-15-codex-toolshape-studio-vertical-slice.md
+│   ├── Build-Logs/
+│   │   ├── 2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md
+│   │   └── Build-Logs-Index.md
+│   └── Daily/
+│       ├── 2026-07-15.md
+│       └── Daily-Index.md
+├── 99_ARCHIVE/
+│   └── Documentation-History/
+│       ├── 2026-07-15_toolshape-studio-vertical-slice.md
+│       └── Documentation-History-Index.md
+├── apps/
+│   └── studio/
+│       ├── scripts/
+│       │   ├── check-render-cancellation.ts
+│       │   ├── qa-browser.ts
+│       │   ├── render-golden.ts
+│       │   ├── smoke-cli.ts
+│       │   └── smoke-runtime.ts
+│       ├── src/
+│       │   ├── App.tsx
+│       │   ├── main.tsx
+│       │   ├── studio-state.ts
+│       │   └── styles.css
+│       ├── .gitignore
+│       ├── index.html
+│       ├── package.json
+│       ├── README.md
+│       ├── THIRD_PARTY.md
+│       ├── tsconfig.json
+│       └── vite.config.ts
 ├── book/
 │   └── harness-native-software-playbook.md
 ├── diagrams/
@@ -9,6 +42,19 @@ Toolshape Studio/
 │   ├── 05-voice-runtime.mmd
 │   └── 06-eval-loop.mmd
 ├── docs/
+│   ├── adr/
+│   │   ├── 0001-active-product-name.md
+│   │   ├── 0002-project-persistence.md
+│   │   ├── 0003-rational-time-model.md
+│   │   ├── 0004-preview-and-headless-renderer.md
+│   │   ├── 0005-ffmpeg-process-boundary.md
+│   │   └── 0006-local-ipc-and-adapters.md
+│   ├── learning/
+│   │   └── 2026-07-15-vertical-slice.md
+│   ├── plans/
+│   │   └── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
+│   ├── security/
+│   │   └── THREAT-MODEL.md
 │   ├── 00-executive-brief.md
 │   ├── 01-agent-native-constitution.md
 │   ├── 02-chaseos-hierarchy.md
@@ -29,6 +75,11 @@ Toolshape Studio/
 │   ├── 17-university-learning-map.md
 │   ├── 18-delivery-plan.md
 │   └── 19-non-goals.md
+├── fixtures/
+│   └── studio/
+│       ├── golden-project.ts
+│       ├── malicious-import.json
+│       └── README.md
 ├── inputs/
 │   ├── README.md
 │   └── software-category-seed.txt
@@ -52,6 +103,63 @@ Toolshape Studio/
 ├── naming/
 │   ├── COLLISION-SCAN.md
 │   └── NAME-CANDIDATES.md
+├── packages/
+│   ├── studio-cli/
+│   │   ├── src/
+│   │   │   └── bin.ts
+│   │   └── package.json
+│   ├── studio-domain/
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── migrations.ts
+│   │   │   └── model.ts
+│   │   ├── tests/
+│   │   │   └── migrations.test.ts
+│   │   └── package.json
+│   ├── studio-engine/
+│   │   ├── src/
+│   │   │   ├── animation.ts
+│   │   │   ├── index.ts
+│   │   │   ├── matrix.ts
+│   │   │   ├── operations.ts
+│   │   │   ├── rational.ts
+│   │   │   └── validation.ts
+│   │   ├── tests/
+│   │   │   ├── operations.test.ts
+│   │   │   └── rational-matrix-animation.test.ts
+│   │   └── package.json
+│   ├── studio-kernel/
+│   │   ├── src/
+│   │   │   ├── contracts.ts
+│   │   │   ├── digest.ts
+│   │   │   ├── index.ts
+│   │   │   ├── kernel.ts
+│   │   │   └── repository.ts
+│   │   ├── tests/
+│   │   │   └── kernel.test.ts
+│   │   └── package.json
+│   ├── studio-persistence/
+│   │   ├── src/
+│   │   │   ├── content-store.ts
+│   │   │   ├── index.ts
+│   │   │   └── sqlite-repository.ts
+│   │   ├── tests/
+│   │   │   └── persistence.test.ts
+│   │   └── package.json
+│   ├── studio-render/
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── render-plan.ts
+│   │   │   └── runner.ts
+│   │   ├── tests/
+│   │   │   └── render-plan.test.ts
+│   │   └── package.json
+│   └── studio-sdk/
+│       ├── src/
+│       │   └── index.ts
+│       ├── tests/
+│       │   └── parity.test.ts
+│       └── package.json
 ├── platform/
 │   ├── adapter-kit/
 │   │   └── HANDOFF.md
@@ -155,11 +263,15 @@ Toolshape Studio/
 │   ├── secret-handle.schema.json
 │   ├── style-profile.schema.json
 │   └── workflow-recipe.schema.json
+├── .gitignore
 ├── 03-DISCORD-CONTROL-PLANE-PROMPT.md
 ├── AGENTS.md
 ├── CHANGELOG.md
 ├── decisions.json
 ├── MANIFEST.sha256
+├── package-lock.json
+├── package.json
+├── pnpm-workspace.yaml
 ├── README.md
 ├── START-HERE-DUAL-CODEX.md
 ├── TREE.txt

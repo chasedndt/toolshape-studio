@@ -92,13 +92,25 @@ EXAMPLE_TO_SCHEMA = {
 }
 
 IGNORED_GENERATED = {REPORT_PATH, TREE_PATH, MANIFEST_PATH}
+IGNORED_DIRECTORY_NAMES = {
+    ".git",
+    "artifacts",
+    "dist",
+    "node_modules",
+    "runtime",
+    "test-results",
+}
+
+
+def is_ignored(path: Path) -> bool:
+    return any(part in IGNORED_DIRECTORY_NAMES for part in path.relative_to(ROOT).parts)
 
 
 def iter_files() -> list[Path]:
     return sorted(
         p
         for p in ROOT.rglob("*")
-        if p.is_file() and ".git" not in p.parts and p not in IGNORED_GENERATED
+        if p.is_file() and not is_ignored(p) and p not in IGNORED_GENERATED
     )
 
 
@@ -113,7 +125,7 @@ def check_required(result: Result) -> None:
 
 def parse_json(result: Result) -> dict[Path, object]:
     parsed: dict[Path, object] = {}
-    json_files = sorted(ROOT.rglob("*.json"))
+    json_files = sorted(path for path in ROOT.rglob("*.json") if not is_ignored(path))
     for path in json_files:
         try:
             parsed[path] = json.loads(path.read_text(encoding="utf-8"))
@@ -184,7 +196,7 @@ def markdown_targets(path: Path) -> Iterable[tuple[str, int]]:
 def check_markdown_links(result: Result) -> None:
     broken: list[str] = []
     checked = 0
-    for path in sorted(ROOT.rglob("*.md")):
+    for path in sorted(path for path in ROOT.rglob("*.md") if not is_ignored(path)):
         for target, line_number in markdown_targets(path):
             if not target or target.startswith(("#", "http://", "https://", "mailto:", "skills://", "sandbox:")):
                 continue
@@ -305,7 +317,7 @@ def make_tree() -> str:
 
     def walk(directory: Path, prefix: str = "") -> None:
         entries = sorted(
-            [p for p in directory.iterdir() if p.name != ".git"],
+            [p for p in directory.iterdir() if p.name not in IGNORED_DIRECTORY_NAMES],
             key=lambda p: (not p.is_dir(), p.name.lower()),
         )
         for index, entry in enumerate(entries):

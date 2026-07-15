@@ -2,6 +2,8 @@
 
 Toolshape Studio is one integrated visual-design and video-editing super app. It combines the strongest common workflow of Canva-like visual creation and CapCut-like media editing without treating them as separate codebases or separate user journeys.
 
+**Implementation status (2026-07-15): PARTIAL / VERIFIED VERTICAL SLICE.** The repository now contains a runnable unified project/editor/kernel/persistence/render seed. It is not yet a native desktop release or a claim of full category parity. Current evidence and deferred surfaces are recorded in `../../07_LOGS/Build-Logs/2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md`.
+
 ## Product promise
 
 > Give an agent harness a brief, assets, source media, style profile, constraints, and target platforms; receive a fully editable project and verified output variants; then let the operator perform precise master touches in a professional editor.

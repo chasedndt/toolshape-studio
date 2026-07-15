@@ -11,6 +11,25 @@
 
 `Toolshape`, `Toolshape Voice`, and `Toolshape Studio` are provisional engineering names. They passed only a preliminary exact-name web/GitHub scan described in `naming/COLLISION-SCAN.md`. They are **not** trademark, domain, package-registry, company-name, or app-store cleared.
 
+## Current Studio implementation
+
+**Status (2026-07-15): PARTIAL / VERIFIED VERTICAL SLICE.** This repository now owns a runnable Toolshape Studio seed under `apps/studio/` and `packages/studio-*`. It includes a unified scene/timeline project, typed edit operations, revision and idempotency enforcement, atomic batches, undo/redo, SQLite restart recovery, content-addressed imports, a real React editor, a JSON CLI, a shared SDK service, and verified PNG/MP4 output.
+
+Run the canonical checks from the repository root:
+
+```powershell
+npm install
+npm test
+npm run typecheck
+npm run build
+npm run smoke:runtime
+npm run smoke:cli
+```
+
+For live visual and media QA, start `npm run dev`, set `STUDIO_URL` to the printed local URL, then run `npm run qa:browser`, `npm run render:golden`, and `npm run test:render-cancel`.
+
+The Tauri shell, authenticated local IPC, durable render-job adapter, MCP transport, real media probe/proxy ingestion, signed packaging, and broad feature parity remain deferred. The current host does not have Rust/Cargo or the MSVC provisioning tools required to verify a native Tauri build. See `docs/plans/TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md` and `docs/adr/`.
+
 ## The corrected system model
 
 This handover implements the hierarchy specified by the operator:
