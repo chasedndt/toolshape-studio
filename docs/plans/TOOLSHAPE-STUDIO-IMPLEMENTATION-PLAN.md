@@ -3,7 +3,7 @@
 **Date:** 2026-07-15  
 **Runtime:** Codex  
 **Session:** `2026-07-15_toolshape-studio-vertical-slice`  
-**Status:** IN PROGRESS
+**Status:** MILESTONE 1 VERIFIED / PROGRAM IN PROGRESS
 
 ## Repo-truth baseline
 
@@ -135,3 +135,15 @@ Each checkpoint is committed only with its focused tests green. Existing user ch
 - Do not claim desktop release readiness until a signed Tauri build is exercised on a provisioned Rust/MSVC host.
 - Do not claim MCP or local IPC parity until those transports have end-to-end conformance evidence.
 - Do not widen the feature surface before the vertical slice is deterministic, persisted, renderable, and recoverable.
+
+## 2026-07-15 checkpoint
+
+Milestone 1 is verified and committed:
+
+- `ec80cd7` — plan and architecture decisions;
+- `d44c4fd` — persistent editable vertical slice;
+- `d3cb9a7` — verification and operating writeback.
+
+Delivered evidence includes 27 passing tests, strict type checking, a production browser build, real Chrome editor interaction with undo/redo, content-addressed PNG import, SQLite close/reopen recovery, process CLI smoke, verified 540×960 PNG, verified 1080×1920 H.264/AAC MP4, cancellation cleanup, and a clean dependency audit.
+
+The program remains active. The next milestone is durable render-job orchestration and adapter parity for `render`, `job.get`, and `job.cancel`, followed by a thin Tauri host after Rust/MSVC provisioning. MCP, authenticated local IPC, real media proxy ingestion, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestone.

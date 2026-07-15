@@ -1,10 +1,10 @@
 # Handover validation
 
 **Status:** PASS
-**Validated at:** 2026-07-15T22:14:06+00:00
+**Validated at:** 2026-07-15T22:18:13+00:00
 **Files checked:** 212
-**Bytes (excluding generated report/tree/manifest):** 753294
-**Approximate words in text files:** 63976
+**Bytes (excluding generated report/tree/manifest):** 754275
+**Approximate words in text files:** 64104
 
 This validates document structure, JSON syntax/schemas, examples, links, diagrams, source-registry shape, placeholder markers and common plaintext-secret patterns. It does **not** certify product implementation, legal clearance, privacy compliance, third-party deletion, Windows compatibility, model quality or media-codec licensing.
 
