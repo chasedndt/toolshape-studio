@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@toolshape/studio-domain": ["../../packages/studio-domain/src/index.ts"],
+      "@toolshape/studio-engine": ["../../packages/studio-engine/src/index.ts"],
+      "@toolshape/studio-kernel": ["../../packages/studio-kernel/src/index.ts"],
+      "@toolshape/studio-persistence": ["../../packages/studio-persistence/src/index.ts"],
+      "@toolshape/studio-render": ["../../packages/studio-render/src/index.ts"],
+      "@toolshape/studio-sdk": ["../../packages/studio-sdk/src/index.ts"]
+    },
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "src",
+    "scripts",
+    "vite.config.ts",
+    "../../packages/studio-domain/src/**/*.ts",
+    "../../packages/studio-engine/src/**/*.ts",
+    "../../packages/studio-kernel/src/**/*.ts",
+    "../../packages/studio-persistence/src/**/*.ts",
+    "../../packages/studio-render/src/**/*.ts",
+    "../../packages/studio-sdk/src/**/*.ts",
+    "../../packages/studio-cli/src/**/*.ts",
+    "../../fixtures/studio/**/*.ts"
+  ]
+}

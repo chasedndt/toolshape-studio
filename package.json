@@ -1,0 +1,20 @@
+{
+  "name": "toolshape-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.11.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm --prefix apps/studio run dev",
+    "build": "npm --prefix apps/studio run build",
+    "typecheck": "npm --prefix apps/studio run typecheck",
+    "test": "npm --prefix apps/studio run test",
+    "test:render-cancel": "npm --prefix apps/studio run test:render-cancel",
+    "qa:browser": "npm --prefix apps/studio run qa:browser",
+    "render:golden": "npm --prefix apps/studio run render:golden",
+    "smoke:runtime": "npm --prefix apps/studio run smoke:runtime",
+    "smoke:cli": "npm --prefix apps/studio run smoke:cli",
+    "studio": "tsx packages/studio-cli/src/bin.ts"
+  }
+}

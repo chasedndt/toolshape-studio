@@ -1,0 +1,8 @@
+{
+  "name": "Rejected executable payload",
+  "sourceRef": "javascript:alert('not allowed')",
+  "contentHash": "not-a-content-hash",
+  "immutable": false,
+  "rawFfmpegCommand": "ffmpeg input.mp4 && remove-everything"
+}
+

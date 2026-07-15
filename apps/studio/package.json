@@ -1,0 +1,39 @@
+{
+  "name": "@toolshape/studio-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:render-cancel": "tsx scripts/check-render-cancellation.ts",
+    "qa:browser": "tsx scripts/qa-browser.ts",
+    "render:golden": "tsx scripts/render-golden.ts",
+    "smoke:runtime": "tsx scripts/smoke-runtime.ts",
+    "smoke:cli": "tsx scripts/smoke-cli.ts"
+  },
+  "dependencies": {
+    "@toolshape/studio-domain": "file:../../packages/studio-domain",
+    "@toolshape/studio-engine": "file:../../packages/studio-engine",
+    "@toolshape/studio-kernel": "file:../../packages/studio-kernel",
+    "@toolshape/studio-persistence": "file:../../packages/studio-persistence",
+    "@toolshape/studio-render": "file:../../packages/studio-render",
+    "@toolshape/studio-sdk": "file:../../packages/studio-sdk",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.15",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "playwright-core": "^1.54.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.5",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@toolshape/studio-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@toolshape/studio-kernel": "file:../studio-kernel" },
+  "exports": { ".": "./src/index.ts" }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@toolshape/studio-render",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@toolshape/studio-domain": "file:../studio-domain",
+    "@toolshape/studio-engine": "file:../studio-engine"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
+
