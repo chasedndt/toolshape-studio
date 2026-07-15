@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "operation_id": "123e4567-e89b-42d3-a456-426614174000",
+  "trace_id": "trace-20260714-0001",
+  "status": "previewed",
+  "state": {
+    "revision_before": 7,
+    "revision_after": 7,
+    "semantic_diff": [
+      {
+        "action": "create",
+        "object_type": "artboard",
+        "count": 3
+      }
+    ]
+  },
+  "job_ref": null,
+  "artifact_refs": [],
+  "verification": {
+    "status": "passed",
+    "evidence": [
+      {
+        "check": "preview_no_mutation",
+        "passed": true
+      }
+    ],
+    "limitations": []
+  },
+  "warnings": [],
+  "usage": {
+    "duration_ms": 41,
+    "model_tokens": null,
+    "cost": null
+  },
+  "undo": {
+    "supported": false,
+    "token": null,
+    "expires_at": null
+  },
+  "error_ref": null,
+  "completed_at": "2026-07-14T17:00:00.041Z"
+}

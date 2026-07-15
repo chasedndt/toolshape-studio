@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/common.schema.json",
+  "title": "Toolshape common definitions",
+  "type": "object",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+:[A-Fa-f0-9]{16,}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "read_only",
+        "simulation",
+        "reversible_local_write",
+        "external_reversible",
+        "high_impact"
+      ]
+    },
+    "effect": {
+      "type": "string",
+      "enum": [
+        "none",
+        "read_state",
+        "write_local_state",
+        "read_secret",
+        "network_egress",
+        "external_write",
+        "public_publish",
+        "financial",
+        "destructive",
+        "irreversible"
+      ]
+    },
+    "retention_class": {
+      "type": "string",
+      "enum": [
+        "R0_ephemeral",
+        "R1_operational",
+        "R2_user_history",
+        "R3_learned_config",
+        "R4_audit",
+        "R5_aggregate"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "principal_id",
+        "agent_id",
+        "harness_id"
+      ],
+      "properties": {
+        "principal_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "harness_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chaseos_session_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "delegation_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16
+        }
+      }
+    },
+    "resource_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 16
+        },
+        "network": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

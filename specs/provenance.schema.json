@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/provenance.schema.json",
+  "title": "Provenance record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "entity",
+    "activity",
+    "agents",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "record_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "entity": {
+      "$ref": "common.schema.json#/$defs/resource_ref"
+    },
+    "activity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_id",
+        "capability",
+        "started_at"
+      ],
+      "properties": {
+        "operation_id": {
+          "$ref": "common.schema.json#/$defs/uuid"
+        },
+        "capability": {
+          "type": "string"
+        },
+        "job_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "started_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "ended_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "role"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "principal",
+              "agent",
+              "harness",
+              "application",
+              "provider",
+              "reviewer"
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "used_entities": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "was_derived_from": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "approval_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "generated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  }
+}

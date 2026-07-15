@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/approval.schema.json",
+  "title": "Exact action approval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "approval_id",
+    "principal_id",
+    "agent_id",
+    "capability",
+    "target",
+    "parameter_digest",
+    "effect_bounds",
+    "expires_at",
+    "max_invocations",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "approval_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "principal_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "harness_id": {
+      "type": "string"
+    },
+    "capability": {
+      "type": "string"
+    },
+    "target": {
+      "$ref": "common.schema.json#/$defs/resource_ref"
+    },
+    "parameter_digest": {
+      "$ref": "common.schema.json#/$defs/digest"
+    },
+    "effect_bounds": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/effect"
+      }
+    },
+    "destination_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_cost": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/money"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expires_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "max_invocations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "used_invocations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "expired",
+        "revoked",
+        "consumed"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

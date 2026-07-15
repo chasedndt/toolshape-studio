@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/error.schema.json",
+  "title": "Machine-actionable error",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "error_id",
+    "code",
+    "message",
+    "retryable",
+    "state_changed",
+    "user_intervention",
+    "recovery_options",
+    "occurred_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "error_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "code": {
+      "type": "string",
+      "enum": [
+        "ambiguous_target",
+        "missing_context",
+        "stale_revision",
+        "invalid_operation",
+        "invariant_violation",
+        "permission_denied",
+        "approval_required",
+        "spending_limit_exceeded",
+        "data_egress_blocked",
+        "provider_unavailable",
+        "rate_limited",
+        "partial_failure",
+        "verification_failed",
+        "cancelled",
+        "secret_resolution_failed",
+        "unsupported_target",
+        "internal_error"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "state_changed": {
+      "type": "boolean"
+    },
+    "user_intervention": {
+      "type": "boolean"
+    },
+    "field_errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "message"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "candidate_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "recovery_options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "details": {
+      "type": "object"
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  }
+}

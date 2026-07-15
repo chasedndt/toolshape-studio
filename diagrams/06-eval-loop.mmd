@@ -1,0 +1,10 @@
+flowchart LR
+  C[Case fixture and initial state] --> H[Harness run]
+  H --> T[Operations, jobs, and traces]
+  T --> F[Final state]
+  F --> V[State verifier]
+  T --> P[Policy/security verifier]
+  V --> M[Metrics: success, collateral, cost, pass^k]
+  P --> M
+  M --> R[Regression report]
+  R --> C

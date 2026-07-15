@@ -1,0 +1,12 @@
+flowchart LR
+  HK[Global hotkey] --> MIC[Mic selection and capture]
+  MIC --> VAD[VAD and streaming chunks]
+  VAD --> ASR[Local or approved cloud ASR]
+  ASR --> N[Normalise and preserve raw transcript]
+  N --> C[Dictionary, snippets, protected tokens, style]
+  C --> P[Insertion preview/policy]
+  P --> TSF[TSF / semantic input]
+  P --> UIA[UI Automation]
+  P --> SI[Unicode SendInput]
+  P --> CB[Clipboard fallback]
+  C --> L[Correction learning and analytics]

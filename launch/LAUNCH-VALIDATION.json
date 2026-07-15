@@ -1,0 +1,13 @@
+{
+  "full_pack_files": 139,
+  "launch_packet_files": 13,
+  "json_files_validated": 2,
+  "event_schema_validation": "Draft 2020-12 schema and example passed jsonschema validation",
+  "powershell_scripts": [
+    "bootstrap-toolshape.ps1",
+    "start-two-codex-sessions.ps1",
+    "run-codex-session.ps1"
+  ],
+  "powershell_runtime_validation": "PowerShell runtime was not available in the Linux build container; scripts received static review only",
+  "zip_integrity": "tested after packaging; see external checksums file"
+}

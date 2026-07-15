@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1.0",
+  "approval_id": "323e4567-e89b-42d3-a456-426614174002",
+  "principal_id": "user_chase",
+  "agent_id": "studio_agent",
+  "harness_id": "codex",
+  "capability": "publish.external",
+  "target": {
+    "type": "artifact",
+    "id": "artifact_vertical_final"
+  },
+  "parameter_digest": "sha256:0123456789abcdef0123456789abcdef",
+  "effect_bounds": [
+    "network_egress",
+    "external_write",
+    "public_publish"
+  ],
+  "destination_allowlist": [
+    "social.example"
+  ],
+  "max_cost": {
+    "amount": "2.00",
+    "currency": "USDC",
+    "network": "base"
+  },
+  "expires_at": "2026-07-14T18:00:00Z",
+  "max_invocations": 1,
+  "used_invocations": 0,
+  "status": "approved",
+  "reason": "Operator approved exact final artifact and destination."
+}

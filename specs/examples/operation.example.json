@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1.0",
+  "operation_id": "123e4567-e89b-42d3-a456-426614174000",
+  "idempotency_key": "studio-variant-20260714-0001",
+  "trace_id": "trace-20260714-0001",
+  "actor": {
+    "principal_id": "user_chase",
+    "agent_id": "codex_worker_7",
+    "harness_id": "codex",
+    "chaseos_session_id": "chaseos_session_88",
+    "delegation_chain": [
+      "user_chase",
+      "chaseos",
+      "codex_worker_7"
+    ]
+  },
+  "intent": "Create three platform variants without changing approved copy.",
+  "capability": {
+    "id": "studio.project.apply_operations",
+    "version": "0.1.0"
+  },
+  "target": {
+    "resource": {
+      "type": "studio_project",
+      "id": "project_campaign_42",
+      "revision": 7
+    },
+    "expected_revision": 7,
+    "selection_refs": []
+  },
+  "input": {
+    "operations": [
+      {
+        "type": "artboard.create_variant",
+        "preset": "portrait_4_5"
+      },
+      {
+        "type": "artboard.create_variant",
+        "preset": "story_9_16"
+      },
+      {
+        "type": "artboard.create_variant",
+        "preset": "square_1_1"
+      }
+    ]
+  },
+  "context_refs": [
+    {
+      "type": "style_profile",
+      "id": "style_chase_social",
+      "revision": 4
+    }
+  ],
+  "secret_refs": [],
+  "risk": "reversible_local_write",
+  "authorization": {
+    "grant_ids": [
+      "grant_project_42_write"
+    ],
+    "approval_id": null,
+    "max_cost": null
+  },
+  "execution": {
+    "dry_run": true,
+    "atomicity": "atomic",
+    "timeout_ms": 30000,
+    "priority": "normal"
+  },
+  "retention": {
+    "class": "R4_audit",
+    "content_storage": "local",
+    "expires_at": null
+  },
+  "created_at": "2026-07-14T17:00:00Z"
+}

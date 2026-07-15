@@ -1,0 +1,9 @@
+flowchart LR
+  D[Discover] --> I[Inspect and resolve]
+  I --> P[Plan]
+  P --> V[Preview]
+  V --> A[Authorize]
+  A --> E[Execute]
+  E --> X[Verify]
+  X --> R[Recover or accept]
+  R -. feedback .-> I

@@ -1,0 +1,149 @@
+{
+  "schema_version": "2.0.0",
+  "generated_on": "2026-07-14",
+  "canonical_os_name": "ChaseOS",
+  "portfolio": {
+    "working_brand": "Toolshape",
+    "products": [
+      {
+        "id": "voice",
+        "working_name": "Toolshape Voice",
+        "category": "local-first system-wide voice dictation and transformation"
+      },
+      {
+        "id": "studio",
+        "working_name": "Toolshape Studio",
+        "category": "unified visual design and video editing super app"
+      }
+    ],
+    "name_status": "provisional-preliminary-scan-only",
+    "rejected_working_names": [
+      {
+        "name": "Voquill",
+        "reason": "multiple active exact-name GitHub repositories, including an exact organization/repository"
+      },
+      {
+        "name": "SceneWeave",
+        "reason": "multiple exact and near-exact GitHub repositories"
+      },
+      {
+        "name": "Glyphloom",
+        "reason": "retired because design and video are now one product"
+      },
+      {
+        "name": "Reelwright",
+        "reason": "retired because design and video are now one product"
+      }
+    ]
+  },
+  "hierarchy": [
+    "ChaseOS",
+    "agent_harnesses",
+    "adapters",
+    "semantic_application_kernel",
+    "domain_state_jobs_artifacts"
+  ],
+  "chaseos_owns": [
+    "knowledge injection",
+    "approval and policy coordination",
+    "budgets",
+    "scheduling",
+    "workflow archive",
+    "harness registry and routing",
+    "cross-application context",
+    "research proposal intake"
+  ],
+  "harnesses_own": [
+    "model selection within runtime",
+    "planning",
+    "tool invocation",
+    "filesystem work",
+    "task execution",
+    "runtime memory",
+    "agent-specific retries and coordination"
+  ],
+  "applications_own": [
+    "domain truth",
+    "capabilities",
+    "invariants",
+    "authorization enforcement",
+    "revisions",
+    "transactions",
+    "jobs",
+    "verification",
+    "recovery",
+    "artifacts",
+    "provenance"
+  ],
+  "kernel": {
+    "style": "modular monolith first",
+    "contracts": "JSON Schema 2020-12",
+    "local_state": "SQLite plus content-addressed files",
+    "hosted_state": "PostgreSQL plus S3-compatible object storage when required",
+    "native": "Rust",
+    "control_ui": "TypeScript",
+    "evals": "Python",
+    "rules": [
+      "semantic operations",
+      "expected revision",
+      "idempotency",
+      "dry-run",
+      "semantic diff",
+      "structured errors",
+      "durable jobs",
+      "verification",
+      "undo or compensation",
+      "provenance"
+    ]
+  },
+  "adapters": {
+    "priority": [
+      "in-process SDK",
+      "local IPC/HTTP",
+      "CLI",
+      "MCP",
+      "remote HTTP",
+      "computer use fallback"
+    ],
+    "mcp_local": "stdio",
+    "mcp_remote": "streamable HTTP with authentication",
+    "a2a": "only for delegation to autonomous specialist services",
+    "computer_use": "legacy and unsupported-capability fallback"
+  },
+  "memory_boundary": {
+    "operation_envelope": "auditable state transition",
+    "style_profile": "versioned deterministic preferences and weights",
+    "embeddings": "retrieval index only",
+    "workflow_recipe": "portable procedural knowledge",
+    "raw_content_retention": "explicit, minimal, consented"
+  },
+  "security": {
+    "secret_transport": "opaque handles",
+    "credential_mode": "short-lived, scoped, audience-bound",
+    "plaintext_policy": "never log, embed, trace, or persist by default",
+    "deletion": "TTL, revocation, temporary-store deletion, key destruction, evidence; no false guarantee for third-party copies",
+    "untrusted_content": "data, never authority",
+    "approval_binding": "principal + agent + capability + target + parameter bounds + cost + expiry + invocation count"
+  },
+  "licensing_direction": {
+    "phase_zero": "private while contracts change rapidly",
+    "open_standards_layer": "Apache-2.0 after stability",
+    "local_core_candidate": "MPL-2.0 only after an intentional commitment",
+    "hosted_services": "proprietary/open-core",
+    "warning": "Earlier open-source releases cannot be retroactively made closed for existing recipients. Obtain legal advice."
+  },
+  "monetization": {
+    "local_core": "genuinely useful free path",
+    "paid_boundaries": [
+      "hosted sync",
+      "collaboration",
+      "managed models",
+      "GPU rendering",
+      "licensed media",
+      "team governance",
+      "enterprise support",
+      "high-volume API"
+    ],
+    "x402": "remote metered resource boundary only"
+  }
+}

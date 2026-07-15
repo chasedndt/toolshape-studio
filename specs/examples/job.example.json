@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1.0",
+  "job_id": "223e4567-e89b-42d3-a456-426614174001",
+  "operation_id": "123e4567-e89b-42d3-a456-426614174000",
+  "type": "studio.video.render",
+  "status": "running",
+  "progress": {
+    "fraction": 0.42,
+    "stage": "rendering_captions",
+    "message": "Rendering caption track"
+  },
+  "inputs": [
+    {
+      "type": "studio_project",
+      "id": "project_campaign_42",
+      "revision": 8
+    }
+  ],
+  "outputs": [],
+  "attempt": 1,
+  "max_attempts": 2,
+  "cancel_supported": true,
+  "cost_estimate": null,
+  "actual_cost": null,
+  "error_ref": null,
+  "created_at": "2026-07-14T17:01:00Z",
+  "updated_at": "2026-07-14T17:02:00Z",
+  "completed_at": null
+}

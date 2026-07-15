@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1.0",
+  "error_id": "423e4567-e89b-42d3-a456-426614174003",
+  "code": "stale_revision",
+  "message": "Project revision changed from 7 to 8 after the plan was created.",
+  "retryable": true,
+  "state_changed": false,
+  "user_intervention": false,
+  "field_errors": [],
+  "candidate_refs": [
+    {
+      "type": "studio_project",
+      "id": "project_campaign_42",
+      "revision": 8
+    }
+  ],
+  "recovery_options": [
+    "inspect_changed_since",
+    "rebase_plan",
+    "request_review"
+  ],
+  "details": {
+    "expected": 7,
+    "actual": 8
+  },
+  "occurred_at": "2026-07-14T17:03:00Z"
+}

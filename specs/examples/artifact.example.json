@@ -1,0 +1,30 @@
+{
+  "schema_version": "0.1.0",
+  "artifact_id": "523e4567-e89b-42d3-a456-426614174004",
+  "logical_name": "campaign-story-v1.mp4",
+  "media_type": "video/mp4",
+  "size_bytes": 8147200,
+  "digest": "sha256:abcdefabcdefabcdefabcdefabcdefab",
+  "source": [
+    {
+      "type": "studio_project",
+      "id": "project_campaign_42",
+      "revision": 8
+    }
+  ],
+  "producer": {
+    "operation_id": "123e4567-e89b-42d3-a456-426614174000",
+    "job_id": "223e4567-e89b-42d3-a456-426614174001",
+    "toolchain": [
+      {
+        "name": "ffmpeg",
+        "version": "declared-at-runtime"
+      }
+    ]
+  },
+  "sensitivity": "private",
+  "retention_class": "R2_user_history",
+  "licence": "user-owned inputs; dependency notices separate",
+  "created_at": "2026-07-14T17:10:00Z",
+  "expires_at": null
+}

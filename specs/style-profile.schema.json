@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/style-profile.schema.json",
+  "title": "Versioned style profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "revision",
+    "name",
+    "scope",
+    "dimensions",
+    "hard_rules",
+    "anti_patterns",
+    "evidence",
+    "learning_policy",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "profile_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "name": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "brand",
+        "team",
+        "project",
+        "app_context"
+      ]
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "weight",
+          "settings"
+        ],
+        "properties": {
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "settings": {
+            "type": "object"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "hard_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "predicate"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "object"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "anti_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "weight"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "exemplar_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "ref"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "direct_setting",
+              "approved_exemplar",
+              "pairwise_choice",
+              "accepted_edit",
+              "rejected_output",
+              "imported_brand_rule"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "learning_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "requires_confirmation",
+        "private_training_allowed"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "requires_confirmation": {
+          "type": "boolean"
+        },
+        "private_training_allowed": {
+          "type": "boolean"
+        },
+        "decay_days": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  }
+}

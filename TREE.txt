@@ -1,0 +1,166 @@
+toolshape-harness-native-handover-v2.1-launch-ready/
+├── book/
+│   └── harness-native-software-playbook.md
+├── diagrams/
+│   ├── 01-chaseos-stack.mmd
+│   ├── 02-operation-lifecycle.mmd
+│   ├── 03-secret-lifecycle.mmd
+│   ├── 04-content-super-app.mmd
+│   ├── 05-voice-runtime.mmd
+│   └── 06-eval-loop.mmd
+├── docs/
+│   ├── 00-executive-brief.md
+│   ├── 01-agent-native-constitution.md
+│   ├── 02-chaseos-hierarchy.md
+│   ├── 03-reference-architecture.md
+│   ├── 04-semantic-kernel.md
+│   ├── 05-operation-envelope-vs-memory.md
+│   ├── 06-capability-design.md
+│   ├── 07-jobs-events-artifacts.md
+│   ├── 08-human-agent-ux.md
+│   ├── 09-style-preference-intelligence.md
+│   ├── 10-self-evolving-coach.md
+│   ├── 11-security-secrets-privacy.md
+│   ├── 12-evals-benchmarks.md
+│   ├── 13-protocol-selection.md
+│   ├── 14-x402-monetization.md
+│   ├── 15-open-source-licensing.md
+│   ├── 16-two-product-portfolio.md
+│   ├── 17-university-learning-map.md
+│   ├── 18-delivery-plan.md
+│   └── 19-non-goals.md
+├── inputs/
+│   ├── README.md
+│   └── software-category-seed.txt
+├── launch/
+│   ├── 01-CODEX-SESSION-A-PLATFORM-VOICE.md
+│   ├── 02-CODEX-SESSION-B-STUDIO.md
+│   ├── 03-DISCORD-CONTROL-PLANE-PROMPT.md
+│   ├── 04-DISCORD-LAUNCH-ANNOUNCEMENT.md
+│   ├── 05-SHARED-WORKSTREAM-PROTOCOL.md
+│   ├── bootstrap-toolshape.ps1
+│   ├── control-plane-event.example.json
+│   ├── control-plane-event.schema.json
+│   ├── LAUNCH-VALIDATION.json
+│   ├── README.md
+│   ├── run-codex-session.ps1
+│   ├── START-HERE-DUAL-CODEX.md
+│   └── start-two-codex-sessions.ps1
+├── legal/
+│   ├── CLEAN-ROOM.md
+│   └── LICENSING-CHECKLIST.md
+├── naming/
+│   ├── COLLISION-SCAN.md
+│   └── NAME-CANDIDATES.md
+├── platform/
+│   ├── adapter-kit/
+│   │   └── HANDOFF.md
+│   ├── chaseos-bridge/
+│   │   └── HANDOFF.md
+│   ├── conformance/
+│   │   └── HANDOFF.md
+│   ├── policy-engine/
+│   │   └── HANDOFF.md
+│   ├── secret-broker/
+│   │   └── HANDOFF.md
+│   ├── semantic-kernel/
+│   │   └── HANDOFF.md
+│   └── README.md
+├── products/
+│   ├── studio/
+│   │   ├── AGENTS.md
+│   │   ├── ARCHITECTURE.md
+│   │   ├── CODEX-HANDOVER.md
+│   │   ├── DESIGN-ENGINE.md
+│   │   ├── DYNAMIC-INTERFACES.md
+│   │   ├── EVALS.md
+│   │   ├── FEATURES-21.md
+│   │   ├── PRD.md
+│   │   ├── README.md
+│   │   ├── STYLE-INTELLIGENCE.md
+│   │   ├── UX.md
+│   │   └── VIDEO-ENGINE.md
+│   └── voice/
+│       ├── AGENTS.md
+│       ├── ARCHITECTURE.md
+│       ├── CODEX-HANDOVER.md
+│       ├── EVALS.md
+│       ├── FEATURES-80-20.md
+│       ├── PERSONALIZATION-ANALYTICS.md
+│       ├── PRD.md
+│       ├── PRIVACY.md
+│       ├── README.md
+│       ├── UX.md
+│       └── WINDOWS-INTEGRATION.md
+├── prompts/
+│   ├── 00-phase-zero-reference-kernel.md
+│   ├── 01-voice-foundation.md
+│   ├── 02-studio-foundation.md
+│   ├── 03-security-conformance.md
+│   ├── 04-research-refresh.md
+│   └── 05-parallel-orchestrator.md
+├── research/
+│   ├── benchmark-notes/
+│   │   ├── osworld-family.md
+│   │   └── state-based-agent-evals.md
+│   ├── paper-notes/
+│   │   ├── design-preference.md
+│   │   ├── secrets-and-deletion.md
+│   │   ├── security-agents.md
+│   │   └── tool-use-and-harnesses.md
+│   ├── product-notes/
+│   │   ├── canva.md
+│   │   ├── capcut.md
+│   │   └── wispr-flow.md
+│   ├── BOOK-NOTES-TEMPLATE.md
+│   ├── methodology.md
+│   ├── PAPER-NOTE-TEMPLATE.md
+│   ├── READING-PACK.md
+│   ├── README.md
+│   ├── research-refresh-workflow.md
+│   └── SOURCES.json
+├── scripts/
+│   ├── print_tree.sh
+│   ├── run_phase_zero.sh
+│   ├── run_prompt.sh
+│   ├── run_research_refresh.sh
+│   ├── run_security.sh
+│   ├── run_studio.sh
+│   ├── run_voice.sh
+│   └── verify_handover.py
+├── specs/
+│   ├── examples/
+│   │   ├── anac-manifest.example.json
+│   │   ├── approval.example.json
+│   │   ├── artifact.example.json
+│   │   ├── capability.example.json
+│   │   ├── error.example.json
+│   │   ├── job.example.json
+│   │   ├── operation-result.example.json
+│   │   ├── operation.example.json
+│   │   ├── provenance.example.json
+│   │   ├── secret-handle.example.json
+│   │   ├── style-profile.example.json
+│   │   └── workflow-recipe.example.json
+│   ├── anac-manifest.schema.json
+│   ├── approval.schema.json
+│   ├── artifact.schema.json
+│   ├── capability.schema.json
+│   ├── common.schema.json
+│   ├── error.schema.json
+│   ├── job.schema.json
+│   ├── operation-envelope.schema.json
+│   ├── operation-result.schema.json
+│   ├── provenance.schema.json
+│   ├── secret-handle.schema.json
+│   ├── style-profile.schema.json
+│   └── workflow-recipe.schema.json
+├── 03-DISCORD-CONTROL-PLANE-PROMPT.md
+├── AGENTS.md
+├── CHANGELOG.md
+├── decisions.json
+├── MANIFEST.sha256
+├── README.md
+├── START-HERE-DUAL-CODEX.md
+├── TREE.txt
+└── VALIDATION.md

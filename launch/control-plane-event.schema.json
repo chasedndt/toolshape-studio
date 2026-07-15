@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.local/schemas/control-plane-event.schema.json",
+  "title": "Toolshape control-plane event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "occurred_at",
+    "workstream",
+    "event_type",
+    "severity",
+    "summary",
+    "branch",
+    "contract_impact",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workstream": {
+      "enum": [
+        "platform",
+        "voice-platform",
+        "voice",
+        "studio",
+        "integration",
+        "research",
+        "release"
+      ]
+    },
+    "event_type": {
+      "enum": [
+        "started",
+        "progress",
+        "milestone",
+        "test_result",
+        "contract_baseline_ready",
+        "contract_change",
+        "contract_proposal",
+        "integration",
+        "security",
+        "blocker",
+        "approval_required",
+        "artifact",
+        "handover",
+        "release"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "info",
+        "warning",
+        "blocking",
+        "critical"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "tag": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "commands": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      }
+    },
+    "tests": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "blocked",
+              "not_run"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "contract_impact": {
+      "enum": [
+        "none",
+        "compatible",
+        "migration_required",
+        "proposal_only",
+        "blocked"
+      ]
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "reference"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "blocker": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 2000
+    },
+    "decision_requested": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 2000
+    },
+    "next_action": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "trace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "redaction_checked": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

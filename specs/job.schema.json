@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/job.schema.json",
+  "title": "Durable job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "operation_id",
+    "type",
+    "status",
+    "progress",
+    "inputs",
+    "outputs",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "job_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "operation_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "type": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "queued",
+        "running",
+        "waiting_for_input",
+        "retry_scheduled",
+        "completed",
+        "failed",
+        "cancel_requested",
+        "cancelled"
+      ]
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fraction",
+        "stage"
+      ],
+      "properties": {
+        "fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stage": {
+          "type": "string"
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      }
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_attempts": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cancel_supported": {
+      "type": "boolean"
+    },
+    "cost_estimate": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/money"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "actual_cost": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/money"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

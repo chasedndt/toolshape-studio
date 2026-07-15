@@ -1,0 +1,796 @@
+{
+  "generated_on": "2026-07-14",
+  "notes": "URLs and product pages are time-sensitive. Re-verify before implementation or publication. Academic preprints may change and are not all peer-reviewed.",
+  "sources": [
+    {
+      "id": "wispr-features",
+      "category": "product-baseline",
+      "title": "Wispr Flow \u2014 Features",
+      "organization": "Wispr Flow",
+      "date": "current page, accessed 2026-07-14",
+      "url": "https://wisprflow.ai/features",
+      "type": "official product documentation",
+      "why": "System-wide dictation, languages, cleanup, dictionary, snippets, styles, developer context, team dashboards."
+    },
+    {
+      "id": "wispr-whats-new",
+      "category": "product-baseline",
+      "title": "Wispr Flow \u2014 What\u2019s New",
+      "organization": "Wispr Flow",
+      "date": "through 2026-07-09, accessed 2026-07-14",
+      "url": "https://wisprflow.ai/whats-new",
+      "type": "official release notes",
+      "why": "Current reliability, latency, microphone failover, data controls, recovery, Scratchpad, insights and evaluation direction."
+    },
+    {
+      "id": "wispr-privacy",
+      "category": "product-baseline",
+      "title": "Wispr Flow \u2014 Privacy & Security",
+      "organization": "Wispr Flow",
+      "date": "accessed 2026-07-14",
+      "url": "https://wisprflow.ai/privacy",
+      "type": "official product documentation",
+      "why": "Compare privacy, cloud retention, and user controls; do not copy claims without own evidence."
+    },
+    {
+      "id": "canva-visual-suite",
+      "category": "product-baseline",
+      "title": "Canva Visual Suite",
+      "organization": "Canva",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.canva.com/visual-suite/",
+      "type": "official product documentation",
+      "why": "Evidence for unified design/video/content product architecture and AI throughout one connected suite."
+    },
+    {
+      "id": "canva-magic-layers",
+      "category": "product-baseline",
+      "title": "Introducing Magic Layers",
+      "organization": "Canva",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.canva.com/newsroom/news/magic-layers/",
+      "type": "official product announcement",
+      "why": "Editable multi-layer reconstruction from flat AI/static images; control and editability are strategic requirements."
+    },
+    {
+      "id": "canva-connect-apis",
+      "category": "product-baseline",
+      "title": "Canva Connect APIs",
+      "organization": "Canva Developers",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.canva.dev/docs/connect/",
+      "type": "official developer documentation",
+      "why": "Shows existing API/programmatic design workflows; Toolshape differentiates by making the whole kernel semantic rather than adding a shallow API."
+    },
+    {
+      "id": "canva-apps-sdk",
+      "category": "product-baseline",
+      "title": "Canva Apps SDK",
+      "organization": "Canva Developers",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.canva.dev/docs/apps/",
+      "type": "official developer documentation",
+      "why": "Extension architecture and developer experience reference."
+    },
+    {
+      "id": "capcut-online-editor",
+      "category": "product-baseline",
+      "title": "CapCut Online Video Editor",
+      "organization": "CapCut",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.capcut.com/tools/online-video-editor",
+      "type": "official product documentation",
+      "why": "Timeline, trim/crop/split/reverse, audio, text, effects, transitions, filters, resize, background removal, captions, and export baseline."
+    },
+    {
+      "id": "capcut-auto-captions",
+      "category": "product-baseline",
+      "title": "CapCut Auto Caption Generator",
+      "organization": "CapCut",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.capcut.com/tools/auto-caption-generator",
+      "type": "official product documentation",
+      "why": "Caption generation, styling, synchronization, and language workflow baseline."
+    },
+    {
+      "id": "capcut-keyframes",
+      "category": "product-baseline",
+      "title": "CapCut Keyframe Animation",
+      "organization": "CapCut",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.capcut.com/tools/keyframe-animation",
+      "type": "official product documentation",
+      "why": "Position, scale, rotation, opacity, colour, speed curves, graph/easing, multitrack workflow."
+    },
+    {
+      "id": "mcp-spec",
+      "category": "protocol",
+      "title": "Model Context Protocol Specification 2025-11-25",
+      "organization": "Model Context Protocol",
+      "date": "2025-11-25",
+      "url": "https://modelcontextprotocol.io/specification/2025-11-25",
+      "type": "official specification",
+      "why": "Host/client/server architecture, JSON-RPC, capability negotiation, tools/resources/prompts, progress, cancellation, errors, consent and security."
+    },
+    {
+      "id": "openai-codex-mcp",
+      "category": "protocol",
+      "title": "Codex \u2014 Extend with MCP",
+      "organization": "OpenAI",
+      "date": "accessed 2026-07-14",
+      "url": "https://learn.chatgpt.com/codex/extend/mcp",
+      "type": "official documentation",
+      "why": "Codex MCP transports/configuration and local/remote integration."
+    },
+    {
+      "id": "openai-agents-guide",
+      "category": "agent-engineering",
+      "title": "Agents guide",
+      "organization": "OpenAI",
+      "date": "accessed 2026-07-14",
+      "url": "https://developers.openai.com/api/docs/guides/agents",
+      "type": "official documentation",
+      "why": "Current agent application primitives and design guidance."
+    },
+    {
+      "id": "openai-agents-sdk",
+      "category": "agent-engineering",
+      "title": "OpenAI Agents SDK for Python",
+      "organization": "OpenAI",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/openai/openai-agents-python",
+      "type": "official source/documentation",
+      "why": "Agents, tools, handoffs, sessions, guardrails, tracing, and MCP implementation reference."
+    },
+    {
+      "id": "anthropic-effective-agents",
+      "category": "agent-engineering",
+      "title": "Building Effective Agents",
+      "organization": "Anthropic",
+      "date": "2024-12",
+      "url": "https://www.anthropic.com/research/building-effective-agents",
+      "type": "official engineering guidance",
+      "why": "Simple composable patterns, orchestrator-workers, evaluator-optimizer, and careful agent-computer interface design."
+    },
+    {
+      "id": "claude-code-mcp",
+      "category": "protocol",
+      "title": "Claude Code \u2014 MCP",
+      "organization": "Anthropic",
+      "date": "accessed 2026-07-14",
+      "url": "https://docs.anthropic.com/en/docs/claude-code/mcp",
+      "type": "official documentation",
+      "why": "Cross-harness portability and Claude-specific MCP integration."
+    },
+    {
+      "id": "a2a-spec",
+      "category": "protocol",
+      "title": "A2A Protocol Specification",
+      "organization": "A2A Project",
+      "date": "accessed 2026-07-14",
+      "url": "https://a2a-protocol.org/latest/specification/",
+      "type": "official specification",
+      "why": "Autonomous agent-service delegation, task lifecycle, Agent Cards, streaming, artifacts, cancellation, and security."
+    },
+    {
+      "id": "json-schema-2020-12",
+      "category": "protocol",
+      "title": "JSON Schema Draft 2020-12",
+      "organization": "JSON Schema",
+      "date": "2020-12",
+      "url": "https://json-schema.org/draft/2020-12",
+      "type": "official specification",
+      "why": "Runtime validation and versioned operation/capability contracts."
+    },
+    {
+      "id": "w3c-prov",
+      "category": "protocol",
+      "title": "PROV Overview",
+      "organization": "W3C",
+      "date": "2013",
+      "url": "https://www.w3.org/TR/prov-overview/",
+      "type": "W3C recommendation overview",
+      "why": "Entities, activities, agents, derivation, attribution, and provenance concepts."
+    },
+    {
+      "id": "otel-genai-agent",
+      "category": "observability",
+      "title": "OpenTelemetry GenAI Agent Spans",
+      "organization": "OpenTelemetry",
+      "date": "accessed 2026-07-14",
+      "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+      "type": "official specification",
+      "why": "Trace semantics for agent activity; must be combined with pre-export redaction."
+    },
+    {
+      "id": "win-registerhotkey",
+      "category": "windows",
+      "title": "RegisterHotKey function",
+      "organization": "Microsoft",
+      "date": "accessed 2026-07-14",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey",
+      "type": "official API documentation",
+      "why": "System-wide configurable hotkeys and conflicts."
+    },
+    {
+      "id": "win-tsf",
+      "category": "windows",
+      "title": "Text Services Framework",
+      "organization": "Microsoft",
+      "date": "accessed 2026-07-14",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/tsf/text-services-framework",
+      "type": "official platform documentation",
+      "why": "Long-term native text-service/input architecture."
+    },
+    {
+      "id": "win-sendinput",
+      "category": "windows",
+      "title": "SendInput function",
+      "organization": "Microsoft",
+      "date": "accessed 2026-07-14",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput",
+      "type": "official API documentation",
+      "why": "Unicode/key input fallback and UIPI limitations."
+    },
+    {
+      "id": "win-keybdinput",
+      "category": "windows",
+      "title": "KEYBDINPUT structure",
+      "organization": "Microsoft",
+      "date": "accessed 2026-07-14",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-keybdinput",
+      "type": "official API documentation",
+      "why": "Unicode input event representation."
+    },
+    {
+      "id": "whisper-cpp",
+      "category": "dependency-candidate",
+      "title": "whisper.cpp",
+      "organization": "ggml-org",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/ggml-org/whisper.cpp",
+      "type": "open-source project",
+      "why": "MIT local/offline ASR candidate across desktop and other platforms."
+    },
+    {
+      "id": "faster-whisper",
+      "category": "dependency-candidate",
+      "title": "faster-whisper",
+      "organization": "SYSTRAN",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/SYSTRAN/faster-whisper",
+      "type": "open-source project",
+      "why": "Alternative local ASR worker candidate; benchmark rather than assume."
+    },
+    {
+      "id": "sherpa-onnx",
+      "category": "dependency-candidate",
+      "title": "sherpa-onnx",
+      "organization": "k2-fsa",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/k2-fsa/sherpa-onnx",
+      "type": "open-source project",
+      "why": "Offline speech/VAD/diarization and cross-platform provider candidate."
+    },
+    {
+      "id": "silero-vad",
+      "category": "dependency-candidate",
+      "title": "Silero VAD",
+      "organization": "snakers4",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/snakers4/silero-vad",
+      "type": "open-source project",
+      "why": "VAD candidate; verify model/licence/distribution."
+    },
+    {
+      "id": "tauri",
+      "category": "dependency-candidate",
+      "title": "Tauri documentation",
+      "organization": "Tauri",
+      "date": "accessed 2026-07-14",
+      "url": "https://tauri.app/",
+      "type": "official project documentation",
+      "why": "Desktop shell and Rust/TypeScript integration."
+    },
+    {
+      "id": "ffmpeg-legal",
+      "category": "dependency-licensing",
+      "title": "FFmpeg Legal",
+      "organization": "FFmpeg",
+      "date": "accessed 2026-07-14",
+      "url": "https://ffmpeg.org/legal.html",
+      "type": "official project legal documentation",
+      "why": "Build configuration can affect LGPL/GPL obligations; record exact flags."
+    },
+    {
+      "id": "opentimelineio",
+      "category": "dependency-candidate",
+      "title": "OpenTimelineIO",
+      "organization": "Academy Software Foundation",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/AcademySoftwareFoundation/OpenTimelineIO",
+      "type": "open-source project",
+      "why": "Timeline interchange adapter, not render engine or canonical state."
+    },
+    {
+      "id": "osworld",
+      "category": "benchmark",
+      "title": "OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments",
+      "organization": "Research paper",
+      "date": "2024-04-11",
+      "url": "https://arxiv.org/abs/2404.07972",
+      "type": "peer-reviewed/academic preprint benchmark",
+      "why": "369 tasks; exposes GUI grounding and operational-knowledge gap; execution-based evaluation."
+    },
+    {
+      "id": "osworld-mcp",
+      "category": "benchmark",
+      "title": "OSWorld-MCP: Benchmarking MCP Tool Invocation in Computer-Use Agents",
+      "organization": "Research paper",
+      "date": "2025-10-28",
+      "url": "https://arxiv.org/abs/2510.24563",
+      "type": "academic preprint benchmark",
+      "why": "Mixed MCP/GUI evaluation; tools improve success but invocation remains difficult."
+    },
+    {
+      "id": "windowsworld",
+      "category": "benchmark",
+      "title": "WindowsWorld: A Process-Centric Benchmark of Autonomous GUI Agents in Professional Cross-Application Environments",
+      "organization": "Research paper",
+      "date": "2026-04-30",
+      "url": "https://arxiv.org/abs/2604.27776",
+      "type": "academic preprint benchmark",
+      "why": "Professional cross-app conditional workflows; relevant to ChaseOS and Windows testing."
+    },
+    {
+      "id": "appworld",
+      "category": "benchmark",
+      "title": "AppWorld: A Controllable World of Apps and People for Benchmarking Interactive Coding Agents",
+      "organization": "Research paper",
+      "date": "2024-07-26",
+      "url": "https://arxiv.org/abs/2407.18901",
+      "type": "academic benchmark",
+      "why": "State-based unit tests allow different trajectories and detect collateral damage."
+    },
+    {
+      "id": "tau-bench",
+      "category": "benchmark",
+      "title": "tau-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains",
+      "organization": "Research paper",
+      "date": "2024-06-17",
+      "url": "https://arxiv.org/abs/2406.12045",
+      "type": "academic benchmark",
+      "why": "End-state policy evaluation and pass^k reliability across repeated runs."
+    },
+    {
+      "id": "react",
+      "category": "agent-research",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "organization": "Research paper",
+      "date": "2022-10-06",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "type": "academic paper",
+      "why": "Foundational interleaved reasoning/action pattern."
+    },
+    {
+      "id": "toolformer",
+      "category": "agent-research",
+      "title": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+      "organization": "Research paper",
+      "date": "2023-02-09",
+      "url": "https://arxiv.org/abs/2302.04761",
+      "type": "academic paper",
+      "why": "When/how language models invoke tools."
+    },
+    {
+      "id": "gorilla",
+      "category": "agent-research",
+      "title": "Gorilla: Large Language Model Connected with Massive APIs",
+      "organization": "Research paper",
+      "date": "2023-05-24",
+      "url": "https://arxiv.org/abs/2305.15334",
+      "type": "academic paper",
+      "why": "API selection, documentation retrieval, and hallucination challenges."
+    },
+    {
+      "id": "agentdojo",
+      "category": "security-research",
+      "title": "AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents",
+      "organization": "Research paper",
+      "date": "2024-06-19",
+      "url": "https://arxiv.org/abs/2406.13352",
+      "type": "academic security benchmark",
+      "why": "Extensible untrusted-tool-data security environment with realistic tasks and attacks."
+    },
+    {
+      "id": "injecagent",
+      "category": "security-research",
+      "title": "InjecAgent: Benchmarking Indirect Prompt Injections in Tool-Integrated LLM Agents",
+      "organization": "Research paper",
+      "date": "2024-03-05",
+      "url": "https://arxiv.org/abs/2403.02691",
+      "type": "academic security benchmark",
+      "why": "1,054 indirect prompt-injection cases across user and attacker tools."
+    },
+    {
+      "id": "camel",
+      "category": "security-research",
+      "title": "Defeating Prompt Injections by Design",
+      "organization": "Research paper",
+      "date": "2025-03-24",
+      "url": "https://arxiv.org/abs/2503.18813",
+      "type": "academic security paper",
+      "why": "Separates trusted control and untrusted data flows; capability-based egress protection."
+    },
+    {
+      "id": "agentdyn",
+      "category": "security-research",
+      "title": "AgentDyn: A Dynamic Open-Ended Benchmark for Evaluating Prompt Injection Attacks",
+      "organization": "Research paper",
+      "date": "2026-02-03",
+      "url": "https://arxiv.org/abs/2602.03117",
+      "type": "academic preprint benchmark",
+      "why": "Emerging dynamic/open-ended attack cases; warns current defences may be insecure or over-defensive."
+    },
+    {
+      "id": "owasp-secrets",
+      "category": "security-guidance",
+      "title": "Secrets Management Cheat Sheet",
+      "organization": "OWASP",
+      "date": "accessed 2026-07-14",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html",
+      "type": "security guidance",
+      "why": "Centralisation, least privilege, dynamic secrets, in-memory delivery, rotation, and audit."
+    },
+    {
+      "id": "owasp-ai-agent",
+      "category": "security-guidance",
+      "title": "AI Agent Security Cheat Sheet",
+      "organization": "OWASP",
+      "date": "accessed 2026-07-14",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html",
+      "type": "security guidance",
+      "why": "Prompt injection, tool abuse, exfiltration, memory poisoning, excessive autonomy, approvals, rollback, and denial of wallet."
+    },
+    {
+      "id": "owasp-mcp",
+      "category": "security-guidance",
+      "title": "MCP Security Cheat Sheet",
+      "organization": "OWASP",
+      "date": "accessed 2026-07-14",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html",
+      "type": "security guidance",
+      "why": "MCP-specific trust, auth, tool, server, and transport threats."
+    },
+    {
+      "id": "owasp-agentic-top10",
+      "category": "security-guidance",
+      "title": "OWASP Top 10 for Agentic Applications 2026",
+      "organization": "OWASP GenAI Security Project",
+      "date": "2026",
+      "url": "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+      "type": "security guidance",
+      "why": "Agentic threat taxonomy and organizational risk framing."
+    },
+    {
+      "id": "nist-zero-trust",
+      "category": "security-standard",
+      "title": "NIST SP 800-207 Zero Trust Architecture",
+      "organization": "NIST",
+      "date": "2020",
+      "url": "https://csrc.nist.gov/pubs/sp/800/207/final",
+      "type": "government standard",
+      "why": "Resource-centric explicit authentication and authorization; no implicit trust."
+    },
+    {
+      "id": "nist-ai-rmf",
+      "category": "risk-standard",
+      "title": "NIST AI Risk Management Framework",
+      "organization": "NIST",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "type": "government framework",
+      "why": "Govern/map/measure/manage AI risk throughout lifecycle."
+    },
+    {
+      "id": "nist-media-sanitization",
+      "category": "security-standard",
+      "title": "NIST SP 800-88 Rev. 2 \u2014 Guidelines for Media Sanitization",
+      "organization": "NIST",
+      "date": "2025",
+      "url": "https://csrc.nist.gov/pubs/sp/800/88/r2/final",
+      "type": "government standard",
+      "why": "Deletion/sanitisation terminology and evidence; distinguish logical deletion and sanitisation."
+    },
+    {
+      "id": "nist-key-management",
+      "category": "security-standard",
+      "title": "NIST SP 800-57 Part 1 Rev. 5 \u2014 Key Management",
+      "organization": "NIST",
+      "date": "2020",
+      "url": "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final",
+      "type": "government standard",
+      "why": "Cryptographic key lifecycle for envelope encryption and crypto-erasure."
+    },
+    {
+      "id": "vault-secrets-engines",
+      "category": "security-implementation",
+      "title": "Vault Secrets Engines",
+      "organization": "HashiCorp",
+      "date": "accessed 2026-07-14",
+      "url": "https://developer.hashicorp.com/vault/docs/secrets",
+      "type": "official documentation",
+      "why": "Dynamic/leased secrets and broker architecture reference."
+    },
+    {
+      "id": "spiffe-overview",
+      "category": "security-implementation",
+      "title": "SPIFFE Overview",
+      "organization": "SPIFFE",
+      "date": "accessed 2026-07-14",
+      "url": "https://spiffe.io/docs/latest/spiffe-about/overview/",
+      "type": "official documentation",
+      "why": "Workload identity for service/executor authentication."
+    },
+    {
+      "id": "creatiposter",
+      "category": "design-research",
+      "title": "CreatiPoster: Towards Editable and Controllable Multi-Layer Graphic Design Generation",
+      "organization": "Research paper",
+      "date": "2025-06-12",
+      "url": "https://arxiv.org/abs/2506.10890",
+      "type": "academic preprint",
+      "why": "Editable multi-layer JSON design generation, user assets, responsive/multilingual/animated output."
+    },
+    {
+      "id": "aesthetiq",
+      "category": "design-research",
+      "title": "AesthetiQ: Enhancing Graphic Layout Design via Aesthetic-Aware Preference Alignment",
+      "organization": "Research paper",
+      "date": "2025-03-01",
+      "url": "https://arxiv.org/abs/2503.00591",
+      "type": "academic preprint",
+      "why": "Aesthetic-aware preference alignment and layout-quality heuristics."
+    },
+    {
+      "id": "designsense",
+      "category": "design-research",
+      "title": "DesignSense: Human Preference Dataset and Reward Modeling for Graphic Layout Generation",
+      "organization": "Research paper",
+      "date": "2026-02-26",
+      "url": "https://arxiv.org/abs/2602.23438",
+      "type": "academic preprint",
+      "why": "10,235 preference pairs; specialised layout judges and multi-candidate selection."
+    },
+    {
+      "id": "designpref",
+      "category": "design-research",
+      "title": "DesignPref: Capturing Personal Preferences in Visual Design Generation",
+      "organization": "Research paper",
+      "date": "2025-11-25",
+      "url": "https://arxiv.org/abs/2511.20513",
+      "type": "academic preprint",
+      "why": "Designer disagreement and advantage of personalised preference models over aggregate judges."
+    },
+    {
+      "id": "taste",
+      "category": "design-research",
+      "title": "TASTE: A Designer-Annotated Multi-Dimensional Preference Dataset for AI-Generated Graphic Design",
+      "organization": "Research paper",
+      "date": "2026-05-20",
+      "url": "https://arxiv.org/abs/2605.20731",
+      "type": "academic preprint",
+      "why": "Professional evaluation across typography, hierarchy, colour, layout, brief fidelity and other dimensions."
+    },
+    {
+      "id": "viper-personalization",
+      "category": "design-research",
+      "title": "ViPer: Visual Personalization of Generative Models via Individual Preference Learning",
+      "organization": "Research paper",
+      "date": "2024-07-24",
+      "url": "https://arxiv.org/abs/2407.17365",
+      "type": "academic preprint",
+      "why": "Small one-time elicitation of structured liked/disliked attributes for personalised generation."
+    },
+    {
+      "id": "x402-docs",
+      "category": "payments",
+      "title": "x402 Documentation",
+      "organization": "x402 Foundation",
+      "date": "accessed 2026-07-14",
+      "url": "https://docs.x402.org/",
+      "type": "official documentation",
+      "why": "HTTP 402 payment flow, machine-to-machine and metered resources."
+    },
+    {
+      "id": "x402-repo",
+      "category": "payments",
+      "title": "x402 Reference Implementations",
+      "organization": "x402 Foundation",
+      "date": "accessed 2026-07-14",
+      "url": "https://github.com/coinbase/x402",
+      "type": "open-source project/reference",
+      "why": "Implementation and extension details; verify current foundation/repository ownership at build time."
+    },
+    {
+      "id": "apache-2",
+      "category": "licensing",
+      "title": "Apache License 2.0",
+      "organization": "Apache Software Foundation",
+      "date": "2004",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "type": "software licence",
+      "why": "Permissive interoperability-layer candidate with explicit patent grant and notice obligations."
+    },
+    {
+      "id": "mpl-2",
+      "category": "licensing",
+      "title": "Mozilla Public License 2.0 FAQ",
+      "organization": "Mozilla",
+      "date": "accessed 2026-07-14",
+      "url": "https://www.mozilla.org/en-US/MPL/2.0/FAQ/",
+      "type": "official licence guidance",
+      "why": "File-level copyleft candidate for local core."
+    },
+    {
+      "id": "agpl-3",
+      "category": "licensing",
+      "title": "GNU Affero General Public License 3.0",
+      "organization": "Free Software Foundation",
+      "date": "2007",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "type": "software licence",
+      "why": "Network-copyleft/dual-licensing option requiring legal and adoption analysis."
+    },
+    {
+      "id": "book-ddd",
+      "category": "book",
+      "title": "Domain-Driven Design",
+      "organization": "Eric Evans / Domain Language",
+      "date": "book",
+      "url": "https://www.domainlanguage.com/ddd/",
+      "type": "book/publisher-author page",
+      "why": "Ubiquitous language, bounded contexts, aggregates, and domain-first architecture."
+    },
+    {
+      "id": "book-ddia",
+      "category": "book",
+      "title": "Designing Data-Intensive Applications",
+      "organization": "Martin Kleppmann / O\u2019Reilly",
+      "date": "book",
+      "url": "https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/",
+      "type": "book/publisher page",
+      "why": "Reliability, state, storage, transactions, streams, and distributed systems."
+    },
+    {
+      "id": "book-secure-reliable",
+      "category": "book",
+      "title": "Building Secure and Reliable Systems",
+      "organization": "Google SRE",
+      "date": "book",
+      "url": "https://sre.google/books/building-secure-reliable-systems/",
+      "type": "free official book",
+      "why": "Security and reliability designed together."
+    },
+    {
+      "id": "book-ai-engineering",
+      "category": "book",
+      "title": "AI Engineering",
+      "organization": "Chip Huyen / O\u2019Reilly",
+      "date": "book",
+      "url": "https://www.oreilly.com/library/view/ai-engineering/9781098166298/",
+      "type": "book/publisher page",
+      "why": "Foundation-model applications, evals, latency, cost, feedback, agents, and operations."
+    },
+    {
+      "id": "book-design-ml-systems",
+      "category": "book",
+      "title": "Designing Machine Learning Systems",
+      "organization": "Chip Huyen / O\u2019Reilly",
+      "date": "book",
+      "url": "https://www.oreilly.com/library/view/designing-machine-learning/9781098107956/",
+      "type": "book/publisher page",
+      "why": "Data/model/production feedback and monitoring systems."
+    },
+    {
+      "id": "book-security-engineering",
+      "category": "book",
+      "title": "Security Engineering",
+      "organization": "Ross Anderson",
+      "date": "book",
+      "url": "https://www.cl.cam.ac.uk/~rja14/book.html",
+      "type": "free author page/book",
+      "why": "Threat models, protocols, economics, and real security failures."
+    },
+    {
+      "id": "book-human-centered-ai",
+      "category": "book",
+      "title": "Human-Centered AI",
+      "organization": "Ben Shneiderman / Oxford University Press",
+      "date": "book",
+      "url": "https://global.oup.com/academic/product/human-centered-ai-9780192845290",
+      "type": "book/publisher page",
+      "why": "High human control and high automation can coexist."
+    },
+    {
+      "id": "book-design-everyday",
+      "category": "book",
+      "title": "The Design of Everyday Things",
+      "organization": "Don Norman",
+      "date": "book",
+      "url": "https://mitpress.mit.edu/9780262525671/the-design-of-everyday-things/",
+      "type": "book/publisher page",
+      "why": "Affordances, feedback, mappings, errors, and human-centred product design."
+    },
+    {
+      "id": "book-philosophy-software",
+      "category": "book",
+      "title": "A Philosophy of Software Design",
+      "organization": "John Ousterhout",
+      "date": "book",
+      "url": "https://web.stanford.edu/~ouster/cgi-bin/book.php",
+      "type": "author page/book",
+      "why": "Complexity, deep modules, interfaces, and design discipline."
+    },
+    {
+      "id": "book-api-design-patterns",
+      "category": "book",
+      "title": "API Design Patterns",
+      "organization": "JJ Geewax / Manning",
+      "date": "book",
+      "url": "https://www.manning.com/books/api-design-patterns",
+      "type": "book/publisher page",
+      "why": "Resource/action patterns, long-running operations, versioning, and API ergonomics."
+    },
+    {
+      "id": "book-release-it",
+      "category": "book",
+      "title": "Release It!",
+      "organization": "Michael T. Nygard / Pragmatic Bookshelf",
+      "date": "book",
+      "url": "https://pragprog.com/titles/mnee2/release-it-second-edition/",
+      "type": "book/publisher page",
+      "why": "Stability patterns, failure modes, production readiness."
+    },
+    {
+      "id": "book-architecture-hard-parts",
+      "category": "book",
+      "title": "Software Architecture: The Hard Parts",
+      "organization": "Neal Ford et al. / O\u2019Reilly",
+      "date": "book",
+      "url": "https://www.oreilly.com/library/view/software-architecture-the/9781492086888/",
+      "type": "book/publisher page",
+      "why": "Trade-offs, boundaries, coupling, data ownership, and architecture decisions."
+    },
+    {
+      "id": "book-team-topologies",
+      "category": "book",
+      "title": "Team Topologies",
+      "organization": "Matthew Skelton and Manuel Pais",
+      "date": "book",
+      "url": "https://teamtopologies.com/book",
+      "type": "official book page",
+      "why": "Parallel workstream ownership and cognitive-load boundaries for agent/human teams."
+    },
+    {
+      "id": "book-continuous-discovery",
+      "category": "book",
+      "title": "Continuous Discovery Habits",
+      "organization": "Teresa Torres",
+      "date": "book",
+      "url": "https://www.producttalk.org/continuous-discovery-habits/",
+      "type": "author/product page",
+      "why": "Continuous product evidence and opportunity/solution discovery."
+    },
+    {
+      "id": "book-inspired",
+      "category": "book",
+      "title": "INSPIRED",
+      "organization": "Marty Cagan / SVPG",
+      "date": "book",
+      "url": "https://www.svpg.com/books/inspired-how-to-create-tech-products-customers-love-2nd-edition/",
+      "type": "author/company page",
+      "why": "Product discovery, empowered teams, and outcome-focused development."
+    }
+  ]
+}

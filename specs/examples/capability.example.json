@@ -1,0 +1,57 @@
+{
+  "id": "studio.project.apply_operations",
+  "version": "0.1.0",
+  "description": "Atomically validates and applies semantic scene or timeline operations to one project revision.",
+  "when_to_use": [
+    "Apply a reviewed batch of structured edits."
+  ],
+  "when_not_to_use": [
+    "Do not use for raw UI gestures or an unreviewed public publish."
+  ],
+  "input_schema": "operation-envelope.schema.json",
+  "output_schema": "operation-result.schema.json",
+  "effects": [
+    "write_local_state"
+  ],
+  "risk": "reversible_local_write",
+  "supports": {
+    "dry_run": true,
+    "idempotency": true,
+    "batching": true,
+    "cancellation": false,
+    "streaming": false
+  },
+  "preconditions": [
+    "project_exists",
+    "expected_revision_matches"
+  ],
+  "postconditions": [
+    "domain_invariants_hold"
+  ],
+  "authorization": {
+    "required_grants": [
+      "studio:project:read",
+      "studio:project:write"
+    ],
+    "approval_mode": "policy",
+    "hard_invariants": [
+      "no_secret_plaintext"
+    ]
+  },
+  "verification": {
+    "mode": "deterministic",
+    "verifier_id": "studio.project.invariants.v1",
+    "limitations": []
+  },
+  "recovery": {
+    "mode": "inverse_operation",
+    "time_limit_seconds": 86400
+  },
+  "cost": {
+    "billable": false,
+    "estimable": true,
+    "quote_capability": null
+  },
+  "latency_class": "interactive",
+  "examples": []
+}

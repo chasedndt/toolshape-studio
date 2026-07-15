@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "record_id": "623e4567-e89b-42d3-a456-426614174005",
+  "entity": {
+    "type": "artifact",
+    "id": "523e4567-e89b-42d3-a456-426614174004"
+  },
+  "activity": {
+    "operation_id": "123e4567-e89b-42d3-a456-426614174000",
+    "capability": "studio.video.render",
+    "job_id": "223e4567-e89b-42d3-a456-426614174001",
+    "started_at": "2026-07-14T17:01:00Z",
+    "ended_at": "2026-07-14T17:10:00Z"
+  },
+  "agents": [
+    {
+      "id": "user_chase",
+      "role": "principal",
+      "version": null
+    },
+    {
+      "id": "codex_worker_7",
+      "role": "agent",
+      "version": "declared-at-runtime"
+    },
+    {
+      "id": "toolshape-studio",
+      "role": "application",
+      "version": "0.1.0"
+    }
+  ],
+  "used_entities": [
+    {
+      "type": "studio_project",
+      "id": "project_campaign_42",
+      "revision": 8
+    }
+  ],
+  "was_derived_from": [],
+  "approval_id": null,
+  "generated_at": "2026-07-14T17:10:00Z"
+}

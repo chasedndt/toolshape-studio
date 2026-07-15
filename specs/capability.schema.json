@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/capability.schema.json",
+  "title": "ANAC capability definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "description",
+    "input_schema",
+    "output_schema",
+    "effects",
+    "risk",
+    "supports",
+    "authorization",
+    "verification",
+    "recovery",
+    "latency_class"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,5}$"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20
+    },
+    "when_to_use": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 12
+    },
+    "when_not_to_use": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 12
+    },
+    "input_schema": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "output_schema": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/effect"
+      },
+      "uniqueItems": true
+    },
+    "risk": {
+      "$ref": "common.schema.json#/$defs/risk"
+    },
+    "supports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dry_run",
+        "idempotency",
+        "batching",
+        "cancellation"
+      ],
+      "properties": {
+        "dry_run": {
+          "type": "boolean"
+        },
+        "idempotency": {
+          "type": "boolean"
+        },
+        "batching": {
+          "type": "boolean"
+        },
+        "cancellation": {
+          "type": "boolean"
+        },
+        "streaming": {
+          "type": "boolean"
+        }
+      }
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "postconditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_grants",
+        "approval_mode"
+      ],
+      "properties": {
+        "required_grants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "approval_mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "policy",
+            "explicit"
+          ]
+        },
+        "hard_invariants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "probabilistic",
+            "hybrid",
+            "manual"
+          ]
+        },
+        "verifier_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "inverse_operation",
+            "snapshot_restore",
+            "compensation",
+            "retry",
+            "manual"
+          ]
+        },
+        "time_limit_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "billable": {
+          "type": "boolean"
+        },
+        "estimable": {
+          "type": "boolean"
+        },
+        "quote_capability": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "latency_class": {
+      "type": "string",
+      "enum": [
+        "instant",
+        "interactive",
+        "background",
+        "long_running"
+      ]
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "maxItems": 10
+    }
+  }
+}

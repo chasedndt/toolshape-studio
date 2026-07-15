@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/anac-manifest.schema.json",
+  "title": "Agent-Native Application Contract manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "application",
+    "transports",
+    "capabilities",
+    "resources",
+    "security",
+    "conformance"
+  ],
+  "properties": {
+    "contract_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9.-]+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/semver"
+        },
+        "project_schema_version": {
+          "$ref": "common.schema.json#/$defs/semver"
+        }
+      }
+    },
+    "transports": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "in_process_sdk",
+          "local_ipc",
+          "local_http",
+          "remote_http",
+          "cli",
+          "mcp_stdio",
+          "mcp_streamable_http"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "capability.schema.json"
+      },
+      "minItems": 1
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "uri_template",
+          "sensitivity"
+        ],
+        "properties": {
+          "uri_template": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "private",
+              "secret"
+            ]
+          }
+        }
+      }
+    },
+    "jobs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "progress": {
+          "type": "boolean"
+        },
+        "cancellation": {
+          "type": "boolean"
+        },
+        "resumable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delegated_identity",
+        "capability_grants",
+        "secret_handles",
+        "data_egress_policy"
+      ],
+      "properties": {
+        "delegated_identity": {
+          "type": "boolean"
+        },
+        "capability_grants": {
+          "type": "boolean"
+        },
+        "secret_handles": {
+          "type": "boolean"
+        },
+        "data_egress_policy": {
+          "type": "boolean"
+        },
+        "local_only_mode": {
+          "type": "boolean"
+        }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "suite_version"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "agent_compatible",
+            "harness_native",
+            "ecosystem_ready"
+          ]
+        },
+        "suite_version": {
+          "$ref": "common.schema.json#/$defs/semver"
+        }
+      }
+    }
+  }
+}

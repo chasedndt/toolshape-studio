@@ -1,0 +1,14 @@
+flowchart TB
+  CO[ChaseOS] --> HR[Harness registry and coordination]
+  HR --> CX[Codex]
+  HR --> CL[Claude / Claude Code]
+  HR --> OA[ChatGPT / Agents SDK]
+  HR --> CA[Chase Agent / KMS / other harness]
+  CX --> AD[MCP · SDK · HTTP/IPC · CLI]
+  CL --> AD
+  OA --> AD
+  CA --> AD
+  UI[Operator UI and task-specific review surfaces] --> K[Semantic application kernel]
+  AD --> P[Application policy and authorization]
+  P --> K
+  K --> S[(Revisions · jobs · artifacts · provenance)]

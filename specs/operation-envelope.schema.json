@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://toolshape.dev/schemas/operation-envelope.schema.json",
+  "title": "Operation envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "operation_id",
+    "idempotency_key",
+    "trace_id",
+    "actor",
+    "intent",
+    "capability",
+    "target",
+    "input",
+    "risk",
+    "authorization",
+    "execution",
+    "retention",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/semver"
+    },
+    "operation_id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 200
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "actor": {
+      "$ref": "common.schema.json#/$defs/actor"
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/semver"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource"
+      ],
+      "properties": {
+        "resource": {
+          "$ref": "common.schema.json#/$defs/resource_ref"
+        },
+        "expected_revision": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "selection_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/resource_ref"
+          }
+        }
+      }
+    },
+    "input": {
+      "type": "object"
+    },
+    "context_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/resource_ref"
+      },
+      "maxItems": 100
+    },
+    "secret_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^secret://"
+      },
+      "maxItems": 20
+    },
+    "risk": {
+      "$ref": "common.schema.json#/$defs/risk"
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grant_ids"
+      ],
+      "properties": {
+        "grant_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approval_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "max_cost": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/money"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dry_run",
+        "atomicity"
+      ],
+      "properties": {
+        "dry_run": {
+          "type": "boolean"
+        },
+        "atomicity": {
+          "type": "string",
+          "enum": [
+            "atomic",
+            "staged",
+            "partial_declared"
+          ]
+        },
+        "timeout_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ]
+        }
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "content_storage"
+      ],
+      "properties": {
+        "class": {
+          "$ref": "common.schema.json#/$defs/retention_class"
+        },
+        "content_storage": {
+          "type": "string",
+          "enum": [
+            "none",
+            "local",
+            "encrypted_sync",
+            "provider_declared"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  }
+}

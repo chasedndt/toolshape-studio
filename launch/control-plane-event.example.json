@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "event_id": "voice-platform-20260714T180000Z-baseline",
+  "occurred_at": "2026-07-14T18:00:00Z",
+  "workstream": "voice-platform",
+  "event_type": "contract_baseline_ready",
+  "severity": "info",
+  "summary": "Shared operation, revision, idempotency, job, artifact and adapter baseline passed the required conformance subset.",
+  "branch": "work/voice-platform",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "tag": "platform-v0.1.0",
+  "commands": [
+    "pnpm lint",
+    "pnpm typecheck",
+    "pnpm test",
+    "pnpm conformance"
+  ],
+  "tests": [
+    {
+      "name": "schema validation",
+      "status": "passed",
+      "details": "All checked examples valid."
+    },
+    {
+      "name": "adapter final-state parity",
+      "status": "passed",
+      "details": "SDK, HTTP, CLI and MCP matched."
+    }
+  ],
+  "contract_impact": "compatible",
+  "artifacts": [],
+  "blocker": null,
+  "decision_requested": null,
+  "next_action": "Session B can integrate platform-v0.1.0; Session A continues the Voice golden loop.",
+  "trace_id": "trace-example-not-secret",
+  "redaction_checked": true
+}

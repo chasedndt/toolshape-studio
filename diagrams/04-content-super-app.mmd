@@ -1,0 +1,13 @@
+flowchart TB
+  PJ[Unified project]
+  PJ --> SG[Scene graph: pages, layers, components]
+  PJ --> TG[Timeline graph: tracks, clips, keyframes]
+  PJ --> AS[Assets and proxies]
+  SG --> PV[Interactive preview]
+  TG --> PV
+  SG --> RP[Render plan]
+  TG --> RP
+  RP --> IM[Image/document renderer]
+  RP --> FF[Video/audio worker]
+  IM --> AR[Artifacts]
+  FF --> AR

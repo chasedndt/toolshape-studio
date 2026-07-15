@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1.0",
+  "recipe_id": "studio.vertical_campaign",
+  "version": "0.1.0",
+  "name": "Create verified vertical campaign asset",
+  "goal": "Create an editable 9:16 campaign video and preview before any external publish.",
+  "required_capabilities": [
+    "studio.project.inspect",
+    "studio.video.edit_from_transcript",
+    "studio.quality.validate",
+    "artifact.export"
+  ],
+  "inputs": {
+    "project_ref": "required",
+    "style_profile_ref": "required"
+  },
+  "steps": [
+    {
+      "id": "inspect",
+      "capability": "studio.project.inspect",
+      "with": {},
+      "approval": "none",
+      "on_success": "edit",
+      "on_failure": null,
+      "verification": [
+        "project_revision_known"
+      ]
+    },
+    {
+      "id": "edit",
+      "capability": "studio.video.edit_from_transcript",
+      "with": {
+        "preset": "vertical_short"
+      },
+      "approval": "policy",
+      "on_success": "validate",
+      "on_failure": "inspect",
+      "verification": [
+        "timeline_invariants_hold"
+      ]
+    },
+    {
+      "id": "validate",
+      "capability": "studio.quality.validate",
+      "with": {},
+      "approval": "none",
+      "on_success": "export",
+      "on_failure": "edit",
+      "verification": [
+        "quality_gate_passed"
+      ]
+    },
+    {
+      "id": "export",
+      "capability": "artifact.export",
+      "with": {
+        "preset": "vertical_social"
+      },
+      "approval": "policy",
+      "on_success": null,
+      "on_failure": "validate",
+      "verification": [
+        "artifact_probe_matches_preset"
+      ]
+    }
+  ],
+  "verification": [
+    "editable_project_retained",
+    "no_external_publish"
+  ],
+  "retention_class": "R3_learned_config",
+  "evidence_refs": [
+    "eval_run_20260714_01"
+  ],
+  "status": "evaluating"
+}

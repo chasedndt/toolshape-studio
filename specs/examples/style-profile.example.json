@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "style_chase_social",
+  "revision": 4,
+  "name": "Chase social content",
+  "scope": "personal",
+  "dimensions": {
+    "typography": {
+      "weight": 0.85,
+      "settings": {
+        "display_scale": "large",
+        "body_density": "compact",
+        "preferred_case": "mixed"
+      },
+      "confidence": 0.78
+    },
+    "layout": {
+      "weight": 0.9,
+      "settings": {
+        "whitespace": "moderate",
+        "alignment": "strong-grid",
+        "asymmetry": "controlled"
+      },
+      "confidence": 0.74
+    },
+    "motion": {
+      "weight": 0.55,
+      "settings": {
+        "energy": "purposeful",
+        "transition_density": "low",
+        "easing": "smooth"
+      },
+      "confidence": 0.63
+    }
+  },
+  "hard_rules": [
+    {
+      "id": "contrast-aa",
+      "predicate": {
+        "type": "min_contrast",
+        "value": 4.5
+      },
+      "message": "Body text must meet configured contrast."
+    }
+  ],
+  "anti_patterns": [
+    {
+      "id": "generic-gradient-card",
+      "description": "Avoid default neon gradient cards without brand evidence.",
+      "weight": 0.9
+    }
+  ],
+  "exemplar_refs": [
+    {
+      "type": "studio_project",
+      "id": "approved_campaign_12",
+      "revision": 5
+    }
+  ],
+  "evidence": [
+    {
+      "type": "pairwise_choice",
+      "ref": "preference_event_92",
+      "weight": 0.8
+    }
+  ],
+  "learning_policy": {
+    "enabled": true,
+    "requires_confirmation": true,
+    "private_training_allowed": false,
+    "decay_days": 180
+  },
+  "created_at": "2026-07-01T10:00:00Z",
+  "updated_at": "2026-07-14T16:00:00Z"
+}
