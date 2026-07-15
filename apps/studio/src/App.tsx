@@ -491,7 +491,17 @@ function TimelinePanel({
 
 export function App() {
   const initialProject = useMemo(() => createGoldenStudioProject(), []);
-  const { project, apply, undo, redo, canUndo, canRedo, lastDiff } = useStudioState(initialProject);
+  const {
+    project,
+    apply,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    lastDiff,
+    renderJob,
+    queueRender,
+  } = useStudioState(initialProject);
   const [selectedNodeId, setSelectedNodeId] = useState("node-title");
   const [notice, setNotice] = useState<string | null>(null);
   const exportMode = new URLSearchParams(window.location.search).get("export") === "cover";
@@ -529,7 +539,15 @@ export function App() {
           <button className="button button--quiet" onClick={undo} disabled={!canUndo}>↶ Undo</button>
           <button className="button button--quiet" onClick={redo} disabled={!canRedo}>↷ Redo</button>
           <button className="button button--quiet">Share review</button>
-          <button className="button button--accent" onClick={() => setNotice("Cover view is ready for the verified FFmpeg render worker.")}>Render proof</button>
+          <button
+            className="button button--accent"
+            onClick={() => {
+              const job = queueRender();
+              setNotice(`Render queued · ${job.job_id.slice(0, 8)} · ${job.status}`);
+            }}
+          >
+            {renderJob ? "Job queued" : "Render proof"}
+          </button>
         </div>
       </header>
 

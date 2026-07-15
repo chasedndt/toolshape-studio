@@ -1,4 +1,5 @@
 import type { SemanticDiff, StudioOperation, StudioProject } from "@toolshape/studio-domain";
+import type { ArtifactRecord, DurableJob, StudioRenderRequest } from "./jobs";
 
 export const STUDIO_SCHEMA_VERSION = "0.1.0";
 
@@ -7,6 +8,9 @@ export type StudioCapabilityId =
   | "studio.project.plan"
   | "studio.project.apply_operations"
   | "studio.project.validate"
+  | "studio.project.render"
+  | "studio.job.get"
+  | "studio.job.cancel"
   | "studio.operation.undo";
 
 export interface OperationEnvelope {
@@ -18,7 +22,12 @@ export interface OperationEnvelope {
   intent: string;
   capability: { id: StudioCapabilityId; version: string };
   target: { resource: string; expected_revision?: number | null; selection_refs?: string[] };
-  input: { operations?: StudioOperation[]; undo_token?: string } & Record<string, unknown>;
+  input: {
+    operations?: StudioOperation[];
+    undo_token?: string;
+    render?: StudioRenderRequest;
+    job_id?: string;
+  } & Record<string, unknown>;
   context_refs?: string[];
   secret_refs?: string[];
   risk: { level: "low" | "medium" | "high" | "critical"; reasons?: string[] };
@@ -32,7 +41,7 @@ export interface OperationResult {
   schema_version: string;
   operation_id: string;
   trace_id: string;
-  status: "previewed" | "completed" | "rejected" | "failed";
+  status: "previewed" | "completed" | "accepted_job" | "rejected" | "failed";
   state: {
     revision_before: number | null;
     revision_after: number | null;
@@ -40,7 +49,11 @@ export interface OperationResult {
     digest?: string;
     project?: StudioProject;
   };
-  verification: { status: "passed" | "failed" | "not_applicable"; evidence: Array<Record<string, unknown>>; limitations?: string[] };
+  job_ref?: string | null;
+  artifact_refs?: string[];
+  job?: DurableJob;
+  artifacts?: ArtifactRecord[];
+  verification: { status: "passed" | "failed" | "pending" | "not_applicable"; evidence: Array<Record<string, unknown>>; limitations?: string[] };
   warnings: Array<{ code: string; message: string; details?: Record<string, unknown> }>;
   usage: { duration_ms: number; model_tokens?: null };
   undo?: { supported: boolean; token: string | null; expires_at?: null };
@@ -53,6 +66,9 @@ const CAPABILITIES = new Set<StudioCapabilityId>([
   "studio.project.plan",
   "studio.project.apply_operations",
   "studio.project.validate",
+  "studio.project.render",
+  "studio.job.get",
+  "studio.job.cancel",
   "studio.operation.undo",
 ]);
 

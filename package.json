@@ -15,6 +15,7 @@
     "render:golden": "npm --prefix apps/studio run render:golden",
     "smoke:runtime": "npm --prefix apps/studio run smoke:runtime",
     "smoke:cli": "npm --prefix apps/studio run smoke:cli",
+    "smoke:render-job": "npm --prefix apps/studio run smoke:render-job",
     "studio": "tsx packages/studio-cli/src/bin.ts"
   }
 }

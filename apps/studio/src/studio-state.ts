@@ -6,9 +6,11 @@ import type {
 } from "@toolshape/studio-domain";
 import {
   MemoryStudioRepository,
+  MemoryStudioJobGateway,
   STUDIO_SCHEMA_VERSION,
   StudioKernel,
   type OperationEnvelope,
+  type DurableJob,
 } from "@toolshape/studio-kernel";
 
 type DistributiveOmit<T, TKey extends PropertyKey> = T extends unknown ? Omit<T, TKey> : never;
@@ -23,11 +25,12 @@ export function useStudioState(initialProject: StudioProject) {
   if (!kernelRef.current) {
     const repository = new MemoryStudioRepository();
     repository.createProject(initialProject);
-    kernelRef.current = new StudioKernel(repository);
+    kernelRef.current = new StudioKernel(repository, new MemoryStudioJobGateway());
   }
   const [undoToken, setUndoToken] = useState<string | null>(null);
   const [redoToken, setRedoToken] = useState<string | null>(null);
   const [lastDiff, setLastDiff] = useState<SemanticDiff | null>(null);
+  const [renderJob, setRenderJob] = useState<DurableJob | null>(null);
 
   const invoke = useCallback((envelope: OperationEnvelope) => {
     const result = kernelRef.current!.invoke(envelope);
@@ -95,6 +98,21 @@ export function useStudioState(initialProject: StudioProject) {
     setUndoToken(result.undo?.token ?? null);
   }, [invoke, makeEnvelope, project.revision, redoToken]);
 
+  const queueRender = useCallback(() => {
+    const result = invoke(
+      makeEnvelope("studio.project.render", project.revision, {
+        render: {
+          cover_asset_id: "asset-product-image",
+          preset_id: "render-social-portrait",
+          output_name: "toolshape-studio-proof.mp4",
+        },
+      }),
+    );
+    if (!result.job) throw new Error("Render capability returned no durable job.");
+    setRenderJob(result.job);
+    return result.job;
+  }, [invoke, makeEnvelope, project.revision]);
+
   return {
     project,
     apply,
@@ -103,5 +121,7 @@ export function useStudioState(initialProject: StudioProject) {
     canUndo: undoToken !== null,
     canRedo: redoToken !== null,
     lastDiff,
+    renderJob,
+    queueRender,
   };
 }

@@ -5,10 +5,10 @@
   "type": "module",
   "dependencies": {
     "@toolshape/studio-domain": "file:../studio-domain",
-    "@toolshape/studio-engine": "file:../studio-engine"
+    "@toolshape/studio-engine": "file:../studio-engine",
+    "@toolshape/studio-kernel": "file:../studio-kernel"
   },
   "exports": {
     ".": "./src/index.ts"
   }
 }
-

@@ -35,6 +35,17 @@ interface CommandResult {
   stderr: string;
 }
 
+export async function probeMediaToolchain(): Promise<Array<Record<string, unknown>>> {
+  const [ffmpeg, ffprobe] = await Promise.all([
+    runCommand("ffmpeg", ["-version"]),
+    runCommand("ffprobe", ["-version"]),
+  ]);
+  return [
+    { name: "ffmpeg", version: ffmpeg.stdout.split(/\r?\n/, 1)[0] ?? "unknown" },
+    { name: "ffprobe", version: ffprobe.stdout.split(/\r?\n/, 1)[0] ?? "unknown" },
+  ];
+}
+
 function runCommand(
   binary: string,
   args: string[],
@@ -154,4 +165,3 @@ export async function executeVerifiedRender(
     throw error;
   }
 }
-

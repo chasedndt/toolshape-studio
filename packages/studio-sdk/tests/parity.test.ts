@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { MemoryStudioRepository, STUDIO_SCHEMA_VERSION, StudioKernel, type OperationEnvelope } from "@toolshape/studio-kernel";
+import {
+  MemoryStudioJobGateway,
+  MemoryStudioRepository,
+  STUDIO_SCHEMA_VERSION,
+  StudioKernel,
+  type OperationEnvelope,
+  type StudioCapabilityId,
+} from "@toolshape/studio-kernel";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 import { dispatchJsonCli, StudioSdk } from "../src";
 
@@ -37,6 +44,26 @@ function createSdk(): StudioSdk {
   return new StudioSdk(new StudioKernel(repository));
 }
 
+function createJobSdk(): StudioSdk {
+  const repository = new MemoryStudioRepository();
+  repository.createProject(createGoldenStudioProject());
+  return new StudioSdk(new StudioKernel(repository, new MemoryStudioJobGateway()));
+}
+
+function jobRequest(
+  capability: StudioCapabilityId,
+  input: OperationEnvelope["input"],
+): OperationEnvelope {
+  return {
+    ...createRequest(),
+    operation_id: randomUUID(),
+    idempotency_key: `job-parity-${randomUUID()}`,
+    capability: { id: capability, version: STUDIO_SCHEMA_VERSION },
+    input,
+    authorization: { grant_ids: [capability] },
+  };
+}
+
 describe("SDK and JSON CLI transport parity", () => {
   it("returns the same normalized result and final state digest", () => {
     const request = createRequest();
@@ -46,5 +73,34 @@ describe("SDK and JSON CLI transport parity", () => {
     expect(cliResult.state.semantic_diff).toEqual(sdkResult.state.semantic_diff);
     expect(cliResult.state.digest).toBe(sdkResult.state.digest);
     expect(cliResult.state.project).toEqual(sdkResult.state.project);
+  });
+
+  it("preserves render, job-read, and cancellation semantics through JSON CLI mapping", () => {
+    const sdk = createJobSdk();
+    const accepted = JSON.parse(
+      dispatchJsonCli(sdk, {
+        command: "invoke",
+        envelope: jobRequest("studio.project.render", {
+          render: {
+            cover_asset_id: "asset-product-image",
+            preset_id: "render-social-portrait",
+            output_name: "adapter-parity.mp4",
+          },
+        }),
+      }),
+    );
+    expect(accepted.status).toBe("accepted_job");
+    expect(accepted.job.status).toBe("queued");
+
+    const read = sdk.invoke(jobRequest("studio.job.get", { job_id: accepted.job.job_id }));
+    expect(read.job?.status).toBe("queued");
+    const cancelled = JSON.parse(
+      dispatchJsonCli(sdk, {
+        command: "invoke",
+        envelope: jobRequest("studio.job.cancel", { job_id: accepted.job.job_id }),
+      }),
+    );
+    expect(cancelled.job.status).toBe("cancelled");
+    expect(cancelled.state.digest).toBe(read.state.digest);
   });
 });

@@ -55,6 +55,11 @@ try {
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r5");
   await page.getByRole("button", { name: /Redo/ }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r6");
+  await page.getByRole("button", { name: "Render proof" }).click();
+  const renderNotice = await page.locator(".notice").textContent();
+  if (!renderNotice?.includes("Render queued") || !renderNotice.includes("queued")) {
+    throw new Error(`Render capability did not produce an accepted job notice: ${String(renderNotice)}`);
+  }
 
   const videoClipCount = await page.locator(".track-lane--video .timeline-clip").count();
   const qualityText = await page.locator(".quality-card strong").textContent();
@@ -98,6 +103,7 @@ try {
         videoClipCount,
         qualityText,
         changedPathText,
+        renderNotice,
         screenshot: path.join(artifactDir, "studio-editor-post-edit.png"),
         cover,
       },

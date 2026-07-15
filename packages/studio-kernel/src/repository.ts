@@ -21,6 +21,7 @@ export interface StudioRepository {
   getProject(projectId: string): StudioProject | null;
   getRevision(projectId: string, revision: number): StudioProject | null;
   getIdempotency(key: string): IdempotencyRecord | null;
+  recordIdempotency(record: IdempotencyRecord): void;
   commit(record: CommitRecord): void;
 }
 
@@ -58,13 +59,21 @@ export class MemoryStudioRepository implements StudioRepository {
     return record ? structuredClone(record) : null;
   }
 
+  recordIdempotency(record: IdempotencyRecord): void {
+    const existing = this.idempotency.get(record.key);
+    if (existing && existing.inputDigest !== record.inputDigest) {
+      throw new RangeError(`Idempotency key already exists: ${record.key}`);
+    }
+    this.idempotency.set(record.key, structuredClone(record));
+  }
+
   commit(record: CommitRecord): void {
     const current = this.projects.get(record.projectId);
     if (!current) throw new RangeError(`Unknown project: ${record.projectId}`);
     if (current.revision !== record.expectedRevision) throw new RepositoryRevisionConflictError(record.expectedRevision, current.revision);
     this.projects.set(record.projectId, structuredClone(record.project));
     this.revisions.get(record.projectId)!.set(record.project.revision, structuredClone(record.project));
-    this.idempotency.set(record.envelope.idempotency_key, {
+    this.recordIdempotency({
       key: record.envelope.idempotency_key,
       inputDigest: record.inputDigest,
       result: structuredClone(record.result),

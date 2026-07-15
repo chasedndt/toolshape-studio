@@ -7,6 +7,7 @@
     "@toolshape/studio-domain": "file:../studio-domain",
     "@toolshape/studio-kernel": "file:../studio-kernel",
     "@toolshape/studio-persistence": "file:../studio-persistence",
+    "@toolshape/studio-render": "file:../studio-render",
     "@toolshape/studio-sdk": "file:../studio-sdk"
   }
 }

@@ -2,6 +2,11 @@ import type { SemanticDiff, StudioOperation, StudioProject } from "@toolshape/st
 import { applyStudioOperation, validateStudioProject } from "@toolshape/studio-engine";
 import { assertOperationEnvelope, STUDIO_SCHEMA_VERSION, type OperationEnvelope, type OperationResult } from "./contracts";
 import { stableDigest } from "./digest";
+import {
+  assertStudioRenderRequest,
+  type DurableJob,
+  type StudioJobGateway,
+} from "./jobs";
 import type { StudioRepository } from "./repository";
 
 export class IdempotencyConflictError extends Error {
@@ -44,6 +49,7 @@ function makeResult(
   diffs: SemanticDiff[],
   verificationStatus: OperationResult["verification"]["status"] = "passed",
   undoToken: string | null = null,
+  job?: DurableJob,
 ): OperationResult {
   const digest = stableDigest(project);
   return {
@@ -62,12 +68,18 @@ function makeResult(
     warnings: [],
     usage: { duration_ms: Math.max(0, Date.now() - startedAt), model_tokens: null },
     undo: { supported: undoToken !== null, token: undoToken, expires_at: null },
+    job_ref: job ? `toolshape-studio://jobs/${job.job_id}` : null,
+    artifact_refs: job?.outputs ?? [],
+    job,
     completed_at: new Date().toISOString(),
   };
 }
 
 export class StudioKernel {
-  constructor(private readonly repository: StudioRepository) {}
+  constructor(
+    private readonly repository: StudioRepository,
+    private readonly jobs?: StudioJobGateway,
+  ) {}
 
   invoke(value: unknown): OperationResult {
     const startedAt = Date.now();
@@ -97,6 +109,63 @@ export class StudioKernel {
       throw new RangeError(
         `Expected project revision ${envelope.target.expected_revision}, but found ${current.revision}.`,
       );
+    }
+
+    if (
+      envelope.capability.id === "studio.project.render" ||
+      envelope.capability.id === "studio.job.get" ||
+      envelope.capability.id === "studio.job.cancel"
+    ) {
+      if (!this.jobs) throw new Error("Studio job gateway is not configured on this host.");
+      let job: DurableJob;
+      let status: OperationResult["status"] = "completed";
+      if (envelope.capability.id === "studio.project.render") {
+        assertStudioRenderRequest(envelope.input.render);
+        job = this.jobs.queueRender(current, envelope.input.render, {
+          operationId: envelope.operation_id,
+          traceId: envelope.trace_id,
+          createdAt: envelope.created_at,
+        });
+        status = "accepted_job";
+      } else {
+        const jobId = envelope.input.job_id;
+        if (typeof jobId !== "string" || !jobId) {
+          throw new TypeError("input.job_id is required.");
+        }
+        const existing = this.jobs.getJob(jobId);
+        if (!existing) throw new RangeError(`Unknown job: ${jobId}`);
+        if (existing.project_id !== current.id) {
+          throw new RangeError("Job does not belong to the target project.");
+        }
+        job = envelope.capability.id === "studio.job.cancel"
+          ? this.jobs.requestCancel(jobId)
+          : existing;
+      }
+      const verificationStatus: OperationResult["verification"]["status"] =
+        job.status === "completed"
+          ? "passed"
+          : job.status === "failed"
+            ? "failed"
+            : "pending";
+      const result = makeResult(
+        envelope,
+        startedAt,
+        status,
+        current.revision,
+        current.revision,
+        current,
+        [],
+        verificationStatus,
+        null,
+        job,
+      );
+      result.verification.evidence.push({ type: "durable_job", job });
+      this.repository.recordIdempotency({
+        key: envelope.idempotency_key,
+        inputDigest,
+        result,
+      });
+      return result;
     }
 
     if (envelope.capability.id === "studio.project.inspect") {

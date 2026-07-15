@@ -13,7 +13,8 @@
     "qa:browser": "tsx scripts/qa-browser.ts",
     "render:golden": "tsx scripts/render-golden.ts",
     "smoke:runtime": "tsx scripts/smoke-runtime.ts",
-    "smoke:cli": "tsx scripts/smoke-cli.ts"
+    "smoke:cli": "tsx scripts/smoke-cli.ts",
+    "smoke:render-job": "tsx scripts/smoke-render-job.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",
