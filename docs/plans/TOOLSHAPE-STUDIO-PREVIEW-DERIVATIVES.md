@@ -3,7 +3,7 @@
 **Date:** 2026-07-16
 **Runtime:** Codex
 **Session:** `2026-07-16_toolshape-studio-preview-derivatives`
-**Status:** IN PROGRESS
+**Status:** COMPLETE / VERIFIED PREVIEW-DERIVATIVE SLICE
 
 ## Outcome
 
@@ -102,3 +102,11 @@ The UI must show:
 - Full waveform zoom/tile pyramids, spectral views, audio editing, or GPU cache policy.
 - Treating fixture URLs as production content storage.
 
+## Verification closure
+
+- Expected-red migration/media run failed 7 tests as planned because schema v3, derivative plans, and thumbnail/waveform generation did not exist.
+- Focused domain/media closure passed 10/10 tests; resolver/digest conformance passed 3/3 tests.
+- Full Vitest closure passed 61 tests across 14 files; strict TypeScript and production Vite build passed.
+- Real FFmpeg/CLI ingestion produced and reopened proxy, thumbnail, and waveform derivatives while public metadata remained path-free.
+- Chrome QA loaded the real 152x270 fixture thumbnail and 1280x160 waveform, found them in Media, Audio, and timeline states, preserved the existing r0-r6 semantic editing flow, and reported no horizontal viewport overflow.
+- Real durable render, runtime, separate-process CLI, cancellation cleanup, dependency audit, Git checks, and repository handover validation passed.

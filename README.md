@@ -13,7 +13,7 @@
 
 ## Current Studio implementation
 
-**Status (2026-07-16): PARTIAL / MILESTONES 1-4 VERIFIED.** This repository now owns a runnable Toolshape Studio seed under `apps/studio/` and `packages/studio-*`. It includes a unified scene/timeline project, typed edit operations, revision and idempotency enforcement, atomic batches, undo/redo, SQLite restart recovery, byte-sniffed content-addressed imports, real video/audio probing and verified proxy generation, a scalable React editor shell with Create/Edit/Review/Automate arrangements and independent human/agent panels, schema-valid JSON CLI/SDK adapters, verified PNG/MP4 output, and a durable local render-job lifecycle with persisted progress, cancellation, retry/recovery, and immutable artifact registration.
+**Status (2026-07-16): PARTIAL / MILESTONES 1-5 VERIFIED.** This repository now owns a runnable Toolshape Studio seed under `apps/studio/` and `packages/studio-*`. It includes a unified scene/timeline project, typed edit operations, revision and idempotency enforcement, atomic batches, undo/redo, SQLite restart recovery, byte-sniffed content-addressed imports, real video/audio probing, verified proxy/thumbnail/waveform generation, a scalable React editor shell with Create/Edit/Review/Automate arrangements and resolver-backed media evidence across Media, Audio, and timeline panels, schema-valid JSON CLI/SDK adapters, verified PNG/MP4 output, and a durable local render-job lifecycle with persisted progress, cancellation, retry/recovery, and immutable artifact registration.
 
 Run the canonical checks from the repository root:
 
@@ -30,7 +30,7 @@ npm run smoke:media-ingest
 
 For live visual and media QA, start `npm run dev`, set `STUDIO_URL` to the printed local URL, then run `npm run qa:browser`, `npm run render:golden`, and `npm run test:render-cancel`.
 
-The Tauri shell, authenticated local IPC, MCP transport, full drag docking/layout persistence, sandboxed hostile-codec execution, waveform generation, signed packaging, crash-proof multi-worker leases, and broad feature parity remain deferred. The current host does not have Rust/Cargo or the MSVC provisioning tools required to verify a native Tauri build. See `docs/plans/TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md` and `docs/adr/`.
+The Tauri shell, authenticated local IPC, MCP transport, full drag docking/layout persistence, sandboxed hostile-codec execution, tiled/zoomable waveform caches, signed packaging, crash-proof multi-worker leases, and broad feature parity remain deferred. The current host does not have Rust/Cargo or the MSVC provisioning tools required to verify a native Tauri build. See `docs/plans/TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md` and `docs/adr/`.
 
 ## The corrected system model
 

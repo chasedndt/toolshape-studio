@@ -4,12 +4,14 @@ Toolshape Studio/
 │   │   ├── 2026-07-15-codex-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-codex-toolshape-studio-vertical-slice.md
 │   │   ├── 2026-07-16-codex-toolshape-studio-editor-shell-ux.md
-│   │   └── 2026-07-16-codex-toolshape-studio-media-ingest-conformance.md
+│   │   ├── 2026-07-16-codex-toolshape-studio-media-ingest-conformance.md
+│   │   └── 2026-07-16-codex-toolshape-studio-preview-derivatives.md
 │   ├── Build-Logs/
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md
 │   │   ├── 2026-07-16-ChaseOS-toolshape-studio-editor-shell-ux.md
 │   │   ├── 2026-07-16-ChaseOS-toolshape-studio-media-ingest-conformance.md
+│   │   ├── 2026-07-16-ChaseOS-toolshape-studio-preview-derivatives.md
 │   │   └── Build-Logs-Index.md
 │   └── Daily/
 │       ├── 2026-07-15.md
@@ -21,6 +23,7 @@ Toolshape Studio/
 │       ├── 2026-07-15_toolshape-studio-vertical-slice.md
 │       ├── 2026-07-16_toolshape-studio-editor-shell-ux.md
 │       ├── 2026-07-16_toolshape-studio-media-ingest-conformance.md
+│       ├── 2026-07-16_toolshape-studio-preview-derivatives.md
 │       └── Documentation-History-Index.md
 ├── apps/
 │   └── studio/
@@ -37,6 +40,8 @@ Toolshape Studio/
 │       │   ├── editor-shell.test.ts
 │       │   ├── editor-shell.ts
 │       │   ├── main.tsx
+│       │   ├── preview-assets.test.ts
+│       │   ├── preview-assets.ts
 │       │   ├── studio-state.ts
 │       │   └── styles.css
 │       ├── .gitignore
@@ -65,17 +70,20 @@ Toolshape Studio/
 │   │   ├── 0006-local-ipc-and-adapters.md
 │   │   ├── 0007-durable-render-job-lifecycle.md
 │   │   ├── 0008-media-ingest-and-public-contract-boundary.md
-│   │   └── 0009-editor-shell-view-state-boundary.md
+│   │   ├── 0009-editor-shell-view-state-boundary.md
+│   │   └── 0010-content-addressed-preview-derivatives.md
 │   ├── learning/
 │   │   ├── 2026-07-15-durable-render-jobs.md
 │   │   ├── 2026-07-15-vertical-slice.md
 │   │   ├── 2026-07-16-editor-shell-hci.md
-│   │   └── 2026-07-16-media-ingest-conformance.md
+│   │   ├── 2026-07-16-media-ingest-conformance.md
+│   │   └── 2026-07-16-preview-derivatives-media-systems.md
 │   ├── plans/
 │   │   ├── TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md
 │   │   ├── TOOLSHAPE-STUDIO-EDITOR-SHELL-UX.md
 │   │   ├── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
-│   │   └── TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md
+│   │   ├── TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md
+│   │   └── TOOLSHAPE-STUDIO-PREVIEW-DERIVATIVES.md
 │   ├── security/
 │   │   └── THREAT-MODEL.md
 │   ├── 00-executive-brief.md
@@ -100,6 +108,9 @@ Toolshape Studio/
 │   └── 19-non-goals.md
 ├── fixtures/
 │   └── studio/
+│       ├── previews/
+│       │   ├── source-product-film.thumbnail.png
+│       │   └── source-product-film.waveform.png
 │       ├── golden-project.ts
 │       ├── malicious-import.json
 │       └── README.md
@@ -165,8 +176,10 @@ Toolshape Studio/
 │   │   └── package.json
 │   ├── studio-media/
 │   │   ├── src/
+│   │   │   ├── derivative-plan.ts
 │   │   │   ├── index.ts
 │   │   │   ├── ingestion.ts
+│   │   │   ├── png.ts
 │   │   │   ├── process-runner.ts
 │   │   │   ├── proxy-plan.ts
 │   │   │   └── types.ts

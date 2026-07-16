@@ -152,10 +152,14 @@ Milestone 3 is verified and committed in `2bab9cb`: byte-sniffed import, project
 
 Milestone 4 is verified and committed in `8c3fd15`: a typed ephemeral editor-shell boundary, Create/Edit/Review/Automate arrangements, functional File/Edit/View menus, real Media/Layers/Text/Audio/Captions source panels, independent Inspector/Agent/Quality context, hideable rails/timeline, icon-library controls, keyboard behavior, browser interaction coverage, and accepted default/menu screenshots. Workspace changes do not mutate the canonical project or advance revision.
 
-The program remains active. The next combined product/technical milestone should add waveform/thumbnail derivatives and display them through the new Media/Audio/timeline panels, alongside import quarantine/resource budgets and deeper hostile-media testing. The thin Tauri host remains blocked until Rust/MSVC provisioning. MCP, authenticated local IPC, signed distribution, secrets, publishing, collaboration, drag docking/layout persistence, and broad feature depth remain explicitly outside the verified milestones.
+Milestone 5 is verified and committed in `2d2b21a`: project schema v3, safe thumbnail/waveform FFmpeg plans, PNG dimension verification, content-addressed derivative persistence, silent-video behavior, real media smoke evidence, host preview resolution, fixture digest conformance, and genuine Media/Audio/timeline preview rendering with browser QA.
+
+The program remains active. The next combined product/technical milestone should add direct timeline selection, draggable playhead/trim handles, zoom-aware ruler/waveform behavior, and semantic keyboard editing while adding importer quarantine/resource budgets and a deeper hostile/truncated/polyglot media corpus. Operator-provided CapCut screenshots can sharpen state density and panel behavior without changing Toolshape's clean-room visual language. The thin Tauri host remains blocked until Rust/MSVC provisioning. MCP, authenticated local IPC, signed distribution, secrets, publishing, collaboration, drag docking/layout persistence, and broad feature depth remain explicitly outside the verified milestones.
 
 Milestone 2 execution details are tracked in [TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md](TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md) and ADR 0007.
 
 Milestone 3 execution details are tracked in [TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md](TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md) and ADR 0008.
 
 Milestone 4 execution details are tracked in [TOOLSHAPE-STUDIO-EDITOR-SHELL-UX.md](TOOLSHAPE-STUDIO-EDITOR-SHELL-UX.md) and ADR 0009.
+
+Milestone 5 execution details are tracked in [TOOLSHAPE-STUDIO-PREVIEW-DERIVATIVES.md](TOOLSHAPE-STUDIO-PREVIEW-DERIVATIVES.md) and ADR 0010.

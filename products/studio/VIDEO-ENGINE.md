@@ -175,6 +175,8 @@ The media worker receives a validated render plan and builds argument arrays/fil
 
 On cancellation, terminate the process tree, remove incomplete outputs, and never register a success artifact.
 
+**Implementation checkpoint (2026-07-16, Milestone 5):** the same shell-free FFmpeg boundary now produces a deterministic bounded thumbnail and a fixed-size full-duration waveform PNG beside the editing proxy. PNG signature/IHDR bounds, content digest, source lineage, toolchain, cleanup, and SQLite recovery are verified. Audio-less video omits the waveform. Tiled zoom caches, spectral views, long-media paging, and hostile-codec resource isolation remain planned.
+
 ## Output verification
 
 Probe output and compare:

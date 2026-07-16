@@ -154,3 +154,15 @@ Milestone 4 implements the first stable editor-shell contract in the browser see
 - browser assertions for revision invariance, tab/menu state, timeline hide/restore, semantic editing, undo/redo, render queueing, and viewport overflow.
 
 The shell is hideable and keyboard-addressable but not yet drag-dockable, resizable, layout-persistent, screen-reader audited, or proven under zoom/reflow. Those remain partial rather than implied complete.
+
+## Preview-evidence checkpoint - 2026-07-16
+
+Milestone 5 replaces simulated media imagery with real derivative evidence:
+
+- the Media panel resolves a content-addressed video thumbnail, shows immutable/derived readiness, and falls back to honest type icons when no preview exists;
+- the Audio panel resolves the source waveform and exposes sample-rate, channel, gain, and mute evidence;
+- video and audio timeline clips reuse those same resolved derivatives instead of drawing unrelated preview art;
+- the host resolver is ephemeral UI infrastructure, while canonical asset records retain only immutable content references and provenance;
+- browser QA checks image load/natural dimensions, panel readiness, timeline presence, revision-safe edits, and viewport overflow at 1440x1000.
+
+Waveform tile pyramids, deep timeline zoom, clip selection/trim handles, drag interaction, accessible media descriptions, and native content resolution remain partial or not built.

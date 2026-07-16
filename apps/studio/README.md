@@ -14,7 +14,7 @@ npm run dev
 
 Open `http://127.0.0.1:5173/`. The export-only cover surface is `http://127.0.0.1:5173/?export=cover`.
 
-With the dev server running, set `STUDIO_URL` to its printed URL and run `npm run qa:browser`. The script switches Create/Edit/Review shell arrangements without changing project revision, exercises the View menu, hides/restores the timeline, selects source/context tabs, drives canonical split, ripple-trim, direct-transform, agent-style, undo, redo, and render operations, checks the final state, and captures the closed editor, open View menu, and render cover.
+With the dev server running, set `STUDIO_URL` to its printed URL and run `npm run qa:browser`. The script verifies loaded thumbnail/waveform bytes in Media, Audio, and timeline states; switches Create/Edit/Review shell arrangements without changing project revision; exercises the View menu; hides/restores the timeline; drives canonical split, ripple-trim, direct-transform, agent-style, undo, redo, and render operations; checks the final state; and captures derivative, closed-editor, open-menu, and render-cover evidence.
 
 ## Editor shell
 
@@ -27,6 +27,7 @@ The browser seed now has a typed ephemeral editor shell over the canonical proje
 - independent source/context/timeline visibility;
 - keyboard undo/redo, Escape-to-close menus, and Alt+1 through Alt+4 workspace selection;
 - Lucide interface icons, visible focus states, reduced-motion handling, and larger core control targets.
+- resolver-backed content-addressed thumbnail/waveform evidence rather than CSS preview simulations.
 
 Workspace and panel choices are view state only. They do not enter `StudioProject`, revisions, semantic diffs, persistence, public contracts, project hashes, or render plans.
 
@@ -44,18 +45,18 @@ Exercise the durable SQLite queue, a separate CLI worker process, artifact regis
 npm run smoke:render-job
 ```
 
-Generate a license-safe MP4 with audio, invoke the separate-process JSON CLI media importer, probe the immutable original, create and verify an editing proxy, and reopen its SQLite record with:
+Generate a licence-safe MP4 with audio, invoke the separate-process JSON CLI media importer, probe the immutable original, create and verify an editing proxy plus PNG thumbnail/waveform derivatives, and reopen its SQLite record with:
 
 ```powershell
 npm run smoke:media-ingest
 ```
 
-The `ingest-media` JSON CLI command accepts a source path through stdin plus an original name and declared media type. The response contains only normalized canonical asset/proxy metadata; local content paths remain inside the host.
+The `ingest-media` JSON CLI command accepts a source path through stdin plus an original name and declared media type. The response contains only normalized canonical asset/derivative metadata; local content paths remain inside the host.
 
 The public render envelope accepts only a project asset ID, a project render-preset ID, and a safe logical `.mp4` name. The worker resolves the immutable `content://sha256/...` source beneath its configured content root and compiles FFmpeg arguments inside the trusted render boundary.
 
 ## Current boundary
 
-The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, byte-sniffed content-addressed imports, probed media/proxy generation, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and a scalable human/agent editor shell. The UI invokes the same in-process kernel, while SDK/CLI public documents are projected and validated against the shared Draft 2020-12 schemas.
+The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, byte-sniffed content-addressed imports, probed media/proxy/preview generation, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and a scalable human/agent editor shell. The UI invokes the same in-process kernel, while SDK/CLI public documents are projected and validated against the shared Draft 2020-12 schemas.
 
-`studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. Real process smokes prove media import/proxy/reopen and render queue/claim/progress/verification/artifact/read/cancel behavior. Authenticated local IPC, MCP, Tauri packaging, waveform generation, hostile-codec sandboxing, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing services rather than duplicate domain logic.
+`studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. Real process smokes prove media import/proxy/thumbnail/waveform/reopen and render queue/claim/progress/verification/artifact/read/cancel behavior. Authenticated local IPC, MCP, Tauri packaging, tiled waveform zoom, hostile-codec sandboxing, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing services rather than duplicate domain logic.
