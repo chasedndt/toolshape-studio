@@ -4,13 +4,16 @@ import path from "node:path";
 import {
   STUDIO_SCHEMA_VERSION,
   StudioKernel,
-  type OperationEnvelope,
 } from "@toolshape/studio-kernel";
 import {
   ContentAddressedAssetStore,
   SqliteStudioRepository,
 } from "@toolshape/studio-persistence";
-import { StudioSdk } from "@toolshape/studio-sdk";
+import {
+  stateDigestFromResult,
+  StudioSdk,
+  type ContractOperationEnvelope,
+} from "@toolshape/studio-sdk";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
@@ -41,28 +44,28 @@ repository.createProject(project);
 const sdk = new StudioSdk(new StudioKernel(repository));
 
 function envelope(
-  capability: OperationEnvelope["capability"]["id"],
+  capability: ContractOperationEnvelope["capability"]["id"],
   revision: number,
-  input: OperationEnvelope["input"],
+  input: ContractOperationEnvelope["input"],
   dryRun: boolean,
-): OperationEnvelope {
+): ContractOperationEnvelope {
   return {
     schema_version: STUDIO_SCHEMA_VERSION,
     operation_id: randomUUID(),
     idempotency_key: `smoke-${randomUUID()}`,
     trace_id: `smoke-trace-${randomUUID()}`,
-    actor: { id: "runtime-smoke", type: "service" },
+    actor: { principal_id: "runtime-smoke", agent_id: "runtime-smoke", harness_id: "smoke" },
     intent: `Exercise ${capability}`,
     capability: { id: capability, version: STUDIO_SCHEMA_VERSION },
     target: {
-      resource: `toolshape-studio://projects/${project.id}`,
+      resource: { type: "studio_project", id: project.id, revision },
       expected_revision: revision,
     },
     input,
-    risk: { level: "low" },
+    risk: "reversible_local_write",
     authorization: { grant_ids: [capability] },
     execution: { dry_run: dryRun, atomicity: "atomic" },
-    retention: { class: "project", content_storage: "local" },
+    retention: { class: "R2_user_history", content_storage: "local" },
     created_at: new Date().toISOString(),
   };
 }
@@ -104,14 +107,14 @@ process.stdout.write(
       apply: {
         status: applied.status,
         revisionAfter: applied.state.revision_after,
-        digest: applied.state.digest,
+        digest: stateDigestFromResult(applied),
       },
       reopenInspect: {
         status: inspected.status,
         revision: inspected.state.revision_after,
-        digest: inspected.state.digest,
+        digest: stateDigestFromResult(inspected),
       },
-      recovered: inspected.state.digest === applied.state.digest,
+      recovered: stateDigestFromResult(inspected) === stateDigestFromResult(applied),
     },
     null,
     2,

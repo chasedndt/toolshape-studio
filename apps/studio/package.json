@@ -14,7 +14,8 @@
     "render:golden": "tsx scripts/render-golden.ts",
     "smoke:runtime": "tsx scripts/smoke-runtime.ts",
     "smoke:cli": "tsx scripts/smoke-cli.ts",
-    "smoke:render-job": "tsx scripts/smoke-render-job.ts"
+    "smoke:render-job": "tsx scripts/smoke-render-job.ts",
+    "smoke:media-ingest": "tsx scripts/smoke-media-ingest.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",

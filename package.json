@@ -16,6 +16,7 @@
     "smoke:runtime": "npm --prefix apps/studio run smoke:runtime",
     "smoke:cli": "npm --prefix apps/studio run smoke:cli",
     "smoke:render-job": "npm --prefix apps/studio run smoke:render-job",
+    "smoke:media-ingest": "npm --prefix apps/studio run smoke:media-ingest",
     "studio": "tsx packages/studio-cli/src/bin.ts"
   }
 }

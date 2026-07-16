@@ -4,9 +4,15 @@ import { access, mkdir, mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
 import {
   STUDIO_SCHEMA_VERSION,
-  type OperationEnvelope,
   type StudioCapabilityId,
 } from "@toolshape/studio-kernel";
+import {
+  jobDocumentFromResult,
+  projectArtifactDocument,
+  validateArtifactDocument,
+  validateJobDocument,
+  type ContractOperationEnvelope,
+} from "@toolshape/studio-sdk";
 import {
   ContentAddressedAssetStore,
   SqliteStudioRepository,
@@ -39,25 +45,25 @@ function runCli(cliPath: string, databasePath: string, document: unknown): Promi
 
 function envelope(
   capability: StudioCapabilityId,
-  input: OperationEnvelope["input"],
-): OperationEnvelope {
+  input: ContractOperationEnvelope["input"],
+): ContractOperationEnvelope {
   return {
     schema_version: STUDIO_SCHEMA_VERSION,
     operation_id: randomUUID(),
     idempotency_key: `render-smoke-${randomUUID()}`,
     trace_id: `render-smoke-trace-${randomUUID()}`,
-    actor: { id: "render-job-smoke", type: "service" },
+    actor: { principal_id: "render-job-smoke", agent_id: "render-job-smoke", harness_id: "cli" },
     intent: `Exercise ${capability} through the process CLI`,
     capability: { id: capability, version: STUDIO_SCHEMA_VERSION },
     target: {
-      resource: "toolshape-studio://projects/project-launch-film",
+      resource: { type: "studio_project", id: "project-launch-film", revision: 0 },
       expected_revision: 0,
     },
     input,
-    risk: { level: "low" },
+    risk: "reversible_local_write",
     authorization: { grant_ids: [capability] },
     execution: { dry_run: false, atomicity: "atomic" },
-    retention: { class: "project", content_storage: "local" },
+    retention: { class: "R2_user_history", content_storage: "local" },
     created_at: new Date().toISOString(),
   };
 }
@@ -106,7 +112,8 @@ const accepted = parsed(
   }),
   "queue render",
 );
-if (accepted.status !== "accepted_job" || accepted.job?.status !== "queued") {
+const acceptedJob = jobDocumentFromResult(accepted);
+if (accepted.status !== "accepted_job" || acceptedJob.status !== "queued") {
   throw new Error(`Render was not durably accepted: ${JSON.stringify(accepted)}`);
 }
 
@@ -117,7 +124,7 @@ const worked = parsed(
 if (worked.status !== "worked" || worked.job?.status !== "completed") {
   throw new Error(`Render worker did not complete: ${JSON.stringify(worked)}`);
 }
-const jobId = accepted.job.job_id as string;
+const jobId = acceptedJob.job_id;
 const read = parsed(
   await runCli(cliPath, databasePath, {
     command: "invoke",
@@ -125,9 +132,11 @@ const read = parsed(
   }),
   "job get",
 );
-if (read.job?.status !== "completed") throw new Error("Completed job was not readable.");
+const readJob = jobDocumentFromResult(read);
+if (readJob.status !== "completed") throw new Error("Completed job was not readable.");
+validateJobDocument(readJob);
 
-const artifactId = read.job.outputs[0].split("/").at(-1);
+const artifactId = readJob.outputs[0]?.id;
 if (!artifactId) throw new Error("Completed job returned no artifact reference.");
 const repository = new SqliteStudioRepository(databasePath);
 const artifact = repository.getArtifact(artifactId);
@@ -136,6 +145,7 @@ repository.close();
 if (!artifact || !artifact.digest.startsWith("sha256:")) {
   throw new Error("Verified artifact metadata is missing.");
 }
+const contractArtifact = validateArtifactDocument(projectArtifactDocument(artifact));
 
 const cancelAccepted = parsed(
   await runCli(cliPath, databasePath, {
@@ -153,11 +163,12 @@ const cancelAccepted = parsed(
 const cancelled = parsed(
   await runCli(cliPath, databasePath, {
     command: "invoke",
-    envelope: envelope("studio.job.cancel", { job_id: cancelAccepted.job.job_id }),
+    envelope: envelope("studio.job.cancel", { job_id: jobDocumentFromResult(cancelAccepted).job_id }),
   }),
   "cancel job",
 );
-if (cancelled.job?.status !== "cancelled") throw new Error("Queued job did not cancel.");
+const cancelledJob = jobDocumentFromResult(cancelled);
+if (cancelledJob.status !== "cancelled") throw new Error("Queued job did not cancel.");
 
 process.stdout.write(
   `${JSON.stringify(
@@ -165,10 +176,11 @@ process.stdout.write(
       runRoot,
       queue: { status: accepted.status, jobId },
       worker: { status: worked.job.status, attempt: worked.job.attempt },
-      jobRead: { status: read.job.status, progress: read.job.progress },
+      jobRead: { status: readJob.status, progress: readJob.progress },
       artifact,
+      contractArtifact,
       eventStatuses: events.map((event: { status: string }) => event.status),
-      cancellation: { jobId: cancelAccepted.job.job_id, status: cancelled.job.status },
+      cancellation: { jobId: jobDocumentFromResult(cancelAccepted).job_id, status: cancelledJob.status },
     },
     null,
     2,

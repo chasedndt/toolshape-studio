@@ -3,7 +3,7 @@ import type { StudioProject } from "@toolshape/studio-domain";
 const second = (value: number) => ({ numerator: value, denominator: 1 });
 
 const goldenProject: StudioProject = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: "project-launch-film",
   name: "Launch Film — Citrus System",
   revision: 0,
@@ -19,6 +19,8 @@ const goldenProject: StudioProject = {
       width: 1920,
       height: 1080,
       duration: second(8),
+      probe: null,
+      derivatives: [],
     },
     {
       id: "asset-product-image",
@@ -30,6 +32,8 @@ const goldenProject: StudioProject = {
       immutable: true,
       width: 1200,
       height: 1200,
+      probe: null,
+      derivatives: [],
     },
     {
       id: "asset-brand-font",
@@ -39,6 +43,8 @@ const goldenProject: StudioProject = {
       contentHash: `sha256:${"c".repeat(64)}`,
       sourceRef: "fixture://inter-variable",
       immutable: true,
+      probe: null,
+      derivatives: [],
     },
   ],
   scenes: [
@@ -282,4 +288,3 @@ const goldenProject: StudioProject = {
 export function createGoldenStudioProject(): StudioProject {
   return structuredClone(goldenProject);
 }
-

@@ -2,15 +2,19 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import type { StudioProject } from "@toolshape/studio-domain";
-import { StudioKernel, type OperationEnvelope } from "@toolshape/studio-kernel";
-import { SqliteStudioRepository } from "@toolshape/studio-persistence";
+import { StudioKernel } from "@toolshape/studio-kernel";
+import { MediaIngestionService } from "@toolshape/studio-media";
+import { ContentAddressedAssetStore, SqliteStudioRepository } from "@toolshape/studio-persistence";
 import { DurableRenderJobService } from "@toolshape/studio-render";
-import { dispatchJsonCli, StudioSdk } from "@toolshape/studio-sdk";
+import { dispatchJsonCli, StudioSdk, type ContractOperationEnvelope } from "@toolshape/studio-sdk";
 
 interface CliDocument {
-  command: "init" | "invoke" | "work" | "recover";
+  command: "init" | "invoke" | "work" | "recover" | "ingest-media";
   project?: StudioProject;
-  envelope?: OperationEnvelope;
+  envelope?: ContractOperationEnvelope;
+  source_path?: string;
+  original_name?: string;
+  declared_media_type?: string;
 }
 
 async function readStdin(): Promise<string> {
@@ -33,6 +37,11 @@ async function main(): Promise<void> {
     contentRoot: path.join(runtimeRoot, "objects"),
     artifactRoot: path.join(runtimeRoot, "artifacts"),
   });
+  const mediaIngestion = new MediaIngestionService({
+    contentStore: new ContentAddressedAssetStore(path.join(runtimeRoot, "objects")),
+    repository,
+    workRoot: path.join(runtimeRoot, "media-work"),
+  });
   try {
     if (document.command === "init") {
       if (!document.project) throw new TypeError("init requires a project document.");
@@ -54,6 +63,18 @@ async function main(): Promise<void> {
     if (document.command === "recover") {
       const recovered = renderJobs.recoverInterruptedJobs();
       process.stdout.write(`${JSON.stringify({ status: "completed", recovered })}\n`);
+      return;
+    }
+    if (document.command === "ingest-media") {
+      if (!document.source_path || !document.original_name || !document.declared_media_type) {
+        throw new TypeError("ingest-media requires source_path, original_name, and declared_media_type.");
+      }
+      const result = await mediaIngestion.ingest({
+        sourcePath: document.source_path,
+        originalName: document.original_name,
+        declaredMediaType: document.declared_media_type,
+      });
+      process.stdout.write(`${JSON.stringify({ status: "completed", asset: result.asset })}\n`);
       return;
     }
     throw new TypeError("Unknown CLI command.");

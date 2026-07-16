@@ -106,6 +106,46 @@ export interface Asset {
   width?: number;
   height?: number;
   duration?: RationalTime;
+  probe: NormalizedMediaProbe | null;
+  derivatives: AssetDerivative[];
+}
+
+export interface MediaVideoProbe {
+  codec: string;
+  width: number;
+  height: number;
+  frameRate: RationalTime;
+}
+
+export interface MediaAudioProbe {
+  codec: string;
+  sampleRate: number;
+  channels: number;
+}
+
+export interface NormalizedMediaProbe {
+  container: string;
+  duration: RationalTime;
+  video?: MediaVideoProbe;
+  audio?: MediaAudioProbe;
+}
+
+export interface AssetDerivative {
+  id: Id;
+  kind: "proxy" | "thumbnail" | "waveform";
+  mediaType: string;
+  contentHash: string;
+  sourceRef: string;
+  immutable: true;
+  width?: number;
+  height?: number;
+  duration?: RationalTime;
+  probe: NormalizedMediaProbe;
+  createdAt: string;
+  provenance: {
+    sourceDigest: string;
+    toolchain: Array<Record<string, unknown>>;
+  };
 }
 
 export interface AudioSettings {
@@ -206,7 +246,7 @@ export interface OperationRecord {
 }
 
 export interface StudioProject {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: Id;
   name: string;
   revision: number;
@@ -281,4 +321,3 @@ export interface SemanticDiff {
   beforeRevision: number;
   afterRevision: number;
 }
-

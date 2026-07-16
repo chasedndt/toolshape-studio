@@ -2,7 +2,8 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
-import { STUDIO_SCHEMA_VERSION, type OperationEnvelope } from "@toolshape/studio-kernel";
+import { STUDIO_SCHEMA_VERSION } from "@toolshape/studio-kernel";
+import { stateDigestFromResult, type ContractOperationEnvelope } from "@toolshape/studio-sdk";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 
 interface ProcessResult {
@@ -40,15 +41,15 @@ const project = createGoldenStudioProject();
 const initialized = await runCli(cliPath, databasePath, { command: "init", project });
 if (initialized.code !== 0) throw new Error(`CLI init failed: ${initialized.stderr}`);
 
-const envelope: OperationEnvelope = {
+const envelope: ContractOperationEnvelope = {
   schema_version: STUDIO_SCHEMA_VERSION,
   operation_id: randomUUID(),
   idempotency_key: `cli-smoke-${randomUUID()}`,
   trace_id: `cli-trace-${randomUUID()}`,
-  actor: { id: "cli-smoke", type: "service" },
+  actor: { principal_id: "cli-smoke", agent_id: "cli-smoke", harness_id: "cli" },
   intent: "Prove the process CLI uses the canonical kernel",
   capability: { id: "studio.project.apply_operations", version: STUDIO_SCHEMA_VERSION },
-  target: { resource: `toolshape-studio://projects/${project.id}`, expected_revision: 0 },
+  target: { resource: { type: "studio_project", id: project.id, revision: 0 }, expected_revision: 0 },
   input: {
     operations: [{
       operationId: randomUUID(),
@@ -58,10 +59,10 @@ const envelope: OperationEnvelope = {
       payload: { sceneId: "scene-hero", nodeId: "node-product", patch: { rotationDeg: -4 } },
     }],
   },
-  risk: { level: "low" },
+  risk: "reversible_local_write",
   authorization: { grant_ids: ["studio.project.apply_operations"] },
   execution: { dry_run: false, atomicity: "atomic" },
-  retention: { class: "project", content_storage: "local" },
+  retention: { class: "R2_user_history", content_storage: "local" },
   created_at: new Date().toISOString(),
 };
 
@@ -72,4 +73,4 @@ if (result.status !== "completed" || result.state?.revision_after !== 1) {
   throw new Error(`CLI returned an unexpected result: ${invoked.stdout}`);
 }
 
-process.stdout.write(`${JSON.stringify({ runRoot, databasePath, init: JSON.parse(initialized.stdout), invoke: { status: result.status, revisionAfter: result.state.revision_after, digest: result.state.digest }, stderrDiagnostics: [initialized.stderr, invoked.stderr].filter(Boolean) }, null, 2)}\n`);
+process.stdout.write(`${JSON.stringify({ runRoot, databasePath, init: JSON.parse(initialized.stdout), invoke: { status: result.status, revisionAfter: result.state.revision_after, digest: stateDigestFromResult(result) }, stderrDiagnostics: [initialized.stderr, invoked.stderr].filter(Boolean) }, null, 2)}\n`);

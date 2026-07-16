@@ -1,0 +1,11 @@
+{
+  "name": "@toolshape/studio-media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@toolshape/studio-domain": "file:../studio-domain",
+    "@toolshape/studio-persistence": "file:../studio-persistence"
+  },
+  "exports": { ".": "./src/index.ts" }
+}

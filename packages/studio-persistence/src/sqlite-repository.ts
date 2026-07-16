@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
-import type { StudioProject } from "@toolshape/studio-domain";
+import { migrateStudioProject, type Asset, type StudioProject } from "@toolshape/studio-domain";
+import type { StoredAsset } from "./content-store";
 import {
   RepositoryRevisionConflictError,
   STUDIO_SCHEMA_VERSION,
@@ -66,6 +67,10 @@ interface EventRow {
 }
 
 interface ArtifactRow {
+  metadata_json: string;
+}
+
+interface MediaAssetRow {
   metadata_json: string;
 }
 
@@ -167,10 +172,24 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
       VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     `);
     this.ensureJobColumns();
+    this.ensureAssetColumns();
     this.database.exec(`
       INSERT OR IGNORE INTO schema_migrations(version, applied_at)
       VALUES (2, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+      INSERT OR IGNORE INTO schema_migrations(version, applied_at)
+      VALUES (3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     `);
+  }
+
+  private ensureAssetColumns(): void {
+    const existing = new Set(
+      (this.database.prepare("PRAGMA table_info(assets)").all() as unknown as Array<{ name: string }>).map(
+        (column) => column.name,
+      ),
+    );
+    if (!existing.has("metadata_json")) {
+      this.database.exec("ALTER TABLE assets ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}'");
+    }
   }
 
   private ensureJobColumns(): void {
@@ -202,16 +221,17 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
   }
 
   createProject(project: StudioProject): void {
+    const canonical = migrateStudioProject(project);
     const now = new Date().toISOString();
-    const state = JSON.stringify(project);
+    const state = JSON.stringify(canonical);
     this.database.exec("BEGIN IMMEDIATE");
     try {
       this.database
         .prepare("INSERT INTO projects(id, revision, state_json, updated_at) VALUES (?, ?, ?, ?)")
-        .run(project.id, project.revision, state, now);
+        .run(canonical.id, canonical.revision, state, now);
       this.database
         .prepare("INSERT INTO project_revisions(project_id, revision, state_json, created_at) VALUES (?, ?, ?, ?)")
-        .run(project.id, project.revision, state, now);
+        .run(canonical.id, canonical.revision, state, now);
       this.database.exec("COMMIT");
     } catch (error) {
       this.database.exec("ROLLBACK");
@@ -223,14 +243,14 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
     const row = this.database
       .prepare("SELECT revision, state_json FROM projects WHERE id = ?")
       .get(projectId) as unknown as ProjectRow | undefined;
-    return row ? (JSON.parse(row.state_json) as StudioProject) : null;
+    return row ? migrateStudioProject(JSON.parse(row.state_json)) : null;
   }
 
   getRevision(projectId: string, revision: number): StudioProject | null {
     const row = this.database
       .prepare("SELECT state_json FROM project_revisions WHERE project_id = ? AND revision = ?")
       .get(projectId, revision) as unknown as RevisionRow | undefined;
-    return row ? (JSON.parse(row.state_json) as StudioProject) : null;
+    return row ? migrateStudioProject(JSON.parse(row.state_json)) : null;
   }
 
   getIdempotency(key: string): IdempotencyRecord | null {
@@ -252,6 +272,33 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
         "INSERT INTO idempotency(idempotency_key, input_digest, result_json, created_at) VALUES (?, ?, ?, ?)",
       )
       .run(record.key, record.inputDigest, JSON.stringify(record.result), new Date().toISOString());
+  }
+
+  saveMediaAsset(asset: Asset, original: StoredAsset): void {
+    if (asset.id !== original.assetId || asset.contentHash !== original.digest) {
+      throw new TypeError("Media asset identity does not match its immutable stored original.");
+    }
+    this.database
+      .prepare(
+        "INSERT INTO assets(asset_id, digest, media_type, size_bytes, original_name, content_path, created_at, metadata_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        asset.id,
+        original.digest,
+        original.mediaType,
+        original.sizeBytes,
+        original.originalName,
+        original.contentPath,
+        new Date().toISOString(),
+        JSON.stringify(asset),
+      );
+  }
+
+  getMediaAsset(assetId: string): Asset | null {
+    const row = this.database
+      .prepare("SELECT metadata_json FROM assets WHERE asset_id = ?")
+      .get(assetId) as unknown as MediaAssetRow | undefined;
+    return row ? (JSON.parse(row.metadata_json) as Asset) : null;
   }
 
   commit(record: CommitRecord): void {

@@ -148,4 +148,29 @@ describe("Studio validators", () => {
       "asset.unsafe-source-reference",
     );
   });
+
+  it("rejects mutable or non-content-addressed media derivatives", () => {
+    const project = createGoldenStudioProject();
+    project.assets[0].derivatives.push({
+      id: "proxy-invalid",
+      kind: "proxy",
+      mediaType: "video/mp4",
+      contentHash: "bad",
+      sourceRef: "file:///escape.mp4",
+      immutable: true,
+      width: 640,
+      height: 360,
+      duration: { numerator: 4, denominator: 1 },
+      probe: {
+        container: "mov,mp4,m4a,3gp,3g2,mj2",
+        duration: { numerator: 4, denominator: 1 },
+        video: { codec: "h264", width: 640, height: 360, frameRate: { numerator: 30, denominator: 1 } },
+      },
+      createdAt: new Date(0).toISOString(),
+      provenance: { sourceDigest: project.assets[0].contentHash, toolchain: [] },
+    });
+    const codes = validateStudioProject(project).map((issue) => issue.code);
+    expect(codes).toContain("asset.derivative-invalid-content-hash");
+    expect(codes).toContain("asset.derivative-unsafe-source-reference");
+  });
 });

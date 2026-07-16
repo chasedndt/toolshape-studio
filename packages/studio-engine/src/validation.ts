@@ -45,6 +45,33 @@ function validateAsset(asset: Asset, index: number): ValidationIssue[] {
       message: "Persisted assets use an opaque fixture://, asset://, or content://sha256 reference.",
     });
   }
+  for (const [derivativeIndex, derivative] of asset.derivatives.entries()) {
+    const derivativePath = `assets[${index}].derivatives[${derivativeIndex}]`;
+    if (!/^sha256:[a-f0-9]{64}$/i.test(derivative.contentHash)) {
+      issues.push({
+        code: "asset.derivative-invalid-content-hash",
+        severity: "error",
+        path: `${derivativePath}.contentHash`,
+        message: "Derived assets require a SHA-256 content hash.",
+      });
+    }
+    if (!/^content:\/\/sha256\/[a-f0-9]{64}$/i.test(derivative.sourceRef)) {
+      issues.push({
+        code: "asset.derivative-unsafe-source-reference",
+        severity: "error",
+        path: `${derivativePath}.sourceRef`,
+        message: "Derived assets require an immutable content-addressed source reference.",
+      });
+    }
+    if (derivative.immutable !== true) {
+      issues.push({
+        code: "asset.derivative-mutable",
+        severity: "error",
+        path: `${derivativePath}.immutable`,
+        message: "Derived assets must be immutable.",
+      });
+    }
+  }
   return issues;
 }
 

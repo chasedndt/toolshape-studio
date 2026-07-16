@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "dependencies": { "@toolshape/studio-kernel": "file:../studio-kernel" },
+  "dependencies": {
+    "@toolshape/studio-kernel": "file:../studio-kernel",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1"
+  },
   "exports": { ".": "./src/index.ts" }
 }

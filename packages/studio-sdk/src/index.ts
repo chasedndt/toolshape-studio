@@ -1,20 +1,29 @@
-import type { OperationEnvelope, OperationResult, StudioKernel } from "@toolshape/studio-kernel";
+import type { StudioKernel } from "@toolshape/studio-kernel";
+import type { ContractOperationEnvelope, ContractOperationResult } from "./contract-types";
+import { contractEnvelopeToKernel, projectOperationResult } from "./projection";
+import { validateOperationEnvelopeDocument, validateOperationResultDocument } from "./schema-validation";
+
+export * from "./contract-types";
+export * from "./projection";
+export * from "./schema-validation";
 
 export interface StudioInvoker {
-  invoke(envelope: OperationEnvelope): OperationResult;
+  invoke(envelope: ContractOperationEnvelope): ContractOperationResult;
 }
 
 export class StudioSdk implements StudioInvoker {
   constructor(private readonly kernel: StudioKernel) {}
 
-  invoke(envelope: OperationEnvelope): OperationResult {
-    return this.kernel.invoke(envelope);
+  invoke(envelope: ContractOperationEnvelope): ContractOperationResult {
+    const validated = validateOperationEnvelopeDocument(envelope);
+    const internal = this.kernel.invoke(contractEnvelopeToKernel(validated));
+    return validateOperationResultDocument(projectOperationResult(internal));
   }
 }
 
 export interface JsonCliCommand {
   command: "invoke";
-  envelope: OperationEnvelope;
+  envelope: ContractOperationEnvelope;
 }
 
 export function dispatchJsonCli(invoker: StudioInvoker, value: unknown): string {

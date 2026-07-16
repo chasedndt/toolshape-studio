@@ -5,22 +5,27 @@ import {
   MemoryStudioRepository,
   STUDIO_SCHEMA_VERSION,
   StudioKernel,
-  type OperationEnvelope,
   type StudioCapabilityId,
 } from "@toolshape/studio-kernel";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
-import { dispatchJsonCli, StudioSdk } from "../src";
+import {
+  dispatchJsonCli,
+  jobDocumentFromResult,
+  stateDigestFromResult,
+  StudioSdk,
+  type ContractOperationEnvelope,
+} from "../src";
 
-function createRequest(): OperationEnvelope {
+function createRequest(): ContractOperationEnvelope {
   return {
     schema_version: STUDIO_SCHEMA_VERSION,
     operation_id: randomUUID(),
     idempotency_key: `parity-${randomUUID()}`,
     trace_id: `trace-${randomUUID()}`,
-    actor: { id: "parity-test", type: "agent" },
+    actor: { principal_id: "operator-1", agent_id: "parity-test", harness_id: "vitest" },
     intent: "Compare adapters",
     capability: { id: "studio.project.apply_operations", version: STUDIO_SCHEMA_VERSION },
-    target: { resource: "toolshape-studio://projects/project-launch-film", expected_revision: 0 },
+    target: { resource: { type: "studio_project", id: "project-launch-film", revision: 0 }, expected_revision: 0 },
     input: {
       operations: [{
         operationId: randomUUID(),
@@ -30,10 +35,10 @@ function createRequest(): OperationEnvelope {
         payload: { sceneId: "scene-hero", nodeId: "node-product", patch: { x: 300 } },
       }],
     },
-    risk: { level: "low" },
+    risk: "reversible_local_write",
     authorization: { grant_ids: ["studio.project.apply_operations"] },
     execution: { dry_run: false, atomicity: "atomic" },
-    retention: { class: "project", content_storage: "local" },
+    retention: { class: "R2_user_history", content_storage: "local" },
     created_at: new Date(0).toISOString(),
   };
 }
@@ -52,8 +57,8 @@ function createJobSdk(): StudioSdk {
 
 function jobRequest(
   capability: StudioCapabilityId,
-  input: OperationEnvelope["input"],
-): OperationEnvelope {
+  input: ContractOperationEnvelope["input"],
+): ContractOperationEnvelope {
   return {
     ...createRequest(),
     operation_id: randomUUID(),
@@ -71,8 +76,7 @@ describe("SDK and JSON CLI transport parity", () => {
     const cliResult = JSON.parse(dispatchJsonCli(createSdk(), { command: "invoke", envelope: request }));
     expect(cliResult.status).toBe(sdkResult.status);
     expect(cliResult.state.semantic_diff).toEqual(sdkResult.state.semantic_diff);
-    expect(cliResult.state.digest).toBe(sdkResult.state.digest);
-    expect(cliResult.state.project).toEqual(sdkResult.state.project);
+    expect(stateDigestFromResult(cliResult)).toBe(stateDigestFromResult(sdkResult));
   });
 
   it("preserves render, job-read, and cancellation semantics through JSON CLI mapping", () => {
@@ -90,17 +94,18 @@ describe("SDK and JSON CLI transport parity", () => {
       }),
     );
     expect(accepted.status).toBe("accepted_job");
-    expect(accepted.job.status).toBe("queued");
+    const acceptedJob = jobDocumentFromResult(accepted);
+    expect(acceptedJob.status).toBe("queued");
 
-    const read = sdk.invoke(jobRequest("studio.job.get", { job_id: accepted.job.job_id }));
-    expect(read.job?.status).toBe("queued");
+    const read = sdk.invoke(jobRequest("studio.job.get", { job_id: acceptedJob.job_id }));
+    expect(jobDocumentFromResult(read).status).toBe("queued");
     const cancelled = JSON.parse(
       dispatchJsonCli(sdk, {
         command: "invoke",
-        envelope: jobRequest("studio.job.cancel", { job_id: accepted.job.job_id }),
+        envelope: jobRequest("studio.job.cancel", { job_id: acceptedJob.job_id }),
       }),
     );
-    expect(cancelled.job.status).toBe("cancelled");
-    expect(cancelled.state.digest).toBe(read.state.digest);
+    expect(jobDocumentFromResult(cancelled).status).toBe("cancelled");
+    expect(stateDigestFromResult(cancelled)).toBe(stateDigestFromResult(read));
   });
 });
