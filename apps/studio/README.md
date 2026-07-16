@@ -14,7 +14,21 @@ npm run dev
 
 Open `http://127.0.0.1:5173/`. The export-only cover surface is `http://127.0.0.1:5173/?export=cover`.
 
-With the dev server running, set `STUDIO_URL` to its printed URL and run `npm run qa:browser`. The script drives canonical split, ripple-trim, direct-transform, agent-style, undo, and redo operations in installed Chromium; checks the final state; records timing; and captures both a post-edit screenshot and render cover.
+With the dev server running, set `STUDIO_URL` to its printed URL and run `npm run qa:browser`. The script switches Create/Edit/Review shell arrangements without changing project revision, exercises the View menu, hides/restores the timeline, selects source/context tabs, drives canonical split, ripple-trim, direct-transform, agent-style, undo, redo, and render operations, checks the final state, and captures the closed editor, open View menu, and render cover.
+
+## Editor shell
+
+The browser seed now has a typed ephemeral editor shell over the canonical project:
+
+- Create, Edit, Review, and Automate workspace arrangements;
+- Media, Layers, Text, Audio, and Captions source panels backed by current project data;
+- separate Inspector, Agent, and Quality context tabs;
+- File, Edit, and View menus with honest disabled native-only actions;
+- independent source/context/timeline visibility;
+- keyboard undo/redo, Escape-to-close menus, and Alt+1 through Alt+4 workspace selection;
+- Lucide interface icons, visible focus states, reduced-motion handling, and larger core control targets.
+
+Workspace and panel choices are view state only. They do not enter `StudioProject`, revisions, semantic diffs, persistence, public contracts, project hashes, or render plans.
 
 After capturing the cover to `artifacts/golden-cover.png`, create and verify the MP4 with:
 
@@ -42,6 +56,6 @@ The public render envelope accepts only a project asset ID, a project render-pre
 
 ## Current boundary
 
-The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, byte-sniffed content-addressed imports, probed media/proxy generation, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and UI. The UI invokes the same in-process kernel, while SDK/CLI public documents are projected and validated against the shared Draft 2020-12 schemas.
+The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, byte-sniffed content-addressed imports, probed media/proxy generation, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and a scalable human/agent editor shell. The UI invokes the same in-process kernel, while SDK/CLI public documents are projected and validated against the shared Draft 2020-12 schemas.
 
 `studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. Real process smokes prove media import/proxy/reopen and render queue/claim/progress/verification/artifact/read/cancel behavior. Authenticated local IPC, MCP, Tauri packaging, waveform generation, hostile-codec sandboxing, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing services rather than duplicate domain logic.

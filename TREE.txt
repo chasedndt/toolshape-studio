@@ -3,10 +3,12 @@ Toolshape Studio/
 │   ├── Agent-Activity/
 │   │   ├── 2026-07-15-codex-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-codex-toolshape-studio-vertical-slice.md
+│   │   ├── 2026-07-16-codex-toolshape-studio-editor-shell-ux.md
 │   │   └── 2026-07-16-codex-toolshape-studio-media-ingest-conformance.md
 │   ├── Build-Logs/
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md
+│   │   ├── 2026-07-16-ChaseOS-toolshape-studio-editor-shell-ux.md
 │   │   ├── 2026-07-16-ChaseOS-toolshape-studio-media-ingest-conformance.md
 │   │   └── Build-Logs-Index.md
 │   └── Daily/
@@ -17,6 +19,7 @@ Toolshape Studio/
 │   └── Documentation-History/
 │       ├── 2026-07-15_toolshape-studio-durable-render-jobs.md
 │       ├── 2026-07-15_toolshape-studio-vertical-slice.md
+│       ├── 2026-07-16_toolshape-studio-editor-shell-ux.md
 │       ├── 2026-07-16_toolshape-studio-media-ingest-conformance.md
 │       └── Documentation-History-Index.md
 ├── apps/
@@ -31,6 +34,8 @@ Toolshape Studio/
 │       │   └── smoke-runtime.ts
 │       ├── src/
 │       │   ├── App.tsx
+│       │   ├── editor-shell.test.ts
+│       │   ├── editor-shell.ts
 │       │   ├── main.tsx
 │       │   ├── studio-state.ts
 │       │   └── styles.css
@@ -59,13 +64,16 @@ Toolshape Studio/
 │   │   ├── 0005-ffmpeg-process-boundary.md
 │   │   ├── 0006-local-ipc-and-adapters.md
 │   │   ├── 0007-durable-render-job-lifecycle.md
-│   │   └── 0008-media-ingest-and-public-contract-boundary.md
+│   │   ├── 0008-media-ingest-and-public-contract-boundary.md
+│   │   └── 0009-editor-shell-view-state-boundary.md
 │   ├── learning/
 │   │   ├── 2026-07-15-durable-render-jobs.md
 │   │   ├── 2026-07-15-vertical-slice.md
+│   │   ├── 2026-07-16-editor-shell-hci.md
 │   │   └── 2026-07-16-media-ingest-conformance.md
 │   ├── plans/
 │   │   ├── TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md
+│   │   ├── TOOLSHAPE-STUDIO-EDITOR-SHELL-UX.md
 │   │   ├── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
 │   │   └── TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md
 │   ├── security/

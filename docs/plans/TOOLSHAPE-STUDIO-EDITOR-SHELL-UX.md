@@ -3,7 +3,7 @@
 **Date:** 2026-07-16
 **Runtime:** Codex
 **Session:** `2026-07-16_toolshape-studio-editor-shell-ux`
-**Status:** IN PROGRESS
+**Status:** COMPLETE / VERIFIED EDITOR-SHELL SLICE
 
 ## Outcome
 
@@ -126,3 +126,13 @@ Workspace, open menu, active panels, panel visibility, and timeline collapse are
 ## Follow-on visual-reference pass
 
 Operator-provided CapCut screenshots should cover the editing states that matter rather than only one beauty shot: default editor, media import, effects/transitions, text/captions, audio, speed, adjustment inspector, export, settings, context menus, dropdown menus, timeline zoom, and narrow/wide panel states. Those references will be used to compare information architecture and interaction coverage while preserving Toolshape's original visual language and agent-facing surfaces.
+
+## Verification closure
+
+- Expected-red shell test failed because `editor-shell.ts` did not exist; focused closure passed 4/4 state tests.
+- Full Vitest closure passed 55 tests across 13 files.
+- Strict TypeScript and the production Vite build passed.
+- Chrome QA verified all four workspaces, revision invariance, View-menu open/Escape close, timeline hide/restore, source/context tabs, semantic edit/undo/redo/render behavior, 12 tab controls, and no horizontal viewport overflow.
+- Accepted screenshots cover the closed Review workspace and open View-menu state at 1440x1000.
+- Runtime and separate-process CLI recovery smokes passed; render cancellation cleanup passed.
+- The real render-job rerun completed and verified an H.264/AAC artifact, but the outer command exceeded the 300-second wall timeout before returning a clean process exit on the loaded host. Full durable-render tests remained green; this timeout is recorded rather than hidden.

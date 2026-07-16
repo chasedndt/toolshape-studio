@@ -141,3 +141,16 @@ Studio explains improvements in context:
 - how audio fade/ducking affects speech clarity;
 - how to turn repeated manual edits into a reusable rule;
 - which harness capability performed each operation.
+
+## Implementation checkpoint - 2026-07-16
+
+Milestone 4 implements the first stable editor-shell contract in the browser seed:
+
+- Create, Edit, Review, and Automate arrangements over one unchanged project revision;
+- a five-panel source registry for real Media, Layers, Text, Audio, and Captions data;
+- independent Inspector, Agent, and Quality context tabs;
+- functional File/Edit/View menus, panel visibility, keyboard undo/redo, Escape handling, and Alt workspace shortcuts;
+- a bounded agent plan/context surface that remains optional and does not replace direct editing;
+- browser assertions for revision invariance, tab/menu state, timeline hide/restore, semantic editing, undo/redo, render queueing, and viewport overflow.
+
+The shell is hideable and keyboard-addressable but not yet drag-dockable, resizable, layout-persistent, screen-reader audited, or proven under zoom/reflow. Those remain partial rather than implied complete.
