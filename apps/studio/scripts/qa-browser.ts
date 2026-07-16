@@ -50,6 +50,40 @@ try {
     throw new Error(`Unexpected initial shell: revision=${String(initialRevision)} workspace=${String(initialWorkspace)}`);
   }
 
+  await page.waitForFunction(() => Array.from(document.querySelectorAll<HTMLImageElement>('[data-preview-kind]')).every((image) => image.complete && image.naturalWidth > 0));
+  const previewEvidence = await page.evaluate(() => ({
+    mediaThumbnailCount: document.querySelectorAll('#active-source-panel [data-preview-kind="thumbnail"]').length,
+    timelineThumbnailCount: document.querySelectorAll('.timeline-panel [data-preview-kind="thumbnail"]').length,
+    timelineWaveformCount: document.querySelectorAll('.timeline-panel [data-preview-kind="waveform"]').length,
+    unresolvedMediaCards: document.querySelectorAll('.asset-card[data-preview-ready="true"] img:not([src])').length,
+  }));
+  if (
+    previewEvidence.mediaThumbnailCount !== 1 ||
+    previewEvidence.timelineThumbnailCount !== 1 ||
+    previewEvidence.timelineWaveformCount !== 1 ||
+    previewEvidence.unresolvedMediaCards !== 0
+  ) {
+    throw new Error(`Initial preview evidence mismatch: ${JSON.stringify(previewEvidence)}`);
+  }
+  const mediaPreviewScreenshot = path.join(artifactDir, "studio-preview-derivatives-media.png");
+  await page.screenshot({ path: mediaPreviewScreenshot, fullPage: false });
+
+  await page.getByRole("tab", { name: "Audio", exact: true }).click();
+  await page.waitForFunction(() => {
+    const image = document.querySelector<HTMLImageElement>('#active-source-panel [data-preview-kind="waveform"]');
+    return Boolean(image?.complete && image.naturalWidth > 0);
+  });
+  const audioPreviewEvidence = await page.evaluate(() => ({
+    panel: document.querySelector("#active-source-panel")?.getAttribute("data-panel-id"),
+    waveformReady: document.querySelector(".audio-source-card")?.getAttribute("data-waveform-ready"),
+    waveformNaturalWidth: document.querySelector<HTMLImageElement>('#active-source-panel [data-preview-kind="waveform"]')?.naturalWidth ?? 0,
+  }));
+  if (audioPreviewEvidence.panel !== "audio" || audioPreviewEvidence.waveformReady !== "true" || audioPreviewEvidence.waveformNaturalWidth !== 1280) {
+    throw new Error(`Audio preview evidence mismatch: ${JSON.stringify(audioPreviewEvidence)}`);
+  }
+  const audioPreviewScreenshot = path.join(artifactDir, "studio-preview-derivatives-audio.png");
+  await page.screenshot({ path: audioPreviewScreenshot, fullPage: false });
+
   await page.getByRole("tab", { name: "Review", exact: true }).click();
   await page.waitForFunction(() => document.querySelector(".studio-shell")?.getAttribute("data-workspace") === "review");
   if (await page.locator(".project-crumb i").textContent() !== "r0") {
@@ -167,8 +201,12 @@ try {
         videoClipCount,
         qualityText,
         changedPathText,
+        previewEvidence,
+        audioPreviewEvidence,
         shellEvidence,
         renderNotice,
+        mediaPreviewScreenshot,
+        audioPreviewScreenshot,
         screenshot: path.join(artifactDir, "studio-editor-shell-post-edit.png"),
         menuScreenshot,
         cover,

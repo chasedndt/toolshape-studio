@@ -1,6 +1,6 @@
 import type { StudioProject } from "./model";
 
-export const CURRENT_STUDIO_SCHEMA_VERSION = 2 as const;
+export const CURRENT_STUDIO_SCHEMA_VERSION = 3 as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -16,13 +16,22 @@ export function migrateStudioProject(input: unknown): StudioProject {
     return structuredClone(input) as unknown as StudioProject;
   }
 
-  if (input.schemaVersion === 0 || input.schemaVersion === 1 || input.schemaVersion === undefined) {
+  if (
+    input.schemaVersion === 0 ||
+    input.schemaVersion === 1 ||
+    input.schemaVersion === 2 ||
+    input.schemaVersion === undefined
+  ) {
     const assets = Array.isArray(input.assets)
       ? input.assets.map((asset) => isRecord(asset)
         ? {
             ...asset,
             probe: isRecord(asset.probe) ? asset.probe : null,
-            derivatives: Array.isArray(asset.derivatives) ? asset.derivatives : [],
+            derivatives: Array.isArray(asset.derivatives)
+              ? asset.derivatives.map((derivative) => isRecord(derivative)
+                ? { ...derivative, probe: isRecord(derivative.probe) ? derivative.probe : null }
+                : derivative)
+              : [],
           }
         : asset)
       : [];

@@ -81,7 +81,7 @@ describe("SQLite project repository", () => {
     repository.close();
     const reopened = new SqliteStudioRepository(databasePath);
     const project = reopened.getProject("project-launch-film");
-    expect(project?.schemaVersion).toBe(2);
+    expect(project?.schemaVersion).toBe(3);
     expect(project?.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);
     reopened.close();
   });

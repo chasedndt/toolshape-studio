@@ -1,6 +1,11 @@
 import { spawn } from "node:child_process";
 import type { RationalTime, NormalizedMediaProbe } from "@toolshape/studio-domain";
-import type { FfmpegProxyPlan, MediaProcessRunner } from "./types";
+import type {
+  FfmpegProxyPlan,
+  FfmpegThumbnailPlan,
+  FfmpegWaveformPlan,
+  MediaProcessRunner,
+} from "./types";
 
 interface ProbeStream {
   codec_type?: string;
@@ -129,6 +134,14 @@ export class FfmpegMediaProcessRunner implements MediaProcessRunner {
 
   async createProxy(plan: FfmpegProxyPlan): Promise<void> {
     await run(plan.binary, plan.args, 5 * 60_000);
+  }
+
+  async createThumbnail(plan: FfmpegThumbnailPlan): Promise<void> {
+    await run(plan.binary, plan.args, 2 * 60_000);
+  }
+
+  async createWaveform(plan: FfmpegWaveformPlan): Promise<void> {
+    await run(plan.binary, plan.args, 2 * 60_000);
   }
 
   async toolchain(): Promise<Array<Record<string, unknown>>> {

@@ -40,6 +40,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type {
+  Asset,
   AudioTrack,
   Scene,
   SceneNode,
@@ -63,6 +64,11 @@ import {
   type ShellRegion,
 } from "./editor-shell";
 import { useStudioState } from "./studio-state";
+import {
+  resolveAssetPreview,
+  resolveFixturePreview,
+  type PreviewResolver,
+} from "./preview-assets";
 
 const NODE_ICONS: Record<SceneNode["type"], LucideIcon> = {
   text: Type,
@@ -74,6 +80,19 @@ const NODE_ICONS: Record<SceneNode["type"], LucideIcon> = {
 function NodeTypeIcon({ type, size = 14 }: { type: SceneNode["type"]; size?: number }) {
   const Icon = NODE_ICONS[type];
   return <Icon size={size} strokeWidth={1.8} aria-hidden="true" />;
+}
+
+const ASSET_ICONS: Record<Asset["kind"], LucideIcon> = {
+  video: Video,
+  audio: Music2,
+  image: Image,
+  font: Type,
+};
+
+function formatDuration(asset: Asset): string | null {
+  if (!asset.duration) return null;
+  const totalSeconds = Math.max(0, Math.round(toSeconds(asset.duration)));
+  return `${String(Math.floor(totalSeconds / 60)).padStart(2, "0")}:${String(totalSeconds % 60).padStart(2, "0")}`;
 }
 
 function sceneNodeStyle(node: SceneNode, scale: number): CSSProperties {
@@ -233,6 +252,7 @@ function LeftRail({
   onSelect,
   onSelectAsset,
   onNotice,
+  resolvePreview,
 }: {
   project: StudioProject;
   activePanel: LeftPanelId;
@@ -242,6 +262,7 @@ function LeftRail({
   onSelect: (id: string) => void;
   onSelectAsset: (id: string) => void;
   onNotice: (message: string) => void;
+  resolvePreview: PreviewResolver;
 }) {
   const scene = project.scenes[0];
   const [query, setQuery] = useState("");
@@ -254,24 +275,42 @@ function LeftRail({
   if (activePanel === "media") {
     panelContent = (
       <div className="asset-grid">
-        {project.assets.filter((asset) => match(asset.name)).map((asset, index) => (
-          <button
-            className={`asset-card${selectedAssetId === asset.id ? " is-active" : ""}`}
-            key={asset.id}
-            aria-label={`Select ${asset.name}`}
-            onClick={() => {
-              onSelectAsset(asset.id);
-              onNotice(`${asset.name} selected · immutable ${asset.kind} source`);
-            }}
-          >
-            <span className={`asset-card__preview asset-card__preview--${index % 2}`}>
-              {asset.kind === "video" ? <Video size={18} aria-hidden="true" /> : <Image size={18} aria-hidden="true" />}
-              {asset.kind === "video" && <i>00:08</i>}
-            </span>
-            <strong>{asset.name}</strong>
-            <small>{asset.kind.toUpperCase()} · IMMUTABLE</small>
-          </button>
-        ))}
+        {project.assets.filter((asset) => match(asset.name)).map((asset) => {
+          const preview = resolveAssetPreview(asset, "thumbnail", resolvePreview);
+          const AssetIcon = ASSET_ICONS[asset.kind];
+          const derivativeKinds = new Set(asset.derivatives.map((derivative) => derivative.kind));
+          return (
+            <button
+              className={`asset-card${preview ? " asset-card--with-preview" : ""}${selectedAssetId === asset.id ? " is-active" : ""}`}
+              key={asset.id}
+              aria-label={`Select ${asset.name}`}
+              data-preview-ready={preview ? "true" : "false"}
+              onClick={() => {
+                onSelectAsset(asset.id);
+                onNotice(`${asset.name} selected · immutable ${asset.kind} source · ${asset.derivatives.length} verified derivatives`);
+              }}
+            >
+              <span className={`asset-card__preview${preview ? " has-media" : " is-type-icon"}`}>
+                {preview ? (
+                  <img src={preview.url} alt="" data-preview-kind="thumbnail" />
+                ) : (
+                  <span className="asset-card__type"><AssetIcon size={18} aria-hidden="true" /><i>{asset.kind}</i></span>
+                )}
+                {formatDuration(asset) && <em>{formatDuration(asset)}</em>}
+                {preview && <span className="asset-card__proof"><Check size={10} aria-hidden="true" /> DERIVED</span>}
+              </span>
+              <strong>{asset.name}</strong>
+              <small>{asset.kind.toUpperCase()} · IMMUTABLE</small>
+              {asset.derivatives.length > 0 && (
+                <span className="asset-card__evidence">
+                  {derivativeKinds.has("thumbnail") && <i>THUMB</i>}
+                  {derivativeKinds.has("waveform") && <i>WAVE</i>}
+                  {derivativeKinds.has("proxy") && <i>PROXY</i>}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     );
   } else if (activePanel === "layers") {
@@ -315,14 +354,37 @@ function LeftRail({
     );
   } else if (activePanel === "audio") {
     panelContent = (
-      <div className="source-list">
-        {audioTracks.filter((track) => match(track.name)).map((track) => (
-          <div className="source-row source-row--static" key={track.id}>
-            <Music2 size={15} aria-hidden="true" />
-            <span><strong>{track.name}</strong><small>{track.clips.length} clip · 48 kHz source</small></span>
-            {track.clips[0]?.audio?.muted ? <VolumeX size={14} aria-label="Muted" /> : <Volume2 size={14} aria-label="Audible" />}
-          </div>
-        ))}
+      <div className="audio-source-list">
+        {audioTracks.filter((track) => match(track.name)).map((track) => {
+          const clip = track.clips[0];
+          const asset = project.assets.find((candidate) => candidate.id === clip?.assetId);
+          const waveform = resolveAssetPreview(asset, "waveform", resolvePreview);
+          const sampleRate = asset?.probe?.audio?.sampleRate;
+          return (
+            <button
+              className={`audio-source-card${selectedAssetId === asset?.id ? " is-active" : ""}`}
+              key={track.id}
+              data-waveform-ready={waveform ? "true" : "false"}
+              onClick={() => {
+                if (asset) onSelectAsset(asset.id);
+                onNotice(`${track.name} selected · ${waveform ? "verified waveform ready" : "waveform unavailable"}`);
+              }}
+            >
+              <span className="audio-source-card__waveform">
+                {waveform ? <img src={waveform.url} alt="" data-preview-kind="waveform" /> : <Music2 size={18} aria-hidden="true" />}
+              </span>
+              <span className="audio-source-card__meta">
+                <strong>{track.name}</strong>
+                <small>{track.clips.length} clip · {sampleRate ? `${Math.round(sampleRate / 1000)} kHz` : "unprobed"} · {asset?.probe?.audio?.channels ?? 0} ch</small>
+                <i>{waveform ? "CONTENT-ADDRESSED WAVEFORM" : "NO WAVEFORM DERIVATIVE"}</i>
+              </span>
+              <span className="audio-source-card__state">
+                {clip?.audio?.muted ? <VolumeX size={14} aria-label="Muted" /> : <Volume2 size={14} aria-label="Audible" />}
+                <small>{clip?.audio?.gainDb ?? 0} dB</small>
+              </span>
+            </button>
+          );
+        })}
       </div>
     );
   } else {
@@ -588,7 +650,7 @@ function RightRail({
               <div className="quality-line"><i style={{ width: "100%" }} /></div>
             </div>
             <div className="quality-checks" aria-label="Quality checks">
-              {["Project schema v2", "Immutable sources", "Safe area visible", "Render preset verified"].map((label) => (
+              {["Project schema v3", "Immutable sources", "Safe area visible", "Render preset verified"].map((label) => (
                 <span key={label}><Check size={13} aria-hidden="true" /><strong>{label}</strong><small>Passed</small></span>
               ))}
             </div>
@@ -599,7 +661,17 @@ function RightRail({
   );
 }
 
-function TrackLane({ track, totalSeconds }: { track: Track; totalSeconds: number }) {
+function TrackLane({
+  track,
+  totalSeconds,
+  project,
+  resolvePreview,
+}: {
+  track: Track;
+  totalSeconds: number;
+  project: StudioProject;
+  resolvePreview: PreviewResolver;
+}) {
   if (track.kind === "caption") {
     return (
       <div className="track-lane track-lane--captions">
@@ -619,25 +691,31 @@ function TrackLane({ track, totalSeconds }: { track: Track; totalSeconds: number
   }
   return (
     <div className={`track-lane track-lane--${track.kind}`}>
-      {track.clips.map((clip) => (
-        <span
-          key={clip.id}
-          className="timeline-clip"
-          style={{
-            left: `${(toSeconds(clip.start) / totalSeconds) * 100}%`,
-            width: `${(toSeconds(clip.duration) / totalSeconds) * 100}%`,
-          }}
-        >
-          <strong>{clip.name}</strong>
-          {track.kind === "audio" && (
-            <i className="waveform" aria-hidden="true">
-              {Array.from({ length: 36 }, (_, index) => (
-                <b key={index} style={{ height: `${25 + ((index * 17) % 65)}%` }} />
-              ))}
-            </i>
-          )}
-        </span>
-      ))}
+      {track.clips.map((clip) => {
+        const asset = project.assets.find((candidate) => candidate.id === clip.assetId);
+        const preview = resolveAssetPreview(asset, track.kind === "audio" ? "waveform" : "thumbnail", resolvePreview);
+        return (
+          <span
+            key={clip.id}
+            className={`timeline-clip${preview ? " has-preview" : ""}`}
+            data-preview-ready={preview ? "true" : "false"}
+            style={{
+              left: `${(toSeconds(clip.start) / totalSeconds) * 100}%`,
+              width: `${(toSeconds(clip.duration) / totalSeconds) * 100}%`,
+            }}
+          >
+            {preview && (
+              <img
+                className={track.kind === "audio" ? "timeline-clip__waveform" : "timeline-clip__thumbnail"}
+                src={preview.url}
+                alt=""
+                data-preview-kind={track.kind === "audio" ? "waveform" : "thumbnail"}
+              />
+            )}
+            <strong>{clip.name}</strong>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -646,10 +724,12 @@ function TimelinePanel({
   project,
   apply,
   onCollapse,
+  resolvePreview,
 }: {
   project: StudioProject;
   apply: ReturnType<typeof useStudioState>["apply"];
   onCollapse: () => void;
+  resolvePreview: PreviewResolver;
 }) {
   const totalSeconds = toSeconds(project.timeline.duration);
   const video = project.timeline.tracks.find((track) => track.id === "track-video");
@@ -742,7 +822,7 @@ function TimelinePanel({
               <strong>{track.name}</strong>
               <i>{track.locked ? <Lock size={11} aria-label="Locked" /> : <Eye size={11} aria-label="Visible" />}</i>
             </div>
-            <TrackLane track={track} totalSeconds={totalSeconds} />
+            <TrackLane track={track} totalSeconds={totalSeconds} project={project} resolvePreview={resolvePreview} />
           </div>
         ))}
         <div className="playhead" style={{ left: `calc(188px + ${(2.4 / totalSeconds) * 100}% - ${(2.4 / totalSeconds) * 188}px)` }}>
@@ -841,7 +921,7 @@ function WorkspaceTabs({
   );
 }
 
-export function App() {
+export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview?: PreviewResolver } = {}) {
   const initialProject = useMemo(() => createGoldenStudioProject(), []);
   const {
     project,
@@ -1007,6 +1087,7 @@ export function App() {
             onSelect={setSelectedNodeId}
             onSelectAsset={setSelectedAssetId}
             onNotice={setNotice}
+            resolvePreview={resolvePreview}
           />
         )}
         <section className="canvas-workspace">
@@ -1051,7 +1132,14 @@ export function App() {
         )}
       </div>
 
-      {shell.visibility.timeline && <TimelinePanel project={project} apply={apply} onCollapse={() => toggleRegion("timeline")} />}
+      {shell.visibility.timeline && (
+        <TimelinePanel
+          project={project}
+          apply={apply}
+          onCollapse={() => toggleRegion("timeline")}
+          resolvePreview={resolvePreview}
+        />
+      )}
       {notice && (
         <div className="notice" role="status">
           <span>{notice}</span>

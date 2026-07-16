@@ -140,7 +140,7 @@ export interface AssetDerivative {
   width?: number;
   height?: number;
   duration?: RationalTime;
-  probe: NormalizedMediaProbe;
+  probe: NormalizedMediaProbe | null;
   createdAt: string;
   provenance: {
     sourceDigest: string;
@@ -246,7 +246,7 @@ export interface OperationRecord {
 }
 
 export interface StudioProject {
-  schemaVersion: 2;
+  schemaVersion: 3;
   id: Id;
   name: string;
   revision: number;

@@ -88,20 +88,32 @@ reopened.close();
 if (JSON.stringify(recovered) !== JSON.stringify(asset)) {
   throw new Error("Normalized media asset did not survive SQLite reopen.");
 }
-const derivative = asset.derivatives[0];
-if (!derivative || derivative.kind !== "proxy") throw new Error("Verified proxy derivative is missing.");
-if (derivative.width !== 960 || derivative.height !== 540) {
-  throw new Error(`Unexpected proxy dimensions: ${String(derivative.width)}x${String(derivative.height)}`);
+const proxy = asset.derivatives.find((derivative) => derivative.kind === "proxy");
+const thumbnail = asset.derivatives.find((derivative) => derivative.kind === "thumbnail");
+const waveform = asset.derivatives.find((derivative) => derivative.kind === "waveform");
+if (!proxy || !thumbnail || !waveform) {
+  throw new Error("Verified proxy, thumbnail, and waveform derivatives are required for this fixture.");
 }
-if (derivative.probe.video?.codec !== "h264" || derivative.probe.audio?.codec !== "aac") {
+if (proxy.width !== 960 || proxy.height !== 540) {
+  throw new Error(`Unexpected proxy dimensions: ${String(proxy.width)}x${String(proxy.height)}`);
+}
+if (proxy.probe?.video?.codec !== "h264" || proxy.probe.audio?.codec !== "aac") {
   throw new Error("Proxy codecs were not verified as H.264/AAC.");
+}
+if (thumbnail.width !== 480 || thumbnail.height !== 270 || thumbnail.probe !== null) {
+  throw new Error(`Unexpected thumbnail evidence: ${String(thumbnail.width)}x${String(thumbnail.height)}.`);
+}
+if (waveform.width !== 1280 || waveform.height !== 160 || waveform.probe !== null) {
+  throw new Error(`Unexpected waveform evidence: ${String(waveform.width)}x${String(waveform.height)}.`);
 }
 function contentPath(digest: string): string {
   const hex = digest.slice("sha256:".length);
   return path.join(objectRoot, hex.slice(0, 2), hex);
 }
 const originalDetails = await stat(contentPath(asset.contentHash));
-const proxyDetails = await stat(contentPath(derivative.contentHash));
+const proxyDetails = await stat(contentPath(proxy.contentHash));
+const thumbnailDetails = await stat(contentPath(thumbnail.contentHash));
+const waveformDetails = await stat(contentPath(waveform.contentHash));
 
 process.stdout.write(`${JSON.stringify({
   runRoot,
@@ -114,13 +126,30 @@ process.stdout.write(`${JSON.stringify({
   },
   proxy: {
     bytes: proxyDetails.size,
-    digest: derivative.contentHash,
-    mediaType: derivative.mediaType,
-    width: derivative.width,
-    height: derivative.height,
-    duration: derivative.duration,
-    probe: derivative.probe,
-    toolchain: derivative.provenance.toolchain,
+    digest: proxy.contentHash,
+    mediaType: proxy.mediaType,
+    width: proxy.width,
+    height: proxy.height,
+    duration: proxy.duration,
+    probe: proxy.probe,
+    toolchain: proxy.provenance.toolchain,
+  },
+  thumbnail: {
+    bytes: thumbnailDetails.size,
+    digest: thumbnail.contentHash,
+    mediaType: thumbnail.mediaType,
+    width: thumbnail.width,
+    height: thumbnail.height,
+    probe: thumbnail.probe,
+  },
+  waveform: {
+    bytes: waveformDetails.size,
+    digest: waveform.contentHash,
+    mediaType: waveform.mediaType,
+    width: waveform.width,
+    height: waveform.height,
+    duration: waveform.duration,
+    probe: waveform.probe,
   },
   persistence: { databasePath, reopened: true },
   adapter: { command: "ingest-media", stderrDiagnostics: cli.stderr ? [cli.stderr] : [] },

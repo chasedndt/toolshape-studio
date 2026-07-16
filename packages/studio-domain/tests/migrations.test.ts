@@ -3,12 +3,33 @@ import { createGoldenStudioProject } from "../../../fixtures/studio/golden-proje
 import { migrateStudioProject } from "../src";
 
 describe("Studio project migrations", () => {
-  it("returns an isolated v2 document", () => {
+  it("returns an isolated v3 document", () => {
     const source = createGoldenStudioProject();
     const migrated = migrateStudioProject(source);
     expect(migrated).toEqual(source);
     expect(migrated).not.toBe(source);
-    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.schemaVersion).toBe(3);
+  });
+
+  it("migrates v2 image derivatives to an explicit nullable probe", () => {
+    const source = createGoldenStudioProject() as unknown as Record<string, unknown>;
+    source.schemaVersion = 2;
+    const assets = source.assets as Array<Record<string, unknown>>;
+    assets[0].derivatives = [{
+      id: "thumbnail-v2",
+      kind: "thumbnail",
+      mediaType: "image/png",
+      contentHash: `sha256:${"d".repeat(64)}`,
+      sourceRef: `content://sha256/${"d".repeat(64)}`,
+      immutable: true,
+      width: 320,
+      height: 180,
+      createdAt: new Date(0).toISOString(),
+      provenance: { sourceDigest: assets[0].contentHash, toolchain: [] },
+    }];
+    const migrated = migrateStudioProject(source);
+    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.assets[0].derivatives[0].probe).toBeNull();
   });
 
   it("migrates v1 assets to explicit probe and derivative state", () => {
@@ -21,12 +42,12 @@ describe("Studio project migrations", () => {
       return legacy;
     });
     const migrated = migrateStudioProject(source);
-    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.schemaVersion).toBe(3);
     expect(migrated.assets.every((asset) => asset.probe === null)).toBe(true);
     expect(migrated.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);
   });
 
-  it("adds the v2 revision, provenance, and media boundaries to seed-era documents", () => {
+  it("adds current revision, provenance, and media boundaries to seed-era documents", () => {
     const source = createGoldenStudioProject() as unknown as Record<string, unknown>;
     delete source.schemaVersion;
     delete source.provenance;
@@ -37,7 +58,7 @@ describe("Studio project migrations", () => {
       return legacy;
     });
     const migrated = migrateStudioProject(source);
-    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.schemaVersion).toBe(3);
     expect(migrated.revision).toBe(0);
     expect(migrated.provenance).toEqual([]);
     expect(migrated.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);
