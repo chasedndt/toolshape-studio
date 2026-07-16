@@ -30,10 +30,18 @@ Exercise the durable SQLite queue, a separate CLI worker process, artifact regis
 npm run smoke:render-job
 ```
 
+Generate a license-safe MP4 with audio, invoke the separate-process JSON CLI media importer, probe the immutable original, create and verify an editing proxy, and reopen its SQLite record with:
+
+```powershell
+npm run smoke:media-ingest
+```
+
+The `ingest-media` JSON CLI command accepts a source path through stdin plus an original name and declared media type. The response contains only normalized canonical asset/proxy metadata; local content paths remain inside the host.
+
 The public render envelope accepts only a project asset ID, a project render-preset ID, and a safe logical `.mp4` name. The worker resolves the immutable `content://sha256/...` source beneath its configured content root and compiles FFmpeg arguments inside the trusted render boundary.
 
 ## Current boundary
 
-The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, content-addressed imports, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and UI. The UI invokes the same in-process kernel as the SDK/CLI adapters.
+The Studio repository now owns its domain, deterministic engine, semantic operation envelopes, grant/revision/idempotency kernel, SQLite repository, byte-sniffed content-addressed imports, probed media/proxy generation, SDK, JSON CLI, durable render jobs, verified artifacts, rendering, and UI. The UI invokes the same in-process kernel, while SDK/CLI public documents are projected and validated against the shared Draft 2020-12 schemas.
 
-`studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. A real process smoke proves queue, worker claim, progress, FFprobe verification, immutable artifact registration, readback, and queued cancellation. Authenticated local IPC, MCP, Tauri packaging, real media probe/proxy generation, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing service rather than duplicate domain logic.
+`studio.project.render`, `studio.job.get`, and `studio.job.cancel` are verified through the shared kernel and JSON adapter mapping. Real process smokes prove media import/proxy/reopen and render queue/claim/progress/verification/artifact/read/cancel behavior. Authenticated local IPC, MCP, Tauri packaging, waveform generation, hostile-codec sandboxing, signed distribution, and crash-proof multi-worker leases remain deferred. They must reuse the existing services rather than duplicate domain logic.

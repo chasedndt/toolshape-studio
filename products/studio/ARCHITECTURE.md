@@ -165,6 +165,8 @@ Import is a hostile boundary:
 - produce import diagnostics and unsupported-feature list;
 - never execute macros/scripts.
 
+**Implementation checkpoint (2026-07-16):** the local MP4 path now checks source size before reading, matches declared `video/mp4` to the byte signature, stores the immutable original by SHA-256, normalizes selected FFprobe fields, generates a bounded H.264/AAC proxy with a fixed shell-free plan, verifies it with a second probe, stores it by digest, and persists path-free schema-v2 asset metadata. Quarantine, codec sandboxing, waveform/thumbnail workers, and broader format coverage remain planned.
+
 ## Agent tool surface
 
 Product-specific capabilities:

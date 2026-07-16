@@ -3,7 +3,7 @@
 **Date:** 2026-07-15  
 **Runtime:** Codex  
 **Session:** `2026-07-15_toolshape-studio-vertical-slice`  
-**Status:** MILESTONES 1-2 VERIFIED / PROGRAM IN PROGRESS
+**Status:** MILESTONES 1-3 VERIFIED / PROGRAM IN PROGRESS
 
 ## Repo-truth baseline
 
@@ -148,6 +148,10 @@ Delivered evidence includes 27 passing tests, strict type checking, a production
 
 Milestone 2 is verified and committed in `ede82b7`: durable SQLite render jobs, transactional claims, ordered progress/events, cancellation, bounded retry/recovery, `render`/`job.get`/`job.cancel` adapter parity, trusted FFmpeg compilation, and verified immutable artifact registration. The full suite now passes 39 tests across 10 files, and the real process smoke completed a verified 1080x1920 H.264/AAC artifact.
 
-The program remains active. The next milestone is real media probe/proxy ingestion and stronger schema/security conformance, while the thin Tauri host remains blocked until Rust/MSVC provisioning. MCP, authenticated local IPC, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestones.
+Milestone 3 is verified and committed in `2bab9cb`: byte-sniffed import, project schema v2 media evidence, real FFprobe normalization, safe bounded FFmpeg proxy generation, SQLite media persistence/reopen, JSON CLI `ingest-media`, and shared Draft 2020-12 validation/projection for SDK/CLI operation, result, job, and artifact documents.
+
+The program remains active. The next milestone is waveform/thumbnail derivatives, import quarantine/resource budgets, and deeper hostile-media testing, while the thin Tauri host remains blocked until Rust/MSVC provisioning. MCP, authenticated local IPC, signed distribution, secrets, publishing, collaboration, and broad feature depth remain explicitly outside the verified milestones.
 
 Milestone 2 execution details are tracked in [TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md](TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md) and ADR 0007.
+
+Milestone 3 execution details are tracked in [TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md](TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md) and ADR 0008.

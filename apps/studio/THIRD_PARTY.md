@@ -1,6 +1,6 @@
 # Third-party build and licence record
 
-Recorded on 2026-07-15 from installed package metadata and local executable output. This is evidence for the development seed, not legal advice.
+Recorded through 2026-07-16 from installed package metadata and local executable output. This is evidence for the development seed, not legal advice.
 
 ## Direct JavaScript tooling
 
@@ -14,8 +14,10 @@ Recorded on 2026-07-15 from installed package metadata and local executable outp
 | tsx | 4.23.1 | MIT | local render/QA scripts |
 | @vitejs/plugin-react | 4.7.0 | MIT | React transform |
 | playwright-core | 1.61.1 | Apache-2.0 | installed-Chromium QA only |
+| Ajv | 8.20.0 | MIT | Draft 2020-12 public contract validation |
+| ajv-formats | 3.0.1 | MIT | UUID and date-time format validation |
 
-`npm audit --audit-level=high` reported 0 vulnerabilities on 2026-07-15. The exact transitive dependency graph is locked in `package-lock.json`.
+`npm audit --audit-level=high` reported 0 vulnerabilities on 2026-07-16. The exact transitive dependency graph is locked in `package-lock.json`.
 
 ## FFmpeg development runtime
 

@@ -3,7 +3,7 @@
 **Date:** 2026-07-16  
 **Runtime:** Codex  
 **Session:** `2026-07-16_toolshape-studio-media-ingest-conformance`  
-**Status:** IN PROGRESS
+**Status:** COMPLETE / VERIFIED MEDIA AND CONTRACT SLICE
 
 ## Repo-truth delta
 
@@ -94,3 +94,15 @@ specs and adapter conformance tests (read-only schemas)
 - Do not expose internal filesystem paths through SDK/CLI operation results.
 - Do not claim sandboxed codecs, native desktop readiness, MCP parity, or hostile-codec completeness.
 - Do not modify Toolshape Voice, the archive, donor repositories, or private media.
+
+## Verification closure
+
+- Project schema v2 migration, byte sniffing, media worker, SQLite asset persistence, SDK/CLI parity, and shared-schema conformance are covered by the full Vitest suite.
+- A generated 4-second 1280x720 H.264/AAC MP4 with a 48 kHz audio stream was imported through the separate-process JSON CLI.
+- The immutable original was stored at SHA-256 `b095a21e59ba173d339e2ccd48a74de52de7ddfb69300478e8a831fbe4fbb65d`.
+- FFmpeg/FFprobe 8.1.1 generated and verified a 960x540 H.264/AAC proxy at SHA-256 `50fcc40bd1d6ba1e4603dfca6bed79ee321c34b894a64089685d0a3421f1ae5d`.
+- The normalized asset/proxy survived SQLite close/reopen and its public JSON contained no local path.
+- Real SDK and CLI operation results, job documents, and artifact projections passed the repository's shared Draft 2020-12 schemas; extra fields and incompatible target types rejected.
+- Existing editor, render-job, cancellation, persistence, build, type, audit, and Chrome QA gates remained green.
+
+This milestone does not claim hostile-codec sandboxing, waveform/thumbnail generation, arbitrary import format coverage, MCP, authenticated IPC, Tauri, signing, or category-complete media editing.

@@ -1,21 +1,21 @@
 # Handover validation
 
 **Status:** PASS
-**Validated at:** 2026-07-15T23:11:41+00:00
-**Files checked:** 224
-**Bytes (excluding generated report/tree/manifest):** 843759
-**Approximate words in text files:** 67686
+**Validated at:** 2026-07-16T00:13:13+00:00
+**Files checked:** 243
+**Bytes (excluding generated report/tree/manifest):** 930656
+**Approximate words in text files:** 71743
 
 This validates document structure, JSON syntax/schemas, examples, links, diagrams, source-registry shape, placeholder markers and common plaintext-secret patterns. It does **not** certify product implementation, legal clearance, privacy compliance, third-party deletion, Windows compatibility, model quality or media-codec licensing.
 
 ## Passed checks
 
 - Required-file check passed (26 files).
-- All JSON files parsed (42 files).
+- All JSON files parsed (43 files).
 - Schema meta-validation passed (13 schemas).
 - All schema examples validated (12 examples).
 - Research source registry check passed (79 sources).
-- Relative Markdown-link check passed (41 links).
+- Relative Markdown-link check passed (63 links).
 - Mermaid source check passed (6 diagrams).
 - No unfinished-work placeholder markers found.
 - No common live-secret token patterns found.

@@ -2,18 +2,22 @@ Toolshape Studio/
 ├── 07_LOGS/
 │   ├── Agent-Activity/
 │   │   ├── 2026-07-15-codex-toolshape-studio-durable-render-jobs.md
-│   │   └── 2026-07-15-codex-toolshape-studio-vertical-slice.md
+│   │   ├── 2026-07-15-codex-toolshape-studio-vertical-slice.md
+│   │   └── 2026-07-16-codex-toolshape-studio-media-ingest-conformance.md
 │   ├── Build-Logs/
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-durable-render-jobs.md
 │   │   ├── 2026-07-15-ChaseOS-toolshape-studio-vertical-slice.md
+│   │   ├── 2026-07-16-ChaseOS-toolshape-studio-media-ingest-conformance.md
 │   │   └── Build-Logs-Index.md
 │   └── Daily/
 │       ├── 2026-07-15.md
+│       ├── 2026-07-16.md
 │       └── Daily-Index.md
 ├── 99_ARCHIVE/
 │   └── Documentation-History/
 │       ├── 2026-07-15_toolshape-studio-durable-render-jobs.md
 │       ├── 2026-07-15_toolshape-studio-vertical-slice.md
+│       ├── 2026-07-16_toolshape-studio-media-ingest-conformance.md
 │       └── Documentation-History-Index.md
 ├── apps/
 │   └── studio/
@@ -22,6 +26,7 @@ Toolshape Studio/
 │       │   ├── qa-browser.ts
 │       │   ├── render-golden.ts
 │       │   ├── smoke-cli.ts
+│       │   ├── smoke-media-ingest.ts
 │       │   ├── smoke-render-job.ts
 │       │   └── smoke-runtime.ts
 │       ├── src/
@@ -53,13 +58,16 @@ Toolshape Studio/
 │   │   ├── 0004-preview-and-headless-renderer.md
 │   │   ├── 0005-ffmpeg-process-boundary.md
 │   │   ├── 0006-local-ipc-and-adapters.md
-│   │   └── 0007-durable-render-job-lifecycle.md
+│   │   ├── 0007-durable-render-job-lifecycle.md
+│   │   └── 0008-media-ingest-and-public-contract-boundary.md
 │   ├── learning/
 │   │   ├── 2026-07-15-durable-render-jobs.md
-│   │   └── 2026-07-15-vertical-slice.md
+│   │   ├── 2026-07-15-vertical-slice.md
+│   │   └── 2026-07-16-media-ingest-conformance.md
 │   ├── plans/
 │   │   ├── TOOLSHAPE-STUDIO-DURABLE-RENDER-JOBS.md
-│   │   └── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
+│   │   ├── TOOLSHAPE-STUDIO-IMPLEMENTATION-PLAN.md
+│   │   └── TOOLSHAPE-STUDIO-MEDIA-INGEST-CONFORMANCE.md
 │   ├── security/
 │   │   └── THREAT-MODEL.md
 │   ├── 00-executive-brief.md
@@ -147,6 +155,16 @@ Toolshape Studio/
 │   │   │   ├── jobs.test.ts
 │   │   │   └── kernel.test.ts
 │   │   └── package.json
+│   ├── studio-media/
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── ingestion.ts
+│   │   │   ├── process-runner.ts
+│   │   │   ├── proxy-plan.ts
+│   │   │   └── types.ts
+│   │   ├── tests/
+│   │   │   └── media-ingest.test.ts
+│   │   └── package.json
 │   ├── studio-persistence/
 │   │   ├── src/
 │   │   │   ├── content-store.ts
@@ -168,8 +186,12 @@ Toolshape Studio/
 │   │   └── package.json
 │   └── studio-sdk/
 │       ├── src/
-│       │   └── index.ts
+│       │   ├── contract-types.ts
+│       │   ├── index.ts
+│       │   ├── projection.ts
+│       │   └── schema-validation.ts
 │       ├── tests/
+│       │   ├── conformance.test.ts
 │       │   └── parity.test.ts
 │       └── package.json
 ├── platform/
