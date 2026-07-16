@@ -44,11 +44,54 @@ try {
     };
   });
 
+  const initialRevision = await page.locator(".project-crumb i").textContent();
+  const initialWorkspace = await page.locator(".studio-shell").getAttribute("data-workspace");
+  if (initialRevision !== "r0" || initialWorkspace !== "edit") {
+    throw new Error(`Unexpected initial shell: revision=${String(initialRevision)} workspace=${String(initialWorkspace)}`);
+  }
+
+  await page.getByRole("tab", { name: "Review", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector(".studio-shell")?.getAttribute("data-workspace") === "review");
+  if (await page.locator(".project-crumb i").textContent() !== "r0") {
+    throw new Error("Workspace switching advanced the canonical project revision.");
+  }
+  if (await page.locator("#active-context-panel").getAttribute("data-panel-id") !== "agent") {
+    throw new Error("Review workspace did not open the agent context.");
+  }
+
+  await page.getByRole("menuitem", { name: "View" }).click();
+  if (!(await page.getByRole("menu", { name: "View menu" }).isVisible())) {
+    throw new Error("View menu did not open.");
+  }
+  await page.keyboard.press("Escape");
+  if (await page.getByRole("menu", { name: "View menu" }).isVisible().catch(() => false)) {
+    throw new Error("Escape did not close the View menu.");
+  }
+
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Timeline" }).click();
+  if (await page.locator(".timeline-panel").count() !== 0) {
+    throw new Error("View menu did not hide the timeline.");
+  }
+  await page.getByRole("button", { name: "Show timeline" }).click();
+  if (await page.locator(".timeline-panel").count() !== 1) {
+    throw new Error("Quick panel control did not restore the timeline.");
+  }
+
+  await page.getByRole("tab", { name: "Edit", exact: true }).click();
+  await page.getByRole("tab", { name: "Text", exact: true }).click();
+  if (await page.locator("#active-source-panel").getAttribute("data-panel-id") !== "text") {
+    throw new Error("Text source panel did not activate.");
+  }
+  await page.locator("#active-source-panel .source-row", { hasText: "Hero title" }).click();
+  await page.getByRole("tab", { name: "Inspector", exact: true }).click();
+
   await page.getByRole("button", { name: "Split at 4s" }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r1");
   await page.getByRole("button", { name: "Trim + ripple" }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r2");
   await page.getByRole("button", { name: "Nudge +24" }).click();
+  await page.getByRole("tab", { name: "Review", exact: true }).click();
   await page.getByRole("button", { name: "Apply candidate" }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r4");
   await page.getByRole("button", { name: /Undo/ }).click();
@@ -62,7 +105,9 @@ try {
   }
 
   const videoClipCount = await page.locator(".track-lane--video .timeline-clip").count();
+  await page.getByRole("tab", { name: "Quality", exact: true }).click();
   const qualityText = await page.locator(".quality-card strong").textContent();
+  await page.getByRole("tab", { name: "Agent", exact: true }).click();
   const changedPathText = await page.locator(".diff-strip strong").textContent();
   if (videoClipCount !== 2 || qualityText !== "Canonical state valid") {
     throw new Error(
@@ -70,8 +115,27 @@ try {
     );
   }
 
+  const shellEvidence = await page.evaluate(() => ({
+    workspace: document.querySelector(".studio-shell")?.getAttribute("data-workspace"),
+    sourcePanel: document.querySelector("#active-source-panel")?.getAttribute("data-panel-id"),
+    contextPanel: document.querySelector("#active-context-panel")?.getAttribute("data-panel-id"),
+    timelineVisible: Boolean(document.querySelector(".timeline-panel")),
+    tabCount: document.querySelectorAll('[role="tab"]').length,
+    viewportOverflow: document.documentElement.scrollWidth > window.innerWidth,
+  }));
+  if (shellEvidence.workspace !== "review" || shellEvidence.contextPanel !== "agent" || !shellEvidence.timelineVisible || shellEvidence.viewportOverflow) {
+    throw new Error(`Editor shell evidence mismatch: ${JSON.stringify(shellEvidence)}`);
+  }
+
+  await page.waitForTimeout(250);
+  await page.getByRole("menuitem", { name: "View" }).click();
+  const menuScreenshot = path.join(artifactDir, "studio-editor-shell-view-menu.png");
+  await page.waitForTimeout(100);
+  await page.screenshot({ path: menuScreenshot, fullPage: false });
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
   await page.screenshot({
-    path: path.join(artifactDir, "studio-editor-post-edit.png"),
+    path: path.join(artifactDir, "studio-editor-shell-post-edit.png"),
     fullPage: false,
   });
 
@@ -103,8 +167,10 @@ try {
         videoClipCount,
         qualityText,
         changedPathText,
+        shellEvidence,
         renderNotice,
-        screenshot: path.join(artifactDir, "studio-editor-post-edit.png"),
+        screenshot: path.join(artifactDir, "studio-editor-shell-post-edit.png"),
+        menuScreenshot,
         cover,
       },
       null,

@@ -24,6 +24,7 @@
     "@toolshape/studio-persistence": "file:../../packages/studio-persistence",
     "@toolshape/studio-render": "file:../../packages/studio-render",
     "@toolshape/studio-sdk": "file:../../packages/studio-sdk",
+    "lucide-react": "^1.24.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

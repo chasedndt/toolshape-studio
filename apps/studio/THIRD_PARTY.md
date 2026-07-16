@@ -8,6 +8,7 @@ Recorded through 2026-07-16 from installed package metadata and local executable
 |---|---:|---|---|
 | React | 19.2.7 | MIT | operator UI |
 | React DOM | 19.2.7 | MIT | browser renderer |
+| Lucide React | 1.24.0 | ISC | accessible editor-shell interface icons |
 | Vite | 7.3.6 | MIT | dev/production build |
 | Vitest | 3.2.7 | MIT | focused tests |
 | TypeScript | 5.9.3 | Apache-2.0 | strict type checking |
