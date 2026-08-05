@@ -8,7 +8,7 @@
  */
 export type WorkspaceId = "home" | "capture" | "create" | "edit" | "review" | "automate";
 export type LeftPanelId = "media" | "layers" | "text" | "audio" | "captions" | "sources";
-export type RightPanelId = "inspector" | "agent" | "quality" | "capture";
+export type RightPanelId = "inspector" | "agent" | "quality" | "capture" | "activity";
 export type ShellRegion = "left" | "right" | "timeline";
 export type AppMenuId = "file" | "edit" | "view";
 
@@ -64,7 +64,9 @@ const WORKSPACE_DEFAULTS: Record<WorkspaceId, Omit<EditorShellState, "workspace"
   },
   review: {
     leftPanel: "layers",
-    rightPanel: "agent",
+    // Review opens on Activity: the point of this workspace is seeing what
+    // changed and who changed it, human or agent.
+    rightPanel: "activity",
     visibility: { left: true, right: true, timeline: true },
   },
   automate: {

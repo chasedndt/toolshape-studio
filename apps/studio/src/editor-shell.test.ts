@@ -31,10 +31,12 @@ describe("editor shell view state", () => {
       visibility: { left: true, right: true, timeline: false },
       activeMenu: null,
     });
+    // Review opens on Activity: this workspace exists to show what changed and
+    // who changed it, so the history is the default context panel.
     expect(switchWorkspace(state, "review")).toEqual({
       workspace: "review",
       leftPanel: "layers",
-      rightPanel: "agent",
+      rightPanel: "activity",
       visibility: { left: true, right: true, timeline: true },
       activeMenu: null,
     });

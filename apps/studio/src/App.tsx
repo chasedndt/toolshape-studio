@@ -12,6 +12,7 @@ import {
   FolderOpen,
   Group,
   Hand,
+  History,
   Image,
   Layers3,
   Lock,
@@ -25,6 +26,7 @@ import {
   Pause,
   Play,
   Redo2,
+  RotateCcw,
   Scissors,
   Search,
   Shapes,
@@ -37,6 +39,7 @@ import {
   StepForward,
   Type,
   Undo2,
+  User,
   Video,
   Volume2,
   VolumeX,
@@ -73,6 +76,7 @@ import {
   type ShellRegion,
   type WorkspaceId,
 } from "./editor-shell";
+import type { OperationHistoryEntry } from "@toolshape/studio-kernel";
 import { useStudioState } from "./studio-state";
 import {
   resolveAssetPreview,
@@ -517,10 +521,13 @@ const RIGHT_PANEL_DEFINITIONS: readonly { id: RightPanelId; label: string; icon:
   { id: "agent", label: "Agent", icon: Bot },
   { id: "quality", label: "Quality", icon: ShieldCheck },
   { id: "capture", label: "Capture", icon: MonitorPlay },
+  { id: "activity", label: "Activity", icon: History },
 ] as const;
 
 function RightRail({
   project,
+  history,
+  onRevert,
   scene,
   selectedNode,
   lastDiff,
@@ -530,6 +537,8 @@ function RightRail({
   apply,
 }: {
   project: StudioProject;
+  history: OperationHistoryEntry[];
+  onRevert: (operationId: string) => void;
   scene: Scene;
   selectedNode: SceneNode;
   lastDiff: ReturnType<typeof useStudioState>["lastDiff"];
@@ -695,6 +704,57 @@ function RightRail({
                 <span key={label}><Check size={13} aria-hidden="true" /><strong>{label}</strong><small>Passed</small></span>
               ))}
             </div>
+          </section>
+        )}
+
+        {activePanel === "activity" && (
+          <section className="activity-section">
+            <SectionTitle eyebrow="PROVENANCE" title="Activity" />
+            <p className="activity-lead">
+              Every change, in order, with who made it. Reverting one entry keeps everything applied
+              after it — nothing is rewound.
+            </p>
+            {history.length === 0 ? (
+              <div className="activity-empty">
+                <History size={18} aria-hidden="true" />
+                <strong>No changes yet</strong>
+                <small>Edits made here or by an agent will appear in this list.</small>
+              </div>
+            ) : (
+              <ol className="activity-list">
+                {[...history].reverse().map((entry) => (
+                  <li
+                    key={entry.operation_id}
+                    className={`activity-entry activity-entry--${entry.actor_type}`}
+                    data-revertible={entry.revertible ? "true" : "false"}
+                  >
+                    <span className="activity-entry__actor" title={`${entry.actor_type}: ${entry.actor_id}`}>
+                      {entry.actor_type === "agent" ? <Bot size={13} /> : <User size={13} />}
+                    </span>
+                    <span className="activity-entry__body">
+                      <strong>{entry.operation_types.join(", ") || entry.capability}</strong>
+                      <small>
+                        r{entry.revision_before} → r{entry.revision_after} ·{" "}
+                        {entry.actor_type === "agent" ? "agent" : "you"}
+                      </small>
+                      {!entry.revertible && entry.revert_blocked_reason && (
+                        <em className="activity-entry__blocked">{entry.revert_blocked_reason}</em>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      className="activity-entry__revert"
+                      disabled={!entry.revertible}
+                      aria-label={`Revert ${entry.operation_types.join(", ") || entry.capability}`}
+                      title={entry.revertible ? "Revert just this change" : entry.revert_blocked_reason}
+                      onClick={() => onRevert(entry.operation_id)}
+                    >
+                      <RotateCcw size={13} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
           </section>
         )}
 
@@ -1582,6 +1642,8 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
     lastDiff,
     renderJob,
     queueRender,
+    history,
+    revert,
   } = useStudioState(initialProject);
   const [shell, setShell] = useState(createEditorShellState);
   const [selectedNodeId, setSelectedNodeId] = useState("node-title");
@@ -1600,6 +1662,15 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
 
   const toggleRegion = (region: ShellRegion) => {
     setShell((current) => toggleShellRegion(current, region));
+  };
+
+  const revertWithNotice = (operationId: string) => {
+    try {
+      const diff = revert(operationId);
+      setNotice(`Reverted · ${diff?.summary ?? "change reversed"} · applied forward as a new revision`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "That change could not be reverted.");
+    }
   };
 
   const queueRenderWithNotice = () => {
@@ -1782,6 +1853,8 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
         {shell.visibility.right && (
           <RightRail
             project={project}
+            history={history}
+            onRevert={revertWithNotice}
             scene={scene}
             selectedNode={selectedNode}
             lastDiff={lastDiff}

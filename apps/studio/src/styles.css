@@ -1136,3 +1136,111 @@ button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible, inp
   color: var(--faint);
   line-height: 1.6;
 }
+
+/* ---------------------------------------------------------------------------
+   Activity panel — every change, who made it, and per-entry revert.
+   --------------------------------------------------------------------------- */
+
+.activity-section { display: flex; flex-direction: column; gap: 10px; padding: 14px; min-width: 0; }
+
+.activity-lead {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.activity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+  text-align: center;
+  border: 1px dashed var(--line-soft);
+  border-radius: 9px;
+  color: var(--faint);
+}
+
+.activity-empty strong { font-size: 12px; color: var(--muted); }
+.activity-empty small { font-size: 10px; }
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.activity-entry {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 26px;
+  align-items: start;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid var(--line-soft);
+  border-left-width: 2px;
+  border-radius: 8px;
+  background: var(--panel-raised);
+}
+
+/* Actor is legible at a glance: agent edits carry an accent spine. */
+.activity-entry--human { border-left-color: var(--line); }
+.activity-entry--agent { border-left-color: var(--accent); }
+
+.activity-entry[data-revertible="false"] { opacity: 0.72; }
+
+.activity-entry__actor {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.activity-entry--agent .activity-entry__actor { color: var(--accent); }
+
+.activity-entry__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.activity-entry__body strong {
+  font-size: 11px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.activity-entry__body small { font-size: 9.5px; color: var(--faint); letter-spacing: 0.03em; }
+
+.activity-entry__blocked {
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-style: normal;
+  line-height: 1.45;
+  color: var(--orange);
+  overflow-wrap: anywhere;
+}
+
+.activity-entry__revert {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.activity-entry__revert:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.activity-entry__revert:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.activity-entry__revert:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}

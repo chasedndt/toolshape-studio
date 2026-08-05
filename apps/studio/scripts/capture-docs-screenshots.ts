@@ -143,6 +143,63 @@ try {
   await selectRightPanel(page, "Capture");
   await shoot(page, "panel-capture-settings");
 
+  // --- Activity panel -------------------------------------------------------
+  // Exercised with real edits rather than screenshotted empty, so the captured
+  // proof shows genuine history entries and genuine revert affordances.
+  await openWorkspace(page, "Edit");
+
+  // Scrubs the playhead to a fraction of the timeline so a trim-at-playhead
+  // stays valid between edits.
+  async function scrubTo(fraction: number): Promise<void> {
+    const lane = page.locator("[data-timeline-lane]").first();
+    const box = await lane.boundingBox();
+    if (!box) return;
+    await page.mouse.click(box.x + box.width * fraction, box.y + box.height / 2);
+    await page.waitForTimeout(150);
+  }
+
+  const clipToEdit = page.locator(".timeline-clip__select").first();
+  if (await clipToEdit.isVisible().catch(() => false)) {
+    await clipToEdit.click();
+    await page.waitForTimeout(150);
+
+    // Two trims on the same clip. The second makes the first non-revertible,
+    // which is the state worth documenting: a blocked entry with its reason
+    // beside a revertible one.
+    for (const fraction of [0.62, 0.45]) {
+      await scrubTo(fraction);
+      const setOut = page.getByRole("button", { name: "Set out", exact: true });
+      if (await setOut.isEnabled().catch(() => false)) {
+        await setOut.click();
+        await page.waitForTimeout(220);
+      }
+    }
+  }
+
+  // Two transform edits on the same node. The second makes the first
+  // non-revertible, so the captured panel shows a blocked entry with its
+  // reason beside entries that are still revertible — the state that actually
+  // explains how selective revert behaves.
+  await openWorkspace(page, "Create");
+  const nudge = page.getByRole("button", { name: "Nudge +24", exact: true });
+  for (let press = 0; press < 2; press += 1) {
+    if (await nudge.isEnabled().catch(() => false)) {
+      await nudge.click();
+      await page.waitForTimeout(220);
+      await dismissNotice(page);
+    }
+  }
+
+  await openWorkspace(page, "Review");
+  await selectRightPanel(page, "Activity");
+  await shoot(page, "panel-activity");
+  const activity = page.locator(".activity-section");
+  if (await activity.isVisible().catch(() => false)) {
+    await dismissNotice(page);
+    await activity.screenshot({ path: path.join(outputDir, "detail-activity.png") });
+    captured.push("detail-activity");
+  }
+
   // --- Timeline detail ------------------------------------------------------
   await openWorkspace(page, "Edit");
   const timeline = page.locator(".timeline-panel");

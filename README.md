@@ -107,6 +107,21 @@ Direct manipulation: click a clip to select it, drag frame-snapped trim handles,
 
 ![Timeline with a clip selected](docs/assets/ui/detail-timeline-selected.png)
 
+### Activity — every change, and undo just one of them
+
+<img src="docs/assets/ui/detail-activity.png" width="520" alt="Activity panel showing three operations, one blocked from reverting">
+
+Every operation is listed with **who made it — you or an agent** — and what revision it produced. Any single entry can be reversed *without* rewinding what came after it.
+
+This is `git revert`, not `git reset`: the inverse is computed and applied **forward** as a new revision, so both the original edit and its reversal stay in history. Nothing is rewritten.
+
+Two things make it honest rather than magical, and both are visible above:
+
+- **The middle entry is blocked** because a later edit touched the same object. Reverting it would silently discard that newer work, so it's refused with the reason rather than guessed at.
+- **Operations whose inverse doesn't exist yet** say so. Undoing a split needs a merge; undoing an insertion needs a delete. Neither is in the vocabulary yet, so those declare themselves non-revertible instead of failing when you click.
+
+Agents get the identical surface: `studio_project_history` and `studio_operation_revert`.
+
 ### Create · Review · Automate
 
 | Create | Review | Automate |
@@ -128,6 +143,10 @@ Direct manipulation: click a clip to select it, drag frame-snapped trim handles,
 | Inspector | Agent | Quality |
 |---|---|---|
 | ![Inspector](docs/assets/ui/panel-inspector.png) | ![Agent](docs/assets/ui/panel-agent.png) | ![Quality](docs/assets/ui/panel-quality.png) |
+
+| Activity | | |
+|---|---|---|
+| ![Activity](docs/assets/ui/panel-activity.png) | | |
 
 | Capture plan | Timeline |
 |---|---|
@@ -190,6 +209,8 @@ Worked examples and error handling: **[Agent integration guide](docs/agent-integ
 | `studio_job_get` | Poll progress, stage and outputs | read only |
 | `studio_job_cancel` | Cooperative cancellation | local write |
 | `studio_operation_undo` | Reverse via a single-use undo token | local write |
+| `studio_project_history` | Every change with actor attribution and per-entry revertibility | read only |
+| `studio_operation_revert` | Reverse one past operation, keeping everything after it | local write |
 
 Capture capabilities join this list at Milestone 9 with no protocol change.
 
