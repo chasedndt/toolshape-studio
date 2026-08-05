@@ -34,7 +34,22 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today: `timeline.clip.split`, `timeline.clip.trim`, `timeline.clip.set-audio`, `style.profile.apply`.
+Operation types today (10):
+
+| Operation | Domain |
+|---|---|
+| `scene.node.add` | design |
+| `scene.node.update-transform` | design |
+| `scene.node.update-text` | design |
+| `timeline.clip.split` | edit |
+| `timeline.clip.trim` | edit |
+| `timeline.clip.set-audio` | edit |
+| `timeline.caption.upsert` | edit |
+| `animation.keyframe.set` | motion |
+| `effect.blur.set` | effects |
+| `style.profile.apply` | style |
+
+Notably **absent**, and the reason Milestone 8 exists: there is no way to move, reorder, delete, duplicate, or re-speed a clip. Split and trim alone cannot assemble a video.
 
 ### studio.project.render
 Queues a durable render job and returns immediately with `accepted_job`. The public input names an asset, a preset and a safe output filename — it **never** carries FFmpeg arguments. Command construction and path resolution happen inside the trusted worker (ADR 0007).

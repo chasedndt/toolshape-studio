@@ -269,10 +269,16 @@ The `operations` array carries the kernel's typed operation union. Each entry ne
 
 | Type | Payload |
 |---|---|
+| `scene.node.add` | `sceneId`, `node` |
+| `scene.node.update-transform` | `sceneId`, `nodeId`, `patch` |
+| `scene.node.update-text` | `sceneId`, `nodeId`, `content` |
 | `timeline.clip.split` | `trackId`, `clipId`, `splitAt` (rational), `rightClipId` |
 | `timeline.clip.trim` | `trackId`, `clipId`, `newStart`, `newDuration` (rationals), `ripple` |
-| `timeline.clip.set-audio` | `trackId`, `clipId`, audio settings |
-| `style.profile.apply` | style profile reference |
+| `timeline.clip.set-audio` | `trackId`, `clipId`, `gainDb`, `muted`, `fadeIn`, `fadeOut` |
+| `timeline.caption.upsert` | `trackId`, `segment` |
+| `animation.keyframe.set` | `sceneId`, `nodeId`, `property`, `keyframe` |
+| `effect.blur.set` | `sceneId`, `nodeId`, `effectId`, `radius`, `enabled` |
+| `style.profile.apply` | `styleProfileRef` |
 
 Times are **rational**, not floats: `{"numerator": 2, "denominator": 1}` is exactly two seconds. This is deliberate — floating-point frame arithmetic accumulates error across edits. See [ADR 0003](../adr/0003-rational-time-model.md).
 
