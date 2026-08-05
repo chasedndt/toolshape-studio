@@ -311,6 +311,12 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
       };
     }
 
+    case "capture.to-scene":
+      return notRevertible(
+        "revert.no-inverse-capability",
+        "Undoing a projection needs a track removal operation, which does not exist yet.",
+      );
+
     case "capture.redaction.add":
       return {
         revertible: true,
@@ -551,6 +557,8 @@ export function operationTargets(operation: StudioOperation): string[] {
       return [`track:${operation.payload.trackId}`, `clip:${operation.payload.trackId}:${operation.payload.clip.id}`];
     case "capture.zoom.set-plan":
       return [`capture:${operation.payload.captureId}`, `capture-zoom:${operation.payload.captureId}`];
+    case "capture.to-scene":
+      return [`capture:${operation.payload.captureId}`, `track:${operation.payload.trackId}`];
     case "capture.redaction.add":
       return [
         `capture:${operation.payload.captureId}`,

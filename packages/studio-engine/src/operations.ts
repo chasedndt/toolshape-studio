@@ -520,6 +520,57 @@ export function applyStudioOperation(
       summary = `Removed a ${existing.kind} redaction from “${capture.source.label}”.`;
       break;
     }
+    case "capture.to-scene": {
+      const capture = findCapture(project, operation.payload.captureId);
+      if (project.timeline.tracks.some((track) => track.id === operation.payload.trackId)) {
+        throw new RangeError(`Track already exists: ${operation.payload.trackId}`);
+      }
+      const media = project.assets.find((asset) => asset.id === capture.mediaAssetId);
+      if (!media) {
+        throw new RangeError(`Capture media is not a project asset: ${capture.mediaAssetId}`);
+      }
+
+      // A capture's declared duration and its media should agree, but if they
+      // disagree the clip is clamped to what the source actually contains.
+      // Projecting the longer figure would produce a clip reading past the end
+      // of its own asset, which the validator rejects — better to make the
+      // projection usable and let validation report the capture itself.
+      const projectedDuration = media.duration && compareRational(capture.duration, media.duration) > 0
+        ? media.duration
+        : capture.duration;
+
+      // The capture is projected, not consumed. Its cursor, event and window
+      // tracks stay intact so a zoom plan can still be re-derived after the
+      // scene has been edited (CAP-7).
+      const clip: Clip = {
+        id: `clip-${capture.id}`,
+        name: capture.source.label,
+        assetId: capture.mediaAssetId,
+        start: rational(0),
+        duration: structuredClone(projectedDuration),
+        sourceIn: rational(0),
+        revision: 0,
+        audio: { gainDb: 0, muted: false, fadeIn: rational(0), fadeOut: rational(0) },
+        effectIds: [],
+      };
+      project.timeline.tracks.push({
+        id: operation.payload.trackId,
+        kind: "video",
+        name: capture.source.label,
+        locked: false,
+        clips: [clip],
+      });
+
+      // A projection that left the timeline shorter than the clip would produce
+      // a project that fails its own validation.
+      if (compareRational(projectedDuration, project.timeline.duration) > 0) {
+        project.timeline.duration = structuredClone(projectedDuration);
+      }
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${operation.payload.trackId}`);
+      summary = `Projected “${capture.source.label}” onto the timeline.`;
+      break;
+    }
     case "scene.node.remove": {
       const scene = findScene(project, operation.payload.sceneId);
       const node = findNode(scene, operation.payload.nodeId);

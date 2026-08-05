@@ -360,6 +360,11 @@ export type StudioOperation =
     >
   | Operation<"capture.redaction.add", { captureId: Id; redaction: CaptureRedaction }>
   | Operation<"capture.redaction.remove", { captureId: Id; redactionId: Id }>
+  | Operation<
+      "capture.to-scene",
+      /** Projects a capture into an editable track. The capture is not consumed. */
+      { captureId: Id; trackId: Id }
+    >
   | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 
