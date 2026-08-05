@@ -4,7 +4,7 @@
 
 **An agent-native content studio. Screen capture, video editing and visual design in one semantic project — operable by an AI agent as competently as by a human.**
 
-[Architecture](docs/architecture/DIAGRAMS.md) · [PRD](products/studio/PRD-V2.md) · [Agent integration](docs/agent-integration/AGENT-INTEGRATION-GUIDE.md) · [Capabilities](docs/agent-integration/CAPABILITY-CATALOG.md) · [ADRs](docs/adr/) · [Security](docs/security/THREAT-MODEL.md)
+[Roadmap](docs/product/ROADMAP.md) · [Architecture](docs/architecture/DIAGRAMS.md) · [PRD](products/studio/PRD-V2.md) · [Agent integration](docs/agent-integration/AGENT-INTEGRATION-GUIDE.md) · [Capabilities](docs/agent-integration/CAPABILITY-CATALOG.md) · [ADRs](docs/adr/) · [Security](docs/security/THREAT-MODEL.md)
 
 </div>
 
@@ -236,7 +236,7 @@ Shipped: unified project model, typed operations with revisions and idempotency,
 
 Not yet built, and not claimed: the capture worker, the policy engine, the secret broker, network egress, at-rest encryption, sandboxed codec execution, the Tauri desktop shell, and real-time collaboration. The [threat model](docs/security/THREAT-MODEL.md) enumerates these explicitly as non-claims rather than leaving them ambiguous.
 
-Roadmap: [PRD v2 §10](products/studio/PRD-V2.md) · [delivery plan](docs/18-delivery-plan.md) · [non-goals](docs/19-non-goals.md)
+**Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md)** — phased build order for all three pillars, including why agent-native screen capture is achievable without native code first. Also: [PRD v2](products/studio/PRD-V2.md) · [non-goals](docs/19-non-goals.md)
 
 ---
 
