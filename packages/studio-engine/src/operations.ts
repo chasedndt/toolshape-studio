@@ -1,6 +1,7 @@
 import type {
   AudioTrack,
   CaptionTrack,
+  CaptureDocument,
   Clip,
   Scene,
   SceneNode,
@@ -74,6 +75,14 @@ function findCaptionTrack(project: StudioProject, trackId: string): CaptionTrack
     throw new TypeError(`Track ${trackId} is not a caption track.`);
   }
   return track;
+}
+
+function findCapture(project: StudioProject, captureId: string): CaptureDocument {
+  const capture = project.captures.find((candidate) => candidate.id === captureId);
+  if (!capture) {
+    throw new RangeError(`Unknown capture: ${captureId}`);
+  }
+  return capture;
 }
 
 function findClip(track: VideoTrack | AudioTrack, clipId: string): Clip {
@@ -475,6 +484,40 @@ export function applyStudioOperation(
       project.timeline.revision += 1;
       changedPaths.push(`timeline.tracks.${track.id}.clips.${inserted.id}`);
       summary = `Inserted “${inserted.name}”.`;
+      break;
+    }
+    case "capture.zoom.set-plan": {
+      const capture = findCapture(project, operation.payload.captureId);
+      // Marked authored, so a later derivation cannot silently overwrite a
+      // decision a person or an agent deliberately made (CAP-5).
+      capture.zoomPlan = { ...structuredClone(operation.payload.plan), derived: false };
+      capture.zoomPlan.revision += 1;
+      capture.revision += 1;
+      changedPaths.push(`captures.${capture.id}.zoomPlan`);
+      summary = `Set an authored zoom plan on “${capture.source.label}”.`;
+      break;
+    }
+    case "capture.redaction.add": {
+      const capture = findCapture(project, operation.payload.captureId);
+      if (capture.redactions.some((candidate) => candidate.id === operation.payload.redaction.id)) {
+        throw new RangeError(`Redaction already exists: ${operation.payload.redaction.id}`);
+      }
+      capture.redactions.push(structuredClone(operation.payload.redaction));
+      capture.revision += 1;
+      changedPaths.push(`captures.${capture.id}.redactions.${operation.payload.redaction.id}`);
+      summary = `Added a ${operation.payload.redaction.kind} redaction to “${capture.source.label}”.`;
+      break;
+    }
+    case "capture.redaction.remove": {
+      const capture = findCapture(project, operation.payload.captureId);
+      const existing = capture.redactions.find((candidate) => candidate.id === operation.payload.redactionId);
+      if (!existing) {
+        throw new RangeError(`Unknown redaction: ${operation.payload.redactionId}`);
+      }
+      capture.redactions = capture.redactions.filter((candidate) => candidate.id !== existing.id);
+      capture.revision += 1;
+      changedPaths.push(`captures.${capture.id}.redactions.${existing.id}`);
+      summary = `Removed a ${existing.kind} redaction from “${capture.source.label}”.`;
       break;
     }
     case "scene.node.remove": {

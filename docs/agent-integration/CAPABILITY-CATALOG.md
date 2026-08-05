@@ -34,7 +34,7 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today (18):
+Operation types today (21):
 
 | Operation | Domain |
 |---|---|
@@ -56,6 +56,9 @@ Operation types today (18):
 | `timeline.clip.set-speed` | assembly |
 | `timeline.clip.insert` | assembly |
 | `scene.node.remove` | design |
+| `capture.zoom.set-plan` | capture |
+| `capture.redaction.add` | capture |
+| `capture.redaction.remove` | capture |
 
 Speed is a **rational ratio**, not a float: `2/1` is double speed, and a clip taken to `1/3` and back returns to its exact original duration (ADR 0003).
 
@@ -86,10 +89,12 @@ Specified in [`docs/product/CAPTURE-PILLAR.md`](../product/CAPTURE-PILLAR.md). T
 | `studio.capture.start` | Begin a recording against a declared source | reversible_local_write |
 | `studio.capture.stop` | Finalize media, register the capture document | reversible_local_write |
 | `studio.capture.get_session` | Poll an in-flight recording | read_only |
-| `studio.capture.plan_zoom` | Derive or author zoom keyframes from the event track | reversible_local_write |
+| `studio.capture.plan_zoom` | Derive zoom keyframes from the event track. **Authoring one is already shipped** as `capture.zoom.set-plan` | reversible_local_write |
 | `studio.capture.set_overlay` | Camera bubble, backdrop, cursor styling | reversible_local_write |
 | `studio.capture.redact` | Mask regions, drop keystroke spans, blur windows | reversible_local_write |
 | `studio.capture.to_scene` | Project a capture into an editable timeline scene | reversible_local_write |
+
+Capture *editing* needed no new capability: adjusting a zoom plan or a redaction is an ordinary operation carried by `apply_operations`, so it is revision-checked, idempotent, reversible and agent-callable for free. Only the capabilities that are not project mutations — enumerating sources, starting and stopping a recording — need the worker.
 
 **`studio.capture.start` carries a hard invariant no grant can override:** recording requires explicit OS-level consent and shows a non-suppressible indicator. An agent can request a recording; it cannot start one silently.
 

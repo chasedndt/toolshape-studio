@@ -3,7 +3,7 @@ import type { StudioProject } from "@toolshape/studio-domain";
 const second = (value: number) => ({ numerator: value, denominator: 1 });
 
 const goldenProject: StudioProject = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   id: "project-launch-film",
   name: "Launch Film — Citrus System",
   revision: 0,
@@ -321,6 +321,7 @@ const goldenProject: StudioProject = {
       frameRate: { numerator: 30, denominator: 1 },
     },
   ],
+  captures: [],
   provenance: [],
 };
 

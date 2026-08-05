@@ -1,3 +1,5 @@
+import type { CaptureDocument, CaptureRedaction, ZoomPlan } from "./capture";
+
 export type Id = string;
 
 export interface RationalTime {
@@ -246,7 +248,7 @@ export interface OperationRecord {
 }
 
 export interface StudioProject {
-  schemaVersion: 3;
+  schemaVersion: 4;
   id: Id;
   name: string;
   revision: number;
@@ -257,8 +259,17 @@ export interface StudioProject {
   effects: Effect[];
   styleProfileRef: StyleProfileRef | null;
   renderPresets: RenderPreset[];
+  /**
+   * Screen captures belonging to this project.
+   *
+   * They live here rather than in a separate store because every capture edit
+   * is an ordinary revision-checked operation. Keeping them outside the project
+   * would mean a second source of truth with its own concurrency story.
+   */
+  captures: CaptureDocument[];
   provenance: OperationRecord[];
 }
+
 
 type Operation<TType extends string, TPayload> = {
   operationId: Id;
@@ -342,6 +353,13 @@ export type StudioOperation =
       /** Carries the whole clip, so a deleted one can be put back exactly. */
       { trackId: Id; clip: Clip; ripple: boolean }
     >
+  | Operation<
+      "capture.zoom.set-plan",
+      /** An authored plan replaces a derived one and is never re-derived (CAP-5). */
+      { captureId: Id; plan: ZoomPlan }
+    >
+  | Operation<"capture.redaction.add", { captureId: Id; redaction: CaptureRedaction }>
+  | Operation<"capture.redaction.remove", { captureId: Id; redactionId: Id }>
   | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 

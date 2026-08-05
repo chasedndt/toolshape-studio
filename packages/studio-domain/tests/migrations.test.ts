@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
-import { migrateStudioProject } from "../src";
+import { migrateStudioProject, CURRENT_STUDIO_SCHEMA_VERSION } from "../src";
 
 describe("Studio project migrations", () => {
   it("returns an isolated v3 document", () => {
@@ -8,7 +8,7 @@ describe("Studio project migrations", () => {
     const migrated = migrateStudioProject(source);
     expect(migrated).toEqual(source);
     expect(migrated).not.toBe(source);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(CURRENT_STUDIO_SCHEMA_VERSION);
   });
 
   it("migrates v2 image derivatives to an explicit nullable probe", () => {
@@ -28,7 +28,7 @@ describe("Studio project migrations", () => {
       provenance: { sourceDigest: assets[0].contentHash, toolchain: [] },
     }];
     const migrated = migrateStudioProject(source);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(CURRENT_STUDIO_SCHEMA_VERSION);
     expect(migrated.assets[0].derivatives[0].probe).toBeNull();
   });
 
@@ -42,7 +42,7 @@ describe("Studio project migrations", () => {
       return legacy;
     });
     const migrated = migrateStudioProject(source);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(CURRENT_STUDIO_SCHEMA_VERSION);
     expect(migrated.assets.every((asset) => asset.probe === null)).toBe(true);
     expect(migrated.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);
   });
@@ -58,7 +58,7 @@ describe("Studio project migrations", () => {
       return legacy;
     });
     const migrated = migrateStudioProject(source);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(CURRENT_STUDIO_SCHEMA_VERSION);
     expect(migrated.revision).toBe(0);
     expect(migrated.provenance).toEqual([]);
     expect(migrated.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);

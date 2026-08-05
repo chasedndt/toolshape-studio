@@ -1,6 +1,6 @@
 import type { StudioProject } from "./model";
 
-export const CURRENT_STUDIO_SCHEMA_VERSION = 3 as const;
+export const CURRENT_STUDIO_SCHEMA_VERSION = 4 as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -20,6 +20,7 @@ export function migrateStudioProject(input: unknown): StudioProject {
     input.schemaVersion === 0 ||
     input.schemaVersion === 1 ||
     input.schemaVersion === 2 ||
+    input.schemaVersion === 3 ||
     input.schemaVersion === undefined
   ) {
     const assets = Array.isArray(input.assets)
@@ -43,6 +44,9 @@ export function migrateStudioProject(input: unknown): StudioProject {
       renderPresets: Array.isArray(input.renderPresets) ? input.renderPresets : [],
       styleProfileRef: input.styleProfileRef ?? null,
       provenance: Array.isArray(input.provenance) ? input.provenance : [],
+      // v4 adds capture documents. A project written before captures existed
+      // simply has none; nothing about its existing content changes.
+      captures: Array.isArray(input.captures) ? input.captures : [],
       assets,
     };
 

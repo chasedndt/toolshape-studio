@@ -1,7 +1,7 @@
 # Capture pillar specification
 
 **Date:** 2026-08-05
-**Status:** PARTIAL — the capture document, deterministic zoom derivation and the camera path (framing, aspect reframing, cursor smoothing) are implemented and tested. The capture worker, OS APIs, backdrop rendering and redaction remain unbuilt.
+**Status:** PARTIAL — the capture document lives on the project at schema v4, and deterministic zoom derivation, the camera path (framing, aspect reframing, cursor smoothing), authored zoom plans and redaction editing are implemented and tested. The capture worker, OS APIs and backdrop rendering remain unbuilt.
 **Parent:** `products/studio/PRD-V2.md` §3
 
 ---

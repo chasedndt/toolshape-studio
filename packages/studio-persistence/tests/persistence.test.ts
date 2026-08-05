@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { CURRENT_STUDIO_SCHEMA_VERSION } from "@toolshape/studio-domain";
 import { STUDIO_SCHEMA_VERSION, StudioKernel, type OperationEnvelope } from "@toolshape/studio-kernel";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 import { ContentAddressedAssetStore, SqliteStudioRepository } from "../src";
@@ -81,7 +82,7 @@ describe("SQLite project repository", () => {
     repository.close();
     const reopened = new SqliteStudioRepository(databasePath);
     const project = reopened.getProject("project-launch-film");
-    expect(project?.schemaVersion).toBe(3);
+    expect(project?.schemaVersion).toBe(CURRENT_STUDIO_SCHEMA_VERSION);
     expect(project?.assets.every((asset) => asset.derivatives.length === 0)).toBe(true);
     reopened.close();
   });

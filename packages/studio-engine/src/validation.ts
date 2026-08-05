@@ -1,5 +1,6 @@
 import type {
   Asset,
+  CaptureDocument,
   Clip,
   RationalTime,
   Scene,
@@ -206,6 +207,60 @@ function validateScene(scene: Scene, path: string): ValidationIssue[] {
   return issues;
 }
 
+/**
+ * Capture invariants.
+ *
+ * Zoom scale below 1 would frame more than the source contains, and a centre
+ * outside 0..1 points off the frame entirely — both render as black bars rather
+ * than failing loudly, so they are caught here instead.
+ */
+function validateCapture(capture: CaptureDocument, path: string): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  for (const [index, keyframe] of capture.zoomPlan.keyframes.entries()) {
+    const keyframePath = `${path}.zoomPlan.keyframes[${index}]`;
+    if (keyframe.scale < 1) {
+      issues.push({
+        code: "capture.zoom-below-source",
+        severity: "error",
+        path: `${keyframePath}.scale`,
+        message: "Zoom scale below 1 would frame more than the source contains.",
+      });
+    }
+    if (keyframe.centerX < 0 || keyframe.centerX > 1 || keyframe.centerY < 0 || keyframe.centerY > 1) {
+      issues.push({
+        code: "capture.zoom-centre-outside-frame",
+        severity: "error",
+        path: `${keyframePath}.center`,
+        message: "Zoom centre must fall inside the frame.",
+      });
+    }
+  }
+
+  const times = capture.zoomPlan.keyframes.map((keyframe) => toSeconds(keyframe.time));
+  if (times.some((time, index) => index > 0 && time < times[index - 1])) {
+    issues.push({
+      code: "capture.zoom-keyframes-unordered",
+      severity: "error",
+      path: `${path}.zoomPlan.keyframes`,
+      message: "Zoom keyframes must be ordered by time.",
+    });
+  }
+
+  for (const [index, redaction] of capture.redactions.entries()) {
+    if (compareRational(redaction.from, redaction.to) >= 0) {
+      issues.push({
+        code: "capture.redaction-empty-range",
+        severity: "error",
+        path: `${path}.redactions[${index}]`,
+        message: "A redaction must cover a positive time range.",
+      });
+    }
+  }
+
+  return issues;
+}
+
 export function validateStudioProject(project: StudioProject): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const ids = new Map<string, string>();
@@ -294,6 +349,11 @@ export function validateStudioProject(project: StudioProject): ValidationIssue[]
       path: "timeline.duration",
       message: "Timeline duration must be positive.",
     });
+  }
+
+  for (const [index, capture] of (project.captures ?? []).entries()) {
+    register(capture.id, `captures[${index}].id`);
+    issues.push(...validateCapture(capture, `captures[${index}]`));
   }
 
   return issues;

@@ -292,6 +292,53 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
         ],
       };
 
+    case "capture.zoom.set-plan": {
+      const capture = before.captures.find((candidate) => candidate.id === operation.payload.captureId);
+      if (!capture) {
+        return notRevertible("revert.target-missing", "The capture this plan belongs to no longer exists.");
+      }
+      // Restores the previous plan verbatim, including whether it was derived
+      // or authored — reverting to a derived plan must not silently mark it as
+      // a deliberate choice.
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "capture.zoom.set-plan",
+            payload: { captureId: operation.payload.captureId, plan: structuredClone(capture.zoomPlan) },
+          },
+        ],
+      };
+    }
+
+    case "capture.redaction.add":
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "capture.redaction.remove",
+            payload: { captureId: operation.payload.captureId, redactionId: operation.payload.redaction.id },
+          },
+        ],
+      };
+
+    case "capture.redaction.remove": {
+      const capture = before.captures.find((candidate) => candidate.id === operation.payload.captureId);
+      const redaction = capture?.redactions.find((candidate) => candidate.id === operation.payload.redactionId);
+      if (!redaction) {
+        return notRevertible("revert.target-missing", "The removed redaction is not present in the prior snapshot.");
+      }
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "capture.redaction.add",
+            payload: { captureId: operation.payload.captureId, redaction: structuredClone(redaction) },
+          },
+        ],
+      };
+    }
+
     case "timeline.clip.insert":
       return {
         revertible: true,
@@ -502,6 +549,18 @@ export function operationTargets(operation: StudioOperation): string[] {
       ];
     case "timeline.clip.insert":
       return [`track:${operation.payload.trackId}`, `clip:${operation.payload.trackId}:${operation.payload.clip.id}`];
+    case "capture.zoom.set-plan":
+      return [`capture:${operation.payload.captureId}`, `capture-zoom:${operation.payload.captureId}`];
+    case "capture.redaction.add":
+      return [
+        `capture:${operation.payload.captureId}`,
+        `redaction:${operation.payload.captureId}:${operation.payload.redaction.id}`,
+      ];
+    case "capture.redaction.remove":
+      return [
+        `capture:${operation.payload.captureId}`,
+        `redaction:${operation.payload.captureId}:${operation.payload.redactionId}`,
+      ];
     case "scene.node.remove":
       return [`scene:${operation.payload.sceneId}`, `node:${operation.payload.sceneId}:${operation.payload.nodeId}`];
     case "timeline.caption.upsert":
