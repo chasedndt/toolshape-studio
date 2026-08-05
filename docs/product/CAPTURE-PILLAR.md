@@ -1,7 +1,7 @@
 # Capture pillar specification
 
 **Date:** 2026-08-05
-**Status:** PARTIAL — the capture document and deterministic zoom derivation are implemented and tested (`packages/studio-engine/src/zoom-derivation.ts`). The capture worker and OS APIs remain unbuilt.
+**Status:** PARTIAL — the capture document, deterministic zoom derivation and the camera path (framing, aspect reframing, cursor smoothing) are implemented and tested. The capture worker, OS APIs, backdrop rendering and redaction remain unbuilt.
 **Parent:** `products/studio/PRD-V2.md` §3
 
 ---

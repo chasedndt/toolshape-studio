@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-05
 **Runtime:** Codex
-**Status:** IN PROGRESS / MILESTONE 9, phase 1
+**Status:** PHASE 1 AND 2 COMPLETE / MILESTONE 9
 **Spec:** `docs/product/CAPTURE-PILLAR.md`
 
 ## Outcome
@@ -92,6 +92,24 @@ identical plans — which is what makes a preview trustworthy and a diff meaning
 - A plan that would exceed the configured zoom rate is rejected with a reason.
 - Two regions closer than the settle time merge into one.
 - A single isolated click below the hold threshold produces no zoom.
+
+## Phase 2 — camera path (complete)
+
+Turns a zoom plan into concrete framing over time, still with no platform
+dependency.
+
+- `sampleZoomAt` interpolates the plan with easing, holding the first and last
+  values outside its range rather than extrapolating toward a framing nobody
+  asked for.
+- `planCameraPath` produces a crop rectangle per frame. The crop always matches
+  the **output** aspect, not the source's, which is what makes one recording
+  become a 16:9 lesson and a 9:16 short without re-deriving anything — the plan
+  stores points of interest normalised to the frame rather than pixel
+  rectangles. Crops are clamped inside the source, so a region centred near an
+  edge is pushed inward instead of sampling pixels that do not exist.
+- `smoothCursorPath` runs an exponential filter forwards then backwards, so the
+  smoothed pointer has no directional lag. A single pass would make it trail
+  behind where it actually was.
 
 ## Non-goals for this phase
 
