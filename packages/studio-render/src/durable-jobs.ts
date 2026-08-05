@@ -18,6 +18,7 @@ import {
   createFfmpegRenderPlan,
   type RenderPlan,
 } from "./render-plan";
+import { createTimelineRenderPlan } from "./timeline-render-plan";
 import {
   executeVerifiedRender,
   probeMediaToolchain,
@@ -136,6 +137,35 @@ export class DurableRenderJobService implements StudioJobGateway {
     return this.repository.recoverInterruptedJobs();
   }
 
+  /**
+   * Builds a timeline render plan, or returns null when the timeline cannot be
+   * rendered from what is on disk.
+   *
+   * Resolution failures are expected rather than exceptional: a project can
+   * reference an asset whose bytes were never imported. Returning null lets the
+   * caller fall back instead of failing the job.
+   */
+  private planTimelineRender(
+    project: StudioProject,
+    outputPath: string,
+    width: number,
+    height: number,
+    frameRate: number,
+  ): RenderPlan | null {
+    try {
+      const sources = project.assets
+        .filter((asset) => asset.kind === "video" || asset.kind === "audio")
+        .map((asset) => ({
+          assetId: asset.id,
+          path: contentPath(this.contentRoot, asset.sourceRef),
+          hasAudio: asset.kind === "audio" || Boolean(asset.probe?.audio),
+        }));
+      return createTimelineRenderPlan({ project, sources, outputPath, width, height, frameRate });
+    } catch {
+      return null;
+    }
+  }
+
   async runNext(): Promise<DurableJob | null> {
     const job = this.repository.claimNextJob();
     if (!job) return null;
@@ -159,15 +189,21 @@ export class DurableRenderJobService implements StudioJobGateway {
       `${job.job_id}-${request.output_name}`,
     );
     if (!isWithin(this.artifactRoot, outputPath)) throw new TypeError("Render output escaped root.");
-    const durationSeconds = toSeconds(project.timeline.duration);
-    const plan = createFfmpegRenderPlan({
-      coverPath,
-      outputPath,
-      width: preset.width,
-      height: preset.height,
-      durationSeconds,
-      frameRate: preset.frameRate.numerator / preset.frameRate.denominator,
-    });
+    const frameRate = preset.frameRate.numerator / preset.frameRate.denominator;
+
+    // Render the timeline when its sources resolve. The cover render remains
+    // the fallback for a project whose media is not yet in the content store —
+    // a still frame is a poor export, but it is better than failing a job the
+    // caller can do nothing about.
+    const plan = this.planTimelineRender(project, outputPath, preset.width, preset.height, frameRate)
+      ?? createFfmpegRenderPlan({
+        coverPath,
+        outputPath,
+        width: preset.width,
+        height: preset.height,
+        durationSeconds: toSeconds(project.timeline.duration),
+        frameRate,
+      });
     const controller = new AbortController();
     const poll = setInterval(() => {
       const current = this.repository.getJob(job.job_id);
@@ -179,7 +215,7 @@ export class DurableRenderJobService implements StudioJobGateway {
         signal: controller.signal,
         onProgress: (seconds) => {
           job.progress = {
-            fraction: Math.max(0, Math.min(0.99, seconds / durationSeconds)),
+            fraction: Math.max(0, Math.min(0.99, seconds / plan.expectation.durationSeconds)),
             stage: "rendering",
             message: `Rendered ${seconds.toFixed(2)} seconds.`,
           };
