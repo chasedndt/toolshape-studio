@@ -50,18 +50,27 @@ HTTP is the mode that closes the gap this ADR exists to close. stdio is included
 
 ### Tool surface
 
-One MCP tool per kernel capability, named to match:
+One MCP tool per kernel capability. Tool names substitute underscores for dots
+because MCP clients commonly constrain tool names to `[a-zA-Z0-9_-]`; the dotted
+capability ID is carried in the tool metadata and description so discovery stays
+unambiguous.
 
 ```text
-studio.project.inspect            read-only
-studio.project.plan               read-only (dry-run projection)
-studio.project.validate           read-only
-studio.project.apply_operations   mutating, revision-checked, idempotent
-studio.project.render             mutating, returns accepted_job
-studio.job.get                    read-only
-studio.job.cancel                 mutating, idempotent
-studio.operation.undo             mutating, token-bound
+studio_project_inspect            → studio.project.inspect            read-only
+studio_project_plan               → studio.project.plan               simulation, dry-run forced
+studio_project_validate           → studio.project.validate           read-only
+studio_project_apply_operations   → studio.project.apply_operations   mutating, revision-checked, idempotent
+studio_project_render             → studio.project.render             mutating, returns accepted_job
+studio_job_get                    → studio.job.get                    read-only
+studio_job_cancel                 → studio.job.cancel                 mutating, idempotent
+studio_operation_undo             → studio.operation.undo             mutating, token-bound
 ```
+
+The tool input schema is deliberately **not** the raw operation envelope. An
+agent supplies `project_id`, `expected_revision`, and typed operations; the
+adapter fills identity, trace, retention, and risk from the authenticated
+session. Making an agent hand-assemble trace IDs and retention classes would be
+poor agent experience and would let a caller assert its own actor identity.
 
 Capture capabilities (PRD v2 §3.3) join this list at Milestone 9 with no protocol change.
 

@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "packageManager": "npm@11.11.0",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm --prefix apps/studio run dev",
     "build": "npm --prefix apps/studio run build",
@@ -17,6 +20,9 @@
     "smoke:cli": "npm --prefix apps/studio run smoke:cli",
     "smoke:render-job": "npm --prefix apps/studio run smoke:render-job",
     "smoke:media-ingest": "npm --prefix apps/studio run smoke:media-ingest",
-    "studio": "tsx packages/studio-cli/src/bin.ts"
+    "studio": "tsx packages/studio-cli/src/bin.ts",
+    "mcp": "tsx packages/studio-mcp/src/bin.ts",
+    "mcp:http": "tsx packages/studio-mcp/src/bin.ts --transport http --port 7777",
+    "smoke:mcp": "npm --prefix apps/studio run smoke:mcp"
   }
 }

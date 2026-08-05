@@ -1,0 +1,14 @@
+{
+  "name": "@toolshape/studio-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@toolshape/studio-domain": "file:../studio-domain",
+    "@toolshape/studio-kernel": "file:../studio-kernel",
+    "@toolshape/studio-persistence": "file:../studio-persistence",
+    "@toolshape/studio-render": "file:../studio-render",
+    "@toolshape/studio-sdk": "file:../studio-sdk"
+  },
+  "exports": { ".": "./src/index.ts" }
+}

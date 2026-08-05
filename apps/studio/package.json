@@ -15,7 +15,8 @@
     "smoke:runtime": "tsx scripts/smoke-runtime.ts",
     "smoke:cli": "tsx scripts/smoke-cli.ts",
     "smoke:render-job": "tsx scripts/smoke-render-job.ts",
-    "smoke:media-ingest": "tsx scripts/smoke-media-ingest.ts"
+    "smoke:media-ingest": "tsx scripts/smoke-media-ingest.ts",
+    "smoke:mcp": "tsx scripts/smoke-mcp.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",
@@ -26,7 +27,8 @@
     "@toolshape/studio-sdk": "file:../../packages/studio-sdk",
     "lucide-react": "^1.24.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "@toolshape/studio-mcp": "file:../../packages/studio-mcp"
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
