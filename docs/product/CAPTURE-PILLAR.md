@@ -1,7 +1,7 @@
 # Capture pillar specification
 
 **Date:** 2026-08-05
-**Status:** SPECIFIED — not implemented. Target: Milestone 9.
+**Status:** PARTIAL — the capture document and deterministic zoom derivation are implemented and tested (`packages/studio-engine/src/zoom-derivation.ts`). The capture worker and OS APIs remain unbuilt.
 **Parent:** `products/studio/PRD-V2.md` §3
 
 ---
@@ -113,8 +113,14 @@ flowchart TD
     K --> RENDER["render-time interpolation"]
 ```
 
-Constraints:
+Implemented constraints:
 
+- **Overlapping regions are refused, not blended.** A frame cannot be zoomed to
+  two places at once, so clusters active over the same moments are ambiguous.
+  The denser region wins and the other is left unzoomed — deterministic, and
+  visually calmer than inventing a framing that covers both.
+- **Leads are fitted to the gap.** A region's zoom-out never runs into the next
+  zoom-in; the available gap is shared between them.
 - **Bounded zoom rate.** A zoom plan that changes faster than a legibility threshold is rejected at validation, not merely discouraged — rapid zoom oscillation is the characteristic failure of naive auto-zoom.
 - **Window-aware.** Zoom regions clamp to window bounds from the window track, so a zoom never frames half a window and half the desktop.
 - **Idle suppression.** Long stretches with no events produce no zoom, rather than drifting.
