@@ -132,11 +132,23 @@ flowchart LR
 
 ---
 
-### Phase A — Editorial foundation
+### Phase A — Foundation
 
-#### Milestone 8 · Assembly operations and the effect stack
+#### Milestone 8 · Connected shell
 
-**Why first:** you currently cannot assemble a video. Split and trim exist; move, reorder, ripple-delete, duplicate and speed do not. Every downstream pillar produces material that lands on the timeline, so an incomplete timeline caps the value of everything after it.
+**Why this is first, ahead of features:** the editor UI constructs its own in-memory kernel (`apps/studio/src/studio-state.ts`), while the CLI and MCP transport run against SQLite. Human and agent editing share an operation path but **not a store** — browser edits vanish on reload and are invisible to agents, and agent edits are invisible to the browser.
+
+The product's central claim is that a human and an agent edit the same project. That is currently true architecturally and false operationally. Nothing built on top of it is worth much until it is true in both senses.
+
+It also establishes the seam ADR 0013 needs: the UI becomes a **kernel client with a swappable transport** — HTTP now, Tauri IPC at M11, behind an unchanged interface.
+
+Plan: [`TOOLSHAPE-STUDIO-CONNECTED-SHELL.md`](../plans/TOOLSHAPE-STUDIO-CONNECTED-SHELL.md)
+
+**Exit:** a UI edit survives reload; an agent edit appears in the UI; a stale UI write is refused and surfaced rather than silently overwriting.
+
+#### Milestone 8b · Assembly operations and the effect stack
+
+**Why next:** you cannot assemble a video. Split and trim exist; move, reorder, ripple-delete, duplicate and speed do not. Every downstream pillar produces material that lands on the timeline, so an incomplete timeline caps the value of everything after it.
 
 - **Assembly:** `timeline.clip.move`, `.reorder`, `.delete` (with ripple), `.duplicate`, `.set-speed`
 - **Effect stack:** generalise the one-off `effect.blur.set` into `effect.apply` + `effect.set-parameter` with **keyframable parameters**, reusing the existing interpolation engine. Colour adjustment, opacity and transform effects then become configuration rather than new code each time.
