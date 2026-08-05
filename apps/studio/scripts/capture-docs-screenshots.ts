@@ -106,8 +106,8 @@ try {
   await openWorkspace(page, "Edit");
   await shoot(page, "workspace-edit");
 
-  await openWorkspace(page, "Review");
-  await shoot(page, "workspace-review");
+  // Review is captured later, after real edits exist — otherwise its Activity
+  // panel documents an empty state, which is the least useful thing it can show.
 
   await openWorkspace(page, "Automate");
   await shoot(page, "workspace-automate");
@@ -193,6 +193,8 @@ try {
   await openWorkspace(page, "Review");
   await selectRightPanel(page, "Activity");
   await shoot(page, "panel-activity");
+  // Now that history is populated, Review documents what it is actually for.
+  await shoot(page, "workspace-review");
   const activity = page.locator(".activity-section");
   if (await activity.isVisible().catch(() => false)) {
     await dismissNotice(page);
