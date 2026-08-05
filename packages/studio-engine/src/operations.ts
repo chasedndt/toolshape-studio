@@ -12,6 +12,7 @@ import type {
   VideoTrack,
 } from "@toolshape/studio-domain";
 import { assertStudioProjectValid } from "./validation";
+import { reframeScene } from "./variants";
 import {
   addRational,
   compareRational,
@@ -636,6 +637,48 @@ export function applyStudioOperation(
       project.timeline.revision += 1;
       changedPaths.push(`timeline.tracks.${operation.payload.trackId}`);
       summary = `Projected “${capture.source.label}” onto the timeline.`;
+      break;
+    }
+    case "design.variant.create": {
+      const scene = findScene(project, operation.payload.sceneId);
+      if (operation.payload.width <= 0 || operation.payload.height <= 0) {
+        throw new RangeError("Variant dimensions must be positive.");
+      }
+      const variant = reframeScene({
+        scene,
+        format: {
+          id: operation.payload.formatId,
+          name: operation.payload.formatName,
+          size: { width: operation.payload.width, height: operation.payload.height },
+        },
+      });
+      if (project.scenes.some((candidate) => candidate.id === variant.id)) {
+        throw new RangeError(`Variant already exists: ${variant.id}`);
+      }
+      project.scenes.push(variant);
+      changedPaths.push(`scenes.${variant.id}`);
+      summary = `Created the ${operation.payload.formatName} variant of “${scene.name}”.`;
+      break;
+    }
+    case "design.data.bind": {
+      const scene = findScene(project, operation.payload.sceneId);
+      const entries = Object.entries(operation.payload.values);
+      if (entries.length === 0) {
+        throw new RangeError("Data binding requires at least one value.");
+      }
+      for (const [nodeId, value] of entries) {
+        const node = findNode(scene, nodeId);
+        // Rejected rather than skipped: a bulk run that silently ignores a
+        // mismatched column produces a hundred designs missing the same field,
+        // and nobody notices until they are published.
+        if (node.type !== "text") {
+          throw new TypeError(`Cannot bind data to a ${node.type} layer: ${nodeId}`);
+        }
+        node.content = value;
+        incrementNodeAndScene(node, scene);
+        changedPaths.push(`scenes.${scene.id}.nodes.${node.id}.content`);
+      }
+      summary = `Bound ${entries.length} value${entries.length === 1 ? "" : "s"} into “${scene.name}”.`;
       break;
     }
     case "scene.node.remove": {

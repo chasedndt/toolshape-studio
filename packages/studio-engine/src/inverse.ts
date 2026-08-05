@@ -373,6 +373,33 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
       };
     }
 
+    case "design.variant.create":
+      return notRevertible(
+        "revert.no-inverse-capability",
+        "Removing a variant needs a scene removal operation, which does not exist yet.",
+      );
+
+    case "design.data.bind": {
+      const scene = before.scenes.find((candidate) => candidate.id === operation.payload.sceneId);
+      if (!scene) {
+        return notRevertible("revert.target-missing", "The scene this data filled no longer exists.");
+      }
+      // Restores exactly the fields the bind touched, so reverting one row of a
+      // bulk run leaves the others alone.
+      const values: Record<string, string> = {};
+      for (const nodeId of Object.keys(operation.payload.values)) {
+        const node = scene.nodes.find((candidate) => candidate.id === nodeId);
+        if (!node || node.type !== "text") {
+          return notRevertible("revert.target-missing", `No prior copy recorded for layer ${nodeId}.`);
+        }
+        values[nodeId] = node.content;
+      }
+      return {
+        revertible: true,
+        operations: [{ type: "design.data.bind", payload: { sceneId: operation.payload.sceneId, values } }],
+      };
+    }
+
     case "capture.to-scene":
       return notRevertible(
         "revert.no-inverse-capability",
@@ -621,6 +648,12 @@ export function operationTargets(operation: StudioOperation): string[] {
       return [`capture:${operation.payload.captureId}`, `capture-zoom:${operation.payload.captureId}`];
     case "capture.to-scene":
       return [`capture:${operation.payload.captureId}`, `track:${operation.payload.trackId}`];
+    case "design.variant.create":
+      return [`scene:${operation.payload.sceneId}`, `variant:${operation.payload.formatId}`];
+    case "design.data.bind":
+      return Object.keys(operation.payload.values).map(
+        (nodeId) => `node:${operation.payload.sceneId}:${nodeId}`,
+      );
     case "timeline.transition.set":
       // A transition binds two clips, so editing either of them conflicts.
       return [

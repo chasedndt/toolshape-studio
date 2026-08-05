@@ -388,6 +388,19 @@ export type StudioOperation =
     >
   | Operation<"timeline.transition.set", { trackId: Id; transition: Transition }>
   | Operation<"timeline.transition.remove", { trackId: Id; transitionId: Id }>
+  | Operation<
+      "design.variant.create",
+      /** Reframes a scene into a new format, added alongside the original. */
+      { sceneId: Id; formatId: Id; formatName: string; width: number; height: number }
+    >
+  | Operation<
+      "design.data.bind",
+      /**
+       * Fills text layers from one row of data. Keys are node ids; values are
+       * the copy to place. Unmatched keys are rejected rather than ignored.
+       */
+      { sceneId: Id; values: Record<string, string> }
+    >
   | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 
