@@ -612,6 +612,202 @@ button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible { ou
 .notice button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 5px; color: #a9b296; background: #262e1d; cursor: pointer; pointer-events: auto; }
 .studio-shell.is-timeline-hidden .notice { bottom: 18px; }
 
+/* Milestone 6: direct, semantic timeline interaction. */
+.timeline-toolbar {
+  grid-template-columns: minmax(250px, 1fr) auto minmax(530px, 1fr);
+  height: 54px;
+  gap: 12px;
+  padding: 0 9px 0 12px;
+}
+.timeline-identity {
+  display: grid !important;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px !important;
+  min-width: 0;
+}
+.timeline-identity small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline-actions { align-items: center; gap: 4px; min-width: 0; }
+.timeline-actions .button { min-height: 28px; padding: 0 8px; font-size: 8px; }
+.timeline-actions .button svg { margin-right: 3px; }
+.ripple-toggle.is-active { color: var(--accent); border-color: #6c7932; background: #252b19; }
+.timeline-zoom {
+  display: grid;
+  grid-template-columns: 23px 78px 30px 23px;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  padding: 0 3px;
+  border: 1px solid #2d3136;
+  border-radius: 6px;
+  background: #14171c;
+}
+.timeline-zoom button {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  color: #89908a;
+  background: transparent;
+  cursor: pointer;
+}
+.timeline-zoom button:disabled { opacity: .28; cursor: not-allowed; }
+.timeline-zoom input { width: 78px; accent-color: var(--accent); cursor: ew-resize; }
+.timeline-zoom output { color: #aeb4a8; font-size: 8px; text-align: center; }
+
+.timeline-scroll-viewport { height: calc(100% - 54px); overflow: auto; scrollbar-color: #3a403c #101216; scrollbar-width: thin; }
+.timeline-content {
+  position: relative;
+  width: max(100%, calc(188px + var(--timeline-lane-pixels)));
+  min-height: 100%;
+}
+.timeline-ruler {
+  position: sticky;
+  z-index: 18;
+  top: 0;
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr);
+  height: 27px;
+  border-bottom: 1px solid #262a30;
+  background: #0d0f13f2;
+}
+.track-label-spacer {
+  position: sticky;
+  z-index: 24;
+  left: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-right: 1px solid var(--line);
+  background: #101217;
+}
+.track-label-spacer small { color: #65705c; font-size: 6px; letter-spacing: .12em; }
+.timeline-ruler > div { position: relative; cursor: ew-resize; touch-action: none; }
+.timeline-ruler > div:focus-visible { z-index: 3; }
+.timeline-tick {
+  position: absolute;
+  top: 12px;
+  bottom: 0;
+  width: 1px;
+  background: #30343a;
+  transform: translateX(-.5px);
+  pointer-events: none;
+}
+.timeline-tick.is-major { top: 7px; background: #515752; }
+.timeline-tick i {
+  position: absolute;
+  top: -7px;
+  left: 3px;
+  color: #6d736d;
+  font-size: 6px;
+  font-style: normal;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  transform: none;
+}
+.track-row { grid-template-columns: 188px minmax(0, 1fr); min-height: 61px; }
+.track-label {
+  position: sticky;
+  z-index: 15;
+  left: 0;
+  background: #111318f7;
+  box-shadow: 8px 0 14px #05060855;
+}
+.track-lane {
+  min-width: 0;
+  margin: 4px 0;
+  background-image: linear-gradient(90deg, transparent calc(100% - 1px), #202329 100%);
+  background-size: var(--timeline-grid-percent) 100%;
+  touch-action: none;
+}
+.timeline-clip {
+  top: 3px;
+  bottom: 3px;
+  padding: 0;
+  overflow: visible;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+.timeline-clip.is-selected {
+  z-index: 8;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px #0c0e10, 0 0 0 2px #e7ff5866, 0 7px 18px #0008;
+}
+.timeline-clip.is-trimming { transition: none; }
+.timeline-clip__select {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.timeline-clip__select strong,
+.timeline-clip__select small {
+  position: relative;
+  z-index: 3;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px #050607;
+}
+.timeline-clip__select strong { font-size: 8px; }
+.timeline-clip__select small { margin-top: 3px; color: #9da997; font-size: 6px; }
+.track-lane--video .timeline-clip.has-preview .timeline-clip__select strong,
+.track-lane--video .timeline-clip.has-preview .timeline-clip__select small { margin-left: 58px; }
+.timeline-clip__thumbnail { width: 64px; opacity: .8; }
+.timeline-clip__waveform {
+  inset: 20px auto 4px 0;
+  height: calc(100% - 24px);
+  max-width: none;
+  object-fit: fill;
+  opacity: .9;
+  pointer-events: none;
+}
+.trim-handle {
+  position: absolute;
+  z-index: 12;
+  top: 4px;
+  bottom: 4px;
+  width: 12px;
+  padding: 0;
+  border: 1px solid #1a1d13;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 2px 8px #0009;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.trim-handle::after { content: ""; position: absolute; top: 7px; bottom: 7px; left: 4px; width: 2px; border-left: 1px solid #5d671f; border-right: 1px solid #5d671f; }
+.trim-handle--start { left: -6px; }
+.trim-handle--end { right: -6px; }
+.timeline-playhead-layer {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 188px;
+  pointer-events: none;
+}
+.playhead { top: 0; bottom: 0; }
+.playhead.is-playing { box-shadow: 0 0 9px #e7ff5870; }
+
+@media (max-width: 1280px) {
+  .timeline-toolbar { grid-template-columns: minmax(220px, 1fr) auto minmax(490px, 1fr); gap: 6px; }
+  .timeline-actions .button { padding: 0 6px; }
+  .timeline-zoom { grid-template-columns: 22px 60px 28px 22px; }
+  .timeline-zoom input { width: 60px; }
+}
+
 button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible, input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

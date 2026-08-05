@@ -85,6 +85,15 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${JSON.stringify({ status: "failed", error: { code: "studio.cli.failure", message } })}\n`);
+  const code = typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+    ? error.code
+    : "studio.cli.failure";
+  const stage = typeof error === "object" && error !== null && "stage" in error && typeof error.stage === "string"
+    ? error.stage
+    : undefined;
+  const evidence = typeof error === "object" && error !== null && "evidence" in error && typeof error.evidence === "object"
+    ? error.evidence
+    : undefined;
+  process.stderr.write(`${JSON.stringify({ status: "failed", error: { code, message, ...(stage ? { stage } : {}), ...(evidence ? { evidence } : {}) } })}\n`);
   process.exitCode = 1;
 });

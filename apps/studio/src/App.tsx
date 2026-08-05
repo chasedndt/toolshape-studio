@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   Bot,
   Captions,
@@ -19,6 +19,7 @@ import {
   PanelBottomClose,
   PanelLeftClose,
   PanelRightClose,
+  Pause,
   Play,
   Redo2,
   Scissors,
@@ -37,11 +38,14 @@ import {
   VolumeX,
   WandSparkles,
   X,
+  ZoomIn,
+  ZoomOut,
   type LucideIcon,
 } from "lucide-react";
 import type {
   Asset,
   AudioTrack,
+  Clip,
   Scene,
   SceneNode,
   StudioProject,
@@ -69,6 +73,20 @@ import {
   resolveFixturePreview,
   type PreviewResolver,
 } from "./preview-assets";
+import {
+  MAX_TIMELINE_ZOOM,
+  MIN_TIMELINE_ZOOM,
+  TIMELINE_ZOOM_STEP,
+  buildTimelineTicks,
+  clampTimelineZoom,
+  computeTrimCandidate,
+  formatTimecode,
+  resolveTimelineKeyboardCommand,
+  secondsFromTimelinePointer,
+  stepPlayhead,
+  type TrimCandidate,
+  type TrimEdge,
+} from "./timeline-interaction";
 
 const NODE_ICONS: Record<SceneNode["type"], LucideIcon> = {
   text: Type,
@@ -661,20 +679,54 @@ function RightRail({
   );
 }
 
+interface TimelineClipSelection {
+  trackId: string;
+  clipId: string;
+}
+
+interface TimelineTrimPreview extends TrimCandidate, TimelineClipSelection {}
+
 function TrackLane({
   track,
   totalSeconds,
   project,
   resolvePreview,
+  selection,
+  trimPreview,
+  onSelectClip,
+  onScrubPointerDown,
+  onScrubPointerMove,
+  onScrubPointerUp,
+  onTrimPointerDown,
+  onTrimPointerMove,
+  onTrimPointerUp,
+  onTrimPointerCancel,
 }: {
   track: Track;
   totalSeconds: number;
   project: StudioProject;
   resolvePreview: PreviewResolver;
+  selection: TimelineClipSelection | null;
+  trimPreview: TimelineTrimPreview | null;
+  onSelectClip: (selection: TimelineClipSelection) => void;
+  onScrubPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+  onScrubPointerMove: (event: ReactPointerEvent<HTMLElement>) => void;
+  onScrubPointerUp: (event: ReactPointerEvent<HTMLElement>) => void;
+  onTrimPointerDown: (event: ReactPointerEvent<HTMLButtonElement>, trackId: string, clip: Clip, edge: TrimEdge) => void;
+  onTrimPointerMove: (event: ReactPointerEvent<HTMLButtonElement>, trackId: string, clip: Clip, edge: TrimEdge) => void;
+  onTrimPointerUp: (event: ReactPointerEvent<HTMLButtonElement>, trackId: string, clip: Clip, edge: TrimEdge) => void;
+  onTrimPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 }) {
+  const laneProps = {
+    "data-timeline-lane": true,
+    onPointerDown: onScrubPointerDown,
+    onPointerMove: onScrubPointerMove,
+    onPointerUp: onScrubPointerUp,
+    onPointerCancel: onScrubPointerUp,
+  };
   if (track.kind === "caption") {
     return (
-      <div className="track-lane track-lane--captions">
+      <div className="track-lane track-lane--captions" {...laneProps}>
         {track.segments.map((segment) => (
           <span
             key={segment.id}
@@ -690,30 +742,87 @@ function TrackLane({
     );
   }
   return (
-    <div className={`track-lane track-lane--${track.kind}`}>
+    <div className={`track-lane track-lane--${track.kind}`} {...laneProps}>
       {track.clips.map((clip) => {
+        const selected = selection?.trackId === track.id && selection.clipId === clip.id;
+        const previewing = trimPreview?.trackId === track.id && trimPreview.clipId === clip.id;
+        const displayStart = previewing ? trimPreview.newStart : clip.start;
+        const displayDuration = previewing ? trimPreview.newDuration : clip.duration;
         const asset = project.assets.find((candidate) => candidate.id === clip.assetId);
         const preview = resolveAssetPreview(asset, track.kind === "audio" ? "waveform" : "thumbnail", resolvePreview);
+        const displayStartSeconds = toSeconds(displayStart);
+        const displayDurationSeconds = toSeconds(displayDuration);
+        const sourceDurationSeconds = asset?.duration ? toSeconds(asset.duration) : displayDurationSeconds;
+        const sourceInSeconds = toSeconds(clip.sourceIn) + displayStartSeconds - toSeconds(clip.start);
+        const waveformStyle = track.kind === "audio" && sourceDurationSeconds > 0 && displayDurationSeconds > 0
+          ? {
+              width: `${(sourceDurationSeconds / displayDurationSeconds) * 100}%`,
+              left: `${-(sourceInSeconds / displayDurationSeconds) * 100}%`,
+            }
+          : undefined;
         return (
-          <span
+          <div
             key={clip.id}
-            className={`timeline-clip${preview ? " has-preview" : ""}`}
+            className={`timeline-clip${preview ? " has-preview" : ""}${selected ? " is-selected" : ""}${previewing ? " is-trimming" : ""}`}
             data-preview-ready={preview ? "true" : "false"}
+            data-track-id={track.id}
+            data-clip-id={clip.id}
+            data-selected={selected ? "true" : "false"}
             style={{
-              left: `${(toSeconds(clip.start) / totalSeconds) * 100}%`,
-              width: `${(toSeconds(clip.duration) / totalSeconds) * 100}%`,
+              left: `${(displayStartSeconds / totalSeconds) * 100}%`,
+              width: `${(displayDurationSeconds / totalSeconds) * 100}%`,
             }}
           >
-            {preview && (
-              <img
-                className={track.kind === "audio" ? "timeline-clip__waveform" : "timeline-clip__thumbnail"}
-                src={preview.url}
-                alt=""
-                data-preview-kind={track.kind === "audio" ? "waveform" : "thumbnail"}
-              />
+            <button
+              type="button"
+              className="timeline-clip__select"
+              aria-label={`${clip.name}, ${track.kind} clip`}
+              aria-pressed={selected}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelectClip({ trackId: track.id, clipId: clip.id });
+              }}
+            >
+              {preview && (
+                <img
+                  className={track.kind === "audio" ? "timeline-clip__waveform" : "timeline-clip__thumbnail"}
+                  src={preview.url}
+                  alt=""
+                  style={waveformStyle}
+                  data-preview-kind={track.kind === "audio" ? "waveform" : "thumbnail"}
+                />
+              )}
+              <strong>{clip.name}</strong>
+              <small>{displayStartSeconds.toFixed(2)}s · {displayDurationSeconds.toFixed(2)}s</small>
+            </button>
+            {selected && !track.locked && (
+              <>
+                <button
+                  type="button"
+                  className="trim-handle trim-handle--start"
+                  aria-label={`Trim start of ${clip.name}`}
+                  title="Trim start · drag or press [ at the playhead"
+                  onClick={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => onTrimPointerDown(event, track.id, clip, "start")}
+                  onPointerMove={(event) => onTrimPointerMove(event, track.id, clip, "start")}
+                  onPointerUp={(event) => onTrimPointerUp(event, track.id, clip, "start")}
+                  onPointerCancel={onTrimPointerCancel}
+                />
+                <button
+                  type="button"
+                  className="trim-handle trim-handle--end"
+                  aria-label={`Trim end of ${clip.name}`}
+                  title="Trim end · drag or press ] at the playhead"
+                  onClick={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => onTrimPointerDown(event, track.id, clip, "end")}
+                  onPointerMove={(event) => onTrimPointerMove(event, track.id, clip, "end")}
+                  onPointerUp={(event) => onTrimPointerUp(event, track.id, clip, "end")}
+                  onPointerCancel={onTrimPointerCancel}
+                />
+              </>
             )}
-            <strong>{clip.name}</strong>
-          </span>
+          </div>
         );
       })}
     </div>
@@ -724,70 +833,290 @@ function TimelinePanel({
   project,
   apply,
   onCollapse,
+  onNotice,
   resolvePreview,
 }: {
   project: StudioProject;
   apply: ReturnType<typeof useStudioState>["apply"];
   onCollapse: () => void;
+  onNotice: (notice: string) => void;
   resolvePreview: PreviewResolver;
 }) {
   const totalSeconds = toSeconds(project.timeline.duration);
-  const video = project.timeline.tracks.find((track) => track.id === "track-video");
-  const audio = project.timeline.tracks.find((track) => track.id === "track-audio") as AudioTrack;
-  const hasSplit = video?.kind === "video" && video.clips.some((clip) => clip.id === "clip-tail");
-  const mainDuration =
-    video?.kind === "video"
-      ? toSeconds(video.clips.find((clip) => clip.id === "clip-main")?.duration ?? rational(0))
-      : 0;
-  const audioClip = audio.clips[0];
+  const [selection, setSelection] = useState<TimelineClipSelection | null>({ trackId: "track-video", clipId: "clip-main" });
+  const [playheadSeconds, setPlayheadSeconds] = useState(Math.min(2.4, totalSeconds));
+  const [zoom, setZoom] = useState(1);
+  const [ripple, setRipple] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [trimPreview, setTrimPreview] = useState<TimelineTrimPreview | null>(null);
+  const ticks = useMemo(() => buildTimelineTicks(totalSeconds, zoom), [totalSeconds, zoom]);
+  const selectedTrack = project.timeline.tracks.find((track) => track.id === selection?.trackId);
+  const selectedClip = selectedTrack && selectedTrack.kind !== "caption"
+    ? selectedTrack.clips.find((clip) => clip.id === selection?.clipId)
+    : undefined;
+  const selectedStart = selectedClip ? toSeconds(selectedClip.start) : 0;
+  const selectedEnd = selectedClip ? selectedStart + toSeconds(selectedClip.duration) : 0;
+  const canSplit = Boolean(selectedClip && playheadSeconds > selectedStart && playheadSeconds < selectedEnd);
+  const canTrimToPlayhead = Boolean(selectedClip && playheadSeconds > selectedStart && playheadSeconds < selectedEnd);
+  const audio = project.timeline.tracks.find((track) => track.id === "track-audio") as AudioTrack | undefined;
+  const audioClip = audio?.clips[0];
+
+  const contentStyle = {
+    "--timeline-lane-pixels": `${totalSeconds * 80 * zoom}px`,
+    "--timeline-grid-percent": `${100 / (8 * zoom)}%`,
+  } as CSSProperties;
+
+  const sourceDurationFor = (clip: Clip) => {
+    const asset = project.assets.find((candidate) => candidate.id === clip.assetId);
+    return asset?.duration ?? rational(
+      Math.round((toSeconds(clip.sourceIn) + toSeconds(clip.duration)) * 1_000),
+      1_000,
+    );
+  };
+
+  const setPlayheadFromPointer = (clientX: number, lane: HTMLElement) => {
+    const rect = lane.getBoundingClientRect();
+    setPlayheadSeconds(secondsFromTimelinePointer(
+      clientX,
+      rect.left,
+      rect.width,
+      totalSeconds,
+      project.timeline.frameRate,
+    ));
+  };
+
+  const handleScrubPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
+    setPlaying(false);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setPlayheadFromPointer(event.clientX, event.currentTarget);
+  };
+
+  const handleScrubPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    setPlayheadFromPointer(event.clientX, event.currentTarget);
+  };
+
+  const handleScrubPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    setPlayheadFromPointer(event.clientX, event.currentTarget);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
+  const trimCandidateFromPointer = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    clip: Clip,
+    edge: TrimEdge,
+  ): TrimCandidate | null => {
+    const lane = event.currentTarget.closest<HTMLElement>("[data-timeline-lane]");
+    if (!lane) return null;
+    const requestedSeconds = secondsFromTimelinePointer(
+      event.clientX,
+      lane.getBoundingClientRect().left,
+      lane.getBoundingClientRect().width,
+      totalSeconds,
+      project.timeline.frameRate,
+    );
+    return computeTrimCandidate({
+      edge,
+      requestedSeconds,
+      clipStart: clip.start,
+      clipDuration: clip.duration,
+      sourceIn: clip.sourceIn,
+      sourceDuration: sourceDurationFor(clip),
+      timelineDuration: project.timeline.duration,
+      frameRate: project.timeline.frameRate,
+    });
+  };
+
+  const commitTrim = (trackId: string, clip: Clip, candidate: TrimCandidate, source: string) => {
+    const unchanged = toSeconds(candidate.newStart) === toSeconds(clip.start) &&
+      toSeconds(candidate.newDuration) === toSeconds(clip.duration);
+    setTrimPreview(null);
+    if (unchanged) return;
+    try {
+      apply({
+        type: "timeline.clip.trim",
+        payload: { trackId, clipId: clip.id, ...candidate, ripple },
+      });
+      onNotice(`${source} · ${ripple ? "ripple" : "edge"} trim committed through timeline.clip.trim`);
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "Timeline trim was rejected.");
+    }
+  };
+
+  const handleTrimPointerDown = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    trackId: string,
+    clip: Clip,
+    edge: TrimEdge,
+  ) => {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    setPlaying(false);
+    setSelection({ trackId, clipId: clip.id });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const candidate = trimCandidateFromPointer(event, clip, edge);
+    if (candidate) setTrimPreview({ trackId, clipId: clip.id, ...candidate });
+  };
+
+  const handleTrimPointerMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    trackId: string,
+    clip: Clip,
+    edge: TrimEdge,
+  ) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    const candidate = trimCandidateFromPointer(event, clip, edge);
+    if (candidate) setTrimPreview({ trackId, clipId: clip.id, ...candidate });
+  };
+
+  const handleTrimPointerUp = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    trackId: string,
+    clip: Clip,
+    edge: TrimEdge,
+  ) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    const candidate = trimCandidateFromPointer(event, clip, edge);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (candidate) commitTrim(trackId, clip, candidate, `${edge === "start" ? "In" : "Out"} handle`);
+  };
+
+  const splitSelected = () => {
+    if (!selection || !selectedClip || !canSplit) return;
+    const rightClipId = `clip-${crypto.randomUUID()}`;
+    try {
+      apply({
+        type: "timeline.clip.split",
+        payload: {
+          trackId: selection.trackId,
+          clipId: selection.clipId,
+          splitAt: rational(
+            Math.round(playheadSeconds * project.timeline.frameRate.numerator / project.timeline.frameRate.denominator) * project.timeline.frameRate.denominator,
+            project.timeline.frameRate.numerator,
+          ),
+          rightClipId,
+        },
+      });
+      setSelection({ trackId: selection.trackId, clipId: rightClipId });
+      onNotice(`Split at ${formatTimecode(playheadSeconds, project.timeline.frameRate)} · timeline.clip.split`);
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "Timeline split was rejected.");
+    }
+  };
+
+  const trimSelectedToPlayhead = (edge: TrimEdge) => {
+    if (!selection || !selectedClip || !canTrimToPlayhead) return;
+    const candidate = computeTrimCandidate({
+      edge,
+      requestedSeconds: playheadSeconds,
+      clipStart: selectedClip.start,
+      clipDuration: selectedClip.duration,
+      sourceIn: selectedClip.sourceIn,
+      sourceDuration: sourceDurationFor(selectedClip),
+      timelineDuration: project.timeline.duration,
+      frameRate: project.timeline.frameRate,
+    });
+    commitTrim(selection.trackId, selectedClip, candidate, edge === "start" ? "Set in to playhead" : "Set out to playhead");
+  };
+
+  const togglePlayback = () => {
+    if (!playing && playheadSeconds >= totalSeconds) setPlayheadSeconds(0);
+    setPlaying((current) => !current);
+  };
+
+  useEffect(() => {
+    if (!playing) return;
+    let animationFrame = 0;
+    let previous = performance.now();
+    const advance = (now: number) => {
+      const elapsed = (now - previous) / 1_000;
+      previous = now;
+      setPlayheadSeconds((current) => {
+        const next = current + elapsed;
+        if (next >= totalSeconds) {
+          setPlaying(false);
+          return totalSeconds;
+        }
+        return next;
+      });
+      animationFrame = requestAnimationFrame(advance);
+    };
+    animationFrame = requestAnimationFrame(advance);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [playing, totalSeconds]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      const typing = target instanceof HTMLElement && (
+        target.isContentEditable || target.tagName === "INPUT" || target.tagName === "TEXTAREA"
+      );
+      if (typing || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (target instanceof HTMLButtonElement && event.key === " ") return;
+      const command = resolveTimelineKeyboardCommand(event.key, event.shiftKey);
+      if (!command) return;
+      event.preventDefault();
+      if (command.type === "playhead.nudge") {
+        setPlaying(false);
+        setPlayheadSeconds((current) => stepPlayhead(
+          current,
+          command.direction,
+          command.coarse,
+          totalSeconds,
+          project.timeline.frameRate,
+        ));
+      } else if (command.type === "playhead.boundary") {
+        setPlaying(false);
+        setPlayheadSeconds(command.boundary === "start" ? 0 : totalSeconds);
+      } else if (command.type === "clip.split") {
+        splitSelected();
+      } else if (command.type === "clip.trim-start") {
+        trimSelectedToPlayhead("start");
+      } else if (command.type === "clip.trim-end") {
+        trimSelectedToPlayhead("end");
+      } else if (command.type === "zoom.change") {
+        setZoom((current) => clampTimelineZoom(current + command.direction * TIMELINE_ZOOM_STEP));
+      } else {
+        togglePlayback();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  });
 
   return (
-    <section className="timeline-panel" aria-label="Timeline editor">
+    <section className="timeline-panel" aria-label="Timeline editor" data-timeline-zoom={zoom.toFixed(1)}>
       <header className="timeline-toolbar">
-        <div className="timeline-identity"><span>TIMELINE</span><strong>00:00:02:12</strong><small>/ 00:00:08:00</small></div>
-        <div className="transport" aria-label="Playback controls">
-          <button aria-label="Go to start"><SkipBack size={13} /></button>
-          <button aria-label="Step backward"><StepBack size={13} /></button>
-          <button className="transport__play" aria-label="Play"><Play size={13} fill="currentColor" /></button>
-          <button aria-label="Step forward"><StepForward size={13} /></button>
-          <button aria-label="Go to end"><SkipForward size={13} /></button>
+        <div className="timeline-identity">
+          <span>TIMELINE · VIEW TRANSPORT</span>
+          <strong>{formatTimecode(playheadSeconds, project.timeline.frameRate)}</strong>
+          <small>/ {formatTimecode(totalSeconds, project.timeline.frameRate)} · {selectedClip?.name ?? "No clip selected"}</small>
+        </div>
+        <div className="transport" aria-label="Preview transport controls">
+          <button aria-label="Go to timeline start" onClick={() => { setPlaying(false); setPlayheadSeconds(0); }}><SkipBack size={13} /></button>
+          <button aria-label="Step backward one frame" onClick={() => { setPlaying(false); setPlayheadSeconds((current) => stepPlayhead(current, -1, false, totalSeconds, project.timeline.frameRate)); }}><StepBack size={13} /></button>
+          <button className="transport__play" aria-label={playing ? "Pause preview transport" : "Play preview transport"} aria-pressed={playing} onClick={togglePlayback}>
+            {playing ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
+          </button>
+          <button aria-label="Step forward one frame" onClick={() => { setPlaying(false); setPlayheadSeconds((current) => stepPlayhead(current, 1, false, totalSeconds, project.timeline.frameRate)); }}><StepForward size={13} /></button>
+          <button aria-label="Go to timeline end" onClick={() => { setPlaying(false); setPlayheadSeconds(totalSeconds); }}><SkipForward size={13} /></button>
         </div>
         <div className="timeline-actions">
-          <button
-            className="button button--quiet"
-            disabled={hasSplit}
-            onClick={() =>
-              apply({
-                type: "timeline.clip.split",
-                payload: { trackId: "track-video", clipId: "clip-main", splitAt: rational(4), rightClipId: "clip-tail" },
-              })
-            }
-          >
-            <Scissors size={13} aria-hidden="true" />
-            Split at 4s
+          <button className="button button--quiet" disabled={!canSplit} onClick={splitSelected} title="Split selected clip at playhead (S)">
+            <Scissors size={13} aria-hidden="true" /> Split
           </button>
-          <button
-            className="button button--quiet"
-            disabled={!hasSplit || mainDuration <= 3.5}
-            onClick={() =>
-              apply({
-                type: "timeline.clip.trim",
-                payload: {
-                  trackId: "track-video",
-                  clipId: "clip-main",
-                  newStart: rational(0),
-                  newDuration: rational(7, 2),
-                  ripple: true,
-                },
-              })
-            }
-          >
-            Trim + ripple
+          <button className="button button--quiet timeline-boundary-action" disabled={!canTrimToPlayhead} onClick={() => trimSelectedToPlayhead("start")} title="Trim selected clip start to playhead ([)">Set in</button>
+          <button className="button button--quiet timeline-boundary-action" disabled={!canTrimToPlayhead} onClick={() => trimSelectedToPlayhead("end")} title="Trim selected clip end to playhead (])">Set out</button>
+          <button className={`button button--quiet ripple-toggle${ripple ? " is-active" : ""}`} aria-pressed={ripple} onClick={() => setRipple((current) => !current)} title="Shift downstream clips after an end trim">
+            Ripple
           </button>
-          <button
-            className="button button--quiet"
-            onClick={() =>
-              apply({
+          {audioClip && (
+            <button
+              className="icon-button"
+              aria-label={audioClip.audio?.muted ? "Unmute source mix" : "Mute source mix"}
+              onClick={() => apply({
                 type: "timeline.clip.set-audio",
                 payload: {
                   trackId: "track-audio",
@@ -797,36 +1126,93 @@ function TimelinePanel({
                   fadeIn: audioClip.audio?.fadeIn ?? rational(0),
                   fadeOut: audioClip.audio?.fadeOut ?? rational(0),
                 },
-              })
-            }
-          >
-            {audioClip.audio?.muted ? <Volume2 size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
-            {audioClip.audio?.muted ? "Unmute" : "Mute"}
-          </button>
+              })}
+            >
+              {audioClip.audio?.muted ? <Volume2 size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
+            </button>
+          )}
+          <div className="timeline-zoom" aria-label="Timeline zoom controls">
+            <button aria-label="Zoom timeline out" disabled={zoom <= MIN_TIMELINE_ZOOM} onClick={() => setZoom((current) => clampTimelineZoom(current - TIMELINE_ZOOM_STEP))}><ZoomOut size={13} /></button>
+            <input
+              aria-label="Timeline zoom"
+              type="range"
+              min={MIN_TIMELINE_ZOOM}
+              max={MAX_TIMELINE_ZOOM}
+              step={TIMELINE_ZOOM_STEP}
+              value={zoom}
+              onChange={(event) => setZoom(clampTimelineZoom(Number(event.target.value)))}
+            />
+            <output>{zoom.toFixed(1)}×</output>
+            <button aria-label="Zoom timeline in" disabled={zoom >= MAX_TIMELINE_ZOOM} onClick={() => setZoom((current) => clampTimelineZoom(current + TIMELINE_ZOOM_STEP))}><ZoomIn size={13} /></button>
+          </div>
           <button className="icon-button" aria-label="Hide timeline" title="Hide timeline" onClick={onCollapse}>
             <PanelBottomClose size={14} aria-hidden="true" />
           </button>
         </div>
       </header>
-      <div className="timeline-ruler">
-        <span className="track-label-spacer" />
-        <div>{Array.from({ length: 9 }, (_, index) => <i key={index} style={{ left: `${(index / 8) * 100}%` }}>{index}s</i>)}</div>
-      </div>
-      <div className="track-stack">
-        {project.timeline.tracks.map((track) => (
-          <div className="track-row" key={track.id}>
-            <div className="track-label">
-              <span>
-                {track.kind === "video" ? <Video size={13} aria-hidden="true" /> : track.kind === "audio" ? <Music2 size={13} aria-hidden="true" /> : <Captions size={13} aria-hidden="true" />}
-              </span>
-              <strong>{track.name}</strong>
-              <i>{track.locked ? <Lock size={11} aria-label="Locked" /> : <Eye size={11} aria-label="Visible" />}</i>
+      <div className="timeline-scroll-viewport">
+        <div className="timeline-content" data-timeline-content style={contentStyle}>
+          <div className="timeline-ruler">
+            <span className="track-label-spacer"><small>OVERVIEW CACHE</small></span>
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label="Timeline playhead"
+              aria-valuemin={0}
+              aria-valuemax={totalSeconds}
+              aria-valuenow={Number(playheadSeconds.toFixed(3))}
+              aria-valuetext={formatTimecode(playheadSeconds, project.timeline.frameRate)}
+              onPointerDown={handleScrubPointerDown}
+              onPointerMove={handleScrubPointerMove}
+              onPointerUp={handleScrubPointerUp}
+              onPointerCancel={handleScrubPointerUp}
+            >
+              {ticks.map((tick) => (
+                <span
+                  className={`timeline-tick${tick.major ? " is-major" : ""}`}
+                  key={`${tick.seconds}-${tick.major ? "major" : "minor"}`}
+                  style={{ left: `${tick.positionPercent}%` }}
+                >
+                  {tick.label && <i>{tick.label}</i>}
+                </span>
+              ))}
             </div>
-            <TrackLane track={track} totalSeconds={totalSeconds} project={project} resolvePreview={resolvePreview} />
           </div>
-        ))}
-        <div className="playhead" style={{ left: `calc(188px + ${(2.4 / totalSeconds) * 100}% - ${(2.4 / totalSeconds) * 188}px)` }}>
-          <i />
+          {project.timeline.tracks.map((track) => (
+            <div className="track-row" key={track.id}>
+              <div className="track-label">
+                <span>
+                  {track.kind === "video" ? <Video size={13} aria-hidden="true" /> : track.kind === "audio" ? <Music2 size={13} aria-hidden="true" /> : <Captions size={13} aria-hidden="true" />}
+                </span>
+                <strong>{track.name}</strong>
+                <i>{track.locked ? <Lock size={11} aria-label="Locked" /> : <Eye size={11} aria-label="Visible" />}</i>
+              </div>
+              <TrackLane
+                track={track}
+                totalSeconds={totalSeconds}
+                project={project}
+                resolvePreview={resolvePreview}
+                selection={selection}
+                trimPreview={trimPreview}
+                onSelectClip={setSelection}
+                onScrubPointerDown={handleScrubPointerDown}
+                onScrubPointerMove={handleScrubPointerMove}
+                onScrubPointerUp={handleScrubPointerUp}
+                onTrimPointerDown={handleTrimPointerDown}
+                onTrimPointerMove={handleTrimPointerMove}
+                onTrimPointerUp={handleTrimPointerUp}
+                onTrimPointerCancel={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+                  setTrimPreview(null);
+                }}
+              />
+            </div>
+          ))}
+          <div className="timeline-playhead-layer" aria-hidden="true">
+            <div className={`playhead${playing ? " is-playing" : ""}`} style={{ left: `${(playheadSeconds / totalSeconds) * 100}%` }}>
+              <i />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1137,6 +1523,7 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
           project={project}
           apply={apply}
           onCollapse={() => toggleRegion("timeline")}
+          onNotice={setNotice}
           resolvePreview={resolvePreview}
         />
       )}

@@ -72,6 +72,24 @@ describe("Studio semantic operations", () => {
     );
   });
 
+  it("rejects a trim that reads beyond the immutable source duration", () => {
+    expect(() =>
+      applyStudioOperation(createGoldenStudioProject(), {
+        operationId: "op-overrun-source",
+        type: "timeline.clip.trim",
+        actor: "agent",
+        expectedRevision: 0,
+        payload: {
+          trackId: "track-video",
+          clipId: "clip-main",
+          newStart: rational(0),
+          newDuration: rational(9),
+          ripple: false,
+        },
+      }),
+    ).toThrow(/immutable source duration/i);
+  });
+
   it("rejects stale operator edits", () => {
     const project = createGoldenStudioProject();
     project.revision = 3;

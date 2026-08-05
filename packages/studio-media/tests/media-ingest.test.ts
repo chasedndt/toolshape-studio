@@ -1,10 +1,11 @@
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ContentAddressedAssetStore, SqliteStudioRepository } from "@toolshape/studio-persistence";
 import {
   MediaIngestionService,
+  MediaIngestionRejectedError,
   createFfmpegProxyPlan,
   createFfmpegThumbnailPlan,
   createFfmpegWaveformPlan,
@@ -21,6 +22,15 @@ async function temporaryRoot(): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "toolshape-media-"));
   roots.push(root);
   return root;
+}
+
+async function directoryEntries(directory: string): Promise<string[]> {
+  try {
+    return await readdir(directory, { recursive: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
 }
 
 const sourceProbe: NormalizedMediaProbe = {
@@ -78,6 +88,12 @@ class FakeMediaRunner implements MediaProcessRunner {
 
   async toolchain(): Promise<Array<Record<string, unknown>>> {
     return [{ name: "ffmpeg", version: "test" }, { name: "ffprobe", version: "test" }];
+  }
+}
+
+class FailingProbeRunner extends FakeMediaRunner {
+  override async probe(): Promise<NormalizedMediaProbe> {
+    throw new TypeError("truncated container");
   }
 }
 
@@ -193,6 +209,123 @@ describe("probed media ingestion", () => {
     expect(result.asset.derivatives.map((derivative) => derivative.kind)).toEqual(["proxy", "thumbnail"]);
     expect(result.waveform).toBeNull();
     repository.close();
+  });
+
+  it.each([
+    {
+      label: "duration",
+      code: "media.resource.duration",
+      probe: { ...sourceProbe, duration: { numerator: 121, denominator: 1 } },
+      policy: { maxDurationSeconds: 120 },
+    },
+    {
+      label: "pixel count",
+      code: "media.resource.video_pixels",
+      probe: { ...sourceProbe, video: { ...sourceProbe.video!, width: 8_192, height: 8_192 } },
+      policy: { maxVideoPixels: 33_177_600 },
+    },
+    {
+      label: "frame rate",
+      code: "media.resource.frame_rate",
+      probe: { ...sourceProbe, video: { ...sourceProbe.video!, frameRate: { numerator: 240, denominator: 1 } } },
+      policy: { maxFrameRate: 120 },
+    },
+    {
+      label: "audio channels",
+      code: "media.resource.audio_channels",
+      probe: { ...sourceProbe, audio: { ...sourceProbe.audio!, channels: 32 } },
+      policy: { maxAudioChannels: 8 },
+    },
+    {
+      label: "audio sample rate",
+      code: "media.resource.audio_sample_rate",
+      probe: { ...sourceProbe, audio: { ...sourceProbe.audio!, sampleRate: 384_000 } },
+      policy: { maxAudioSampleRate: 192_000 },
+    },
+  ])("quarantines a source that exceeds the $label budget before trusted import", async ({ code, probe, policy }) => {
+    const root = await temporaryRoot();
+    const sourcePath = path.join(root, "source.mp4");
+    await writeFile(sourcePath, mp4Bytes());
+    const objectRoot = path.join(root, "objects");
+    const workRoot = path.join(root, "work");
+    const repository = new SqliteStudioRepository(path.join(root, "studio.sqlite"));
+    const service = new MediaIngestionService({
+      contentStore: new ContentAddressedAssetStore(objectRoot),
+      repository,
+      workRoot,
+      runner: new FakeMediaRunner(false, probe),
+      resourcePolicy: policy,
+    });
+
+    const rejected = await service.ingest({
+      sourcePath,
+      originalName: "source.mp4",
+      declaredMediaType: "video/mp4",
+    }).catch((error: unknown) => error);
+    repository.close();
+    expect(rejected).toBeInstanceOf(MediaIngestionRejectedError);
+    expect(rejected).toMatchObject({ code, stage: "probe-policy" });
+    expect(await directoryEntries(objectRoot)).toEqual([]);
+    expect(await directoryEntries(workRoot)).toEqual([]);
+  });
+
+  it("rejects signature-mismatch polyglot input before probing or trusted storage", async () => {
+    const root = await temporaryRoot();
+    const sourcePath = path.join(root, "polyglot.mp4");
+    const bytes = new Uint8Array([...pngBytes(1, 1), ...mp4Bytes()]);
+    await writeFile(sourcePath, bytes);
+    const objectRoot = path.join(root, "objects");
+    const workRoot = path.join(root, "work");
+    const repository = new SqliteStudioRepository(path.join(root, "studio.sqlite"));
+    let probed = false;
+    const runner = new FakeMediaRunner();
+    runner.probe = async () => {
+      probed = true;
+      return sourceProbe;
+    };
+    const service = new MediaIngestionService({
+      contentStore: new ContentAddressedAssetStore(objectRoot),
+      repository,
+      workRoot,
+      runner,
+    });
+
+    const rejected = await service.ingest({
+      sourcePath,
+      originalName: "polyglot.mp4",
+      declaredMediaType: "video/mp4",
+    }).catch((error: unknown) => error);
+    repository.close();
+    expect(rejected).toMatchObject({ code: "media.source.signature", stage: "source-validation" });
+    expect(probed).toBe(false);
+    expect(await directoryEntries(objectRoot)).toEqual([]);
+    expect(await directoryEntries(workRoot)).toEqual([]);
+  });
+
+  it("removes the quarantine snapshot after a truncated probe failure", async () => {
+    const root = await temporaryRoot();
+    const sourcePath = path.join(root, "truncated.mp4");
+    await writeFile(sourcePath, mp4Bytes());
+    const objectRoot = path.join(root, "objects");
+    const workRoot = path.join(root, "work");
+    const repository = new SqliteStudioRepository(path.join(root, "studio.sqlite"));
+    const service = new MediaIngestionService({
+      contentStore: new ContentAddressedAssetStore(objectRoot),
+      repository,
+      workRoot,
+      runner: new FailingProbeRunner(),
+    });
+
+    const rejected = await service.ingest({
+      sourcePath,
+      originalName: "truncated.mp4",
+      declaredMediaType: "video/mp4",
+    }).catch((error: unknown) => error);
+    repository.close();
+    expect(rejected).toMatchObject({ code: "media.probe.failed", stage: "probe" });
+    expect(await directoryEntries(objectRoot)).toEqual([]);
+    expect(await directoryEntries(workRoot)).toEqual([]);
+    await expect(access(sourcePath)).resolves.toBeUndefined();
   });
 
   it("builds an approved-root shell-free proxy plan", async () => {

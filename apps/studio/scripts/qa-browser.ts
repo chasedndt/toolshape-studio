@@ -120,18 +120,88 @@ try {
   await page.locator("#active-source-panel .source-row", { hasText: "Hero title" }).click();
   await page.getByRole("tab", { name: "Inspector", exact: true }).click();
 
-  await page.getByRole("button", { name: "Split at 4s" }).click();
+  const initialTimelineRevision = await page.locator(".project-crumb i").textContent();
+  const defaultSelectedClip = page.locator('.timeline-clip[data-selected="true"]');
+  if (await defaultSelectedClip.getAttribute("data-clip-id") !== "clip-main") {
+    throw new Error("The primary video clip was not selected in the initial direct-edit state.");
+  }
+  const overviewMajorTicks = await page.locator(".timeline-tick.is-major").count();
+  const zoomControl = page.getByRole("slider", { name: "Timeline zoom", exact: true });
+  await zoomControl.fill("2");
+  await page.waitForFunction(() => document.querySelector(".timeline-panel")?.getAttribute("data-timeline-zoom") === "2.0");
+  const detailedMajorTicks = await page.locator(".timeline-tick.is-major").count();
+  if (detailedMajorTicks <= overviewMajorTicks || await page.locator(".project-crumb i").textContent() !== initialTimelineRevision) {
+    throw new Error(`Timeline zoom mutated project truth or did not increase ruler density: overview=${overviewMajorTicks} detailed=${detailedMajorTicks}`);
+  }
+
+  const playheadSlider = page.getByRole("slider", { name: "Timeline playhead", exact: true });
+  const rulerBox = await playheadSlider.boundingBox();
+  if (!rulerBox) throw new Error("Timeline ruler had no browser geometry.");
+  await page.mouse.click(rulerBox.x + rulerBox.width / 2, rulerBox.y + rulerBox.height / 2);
+  const scrubbedPlayhead = Number(await playheadSlider.getAttribute("aria-valuenow"));
+  if (Math.abs(scrubbedPlayhead - 4) > 1 / 30 || await page.locator(".project-crumb i").textContent() !== "r0") {
+    throw new Error(`Playhead scrub was not frame-accurate view state: ${scrubbedPlayhead}`);
+  }
+
+  await page.keyboard.press("s");
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r1");
-  await page.getByRole("button", { name: "Trim + ripple" }).click();
+  const rightClip = page.getByRole("button", { name: "Product film B, video clip", exact: true });
+  if (await rightClip.getAttribute("aria-pressed") !== "true") {
+    throw new Error("Keyboard split did not move selection to the new editable clip.");
+  }
+
+  await page.getByRole("button", { name: "Product film, video clip", exact: true }).click();
+  const trimEndHandle = page.getByRole("button", { name: "Trim end of Product film", exact: true });
+  const handleBox = await trimEndHandle.boundingBox();
+  if (!handleBox) throw new Error("Selected clip did not expose a measurable end trim handle.");
+  const videoLaneBox = await trimEndHandle.evaluate((element) => {
+    const lane = element.closest<HTMLElement>("[data-timeline-lane]");
+    if (!lane) return null;
+    const rect = lane.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  });
+  if (!videoLaneBox) throw new Error("Selected clip trim handle was not attached to a timeline lane.");
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(videoLaneBox.x + videoLaneBox.width * (3.5 / 8), handleBox.y + handleBox.height / 2, { steps: 6 });
+  await page.mouse.up();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r2");
+  const trimmedDuration = await page.getByRole("button", { name: "Product film, video clip", exact: true }).locator("small").textContent();
+  if (!trimmedDuration?.includes("3.50s")) {
+    throw new Error(`Direct handle trim did not commit the expected frame-snapped duration: ${String(trimmedDuration)}`);
+  }
+
+  await rightClip.click();
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("]");
+  await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r3");
+  const rightDuration = await rightClip.locator("small").textContent();
+  if (!rightDuration?.includes("2.00s")) {
+    throw new Error(`Keyboard set-out did not commit through the selected clip: ${String(rightDuration)}`);
+  }
+  const revisionBeforeNudge = await page.locator(".project-crumb i").textContent();
+  const playheadBeforeNudge = Number(await playheadSlider.getAttribute("aria-valuenow"));
+  await page.keyboard.press("ArrowLeft");
+  const playheadAfterNudge = Number(await playheadSlider.getAttribute("aria-valuenow"));
+  if (revisionBeforeNudge !== await page.locator(".project-crumb i").textContent() || Math.abs((playheadBeforeNudge - playheadAfterNudge) - 1 / 30) > 0.002) {
+    throw new Error("One-frame keyboard playhead nudge changed canonical state or used the wrong step.");
+  }
+  await page.getByRole("button", { name: "Ripple", exact: true }).click();
+  if (await page.locator(".project-crumb i").textContent() !== "r3") {
+    throw new Error("Ripple preference changed the canonical project before an edit committed.");
+  }
+  const timelineScreenshot = path.join(artifactDir, "studio-direct-timeline-selected.png");
+  await page.screenshot({ path: timelineScreenshot, fullPage: false });
+
   await page.getByRole("button", { name: "Nudge +24" }).click();
   await page.getByRole("tab", { name: "Review", exact: true }).click();
   await page.getByRole("button", { name: "Apply candidate" }).click();
-  await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r4");
-  await page.getByRole("button", { name: /Undo/ }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r5");
-  await page.getByRole("button", { name: /Redo/ }).click();
+  await page.getByRole("button", { name: /Undo/ }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r6");
+  await page.getByRole("button", { name: /Redo/ }).click();
+  await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r7");
   await page.getByRole("button", { name: "Render proof" }).click();
   const renderNotice = await page.locator(".notice").textContent();
   if (!renderNotice?.includes("Render queued") || !renderNotice.includes("queued")) {
@@ -154,10 +224,13 @@ try {
     sourcePanel: document.querySelector("#active-source-panel")?.getAttribute("data-panel-id"),
     contextPanel: document.querySelector("#active-context-panel")?.getAttribute("data-panel-id"),
     timelineVisible: Boolean(document.querySelector(".timeline-panel")),
+    timelineZoom: document.querySelector(".timeline-panel")?.getAttribute("data-timeline-zoom"),
+    selectedClip: document.querySelector('.timeline-clip[data-selected="true"]')?.getAttribute("data-clip-id"),
+    trimHandleCount: document.querySelectorAll(".trim-handle").length,
     tabCount: document.querySelectorAll('[role="tab"]').length,
     viewportOverflow: document.documentElement.scrollWidth > window.innerWidth,
   }));
-  if (shellEvidence.workspace !== "review" || shellEvidence.contextPanel !== "agent" || !shellEvidence.timelineVisible || shellEvidence.viewportOverflow) {
+  if (shellEvidence.workspace !== "review" || shellEvidence.contextPanel !== "agent" || !shellEvidence.timelineVisible || shellEvidence.timelineZoom !== "2.0" || shellEvidence.trimHandleCount !== 2 || shellEvidence.viewportOverflow) {
     throw new Error(`Editor shell evidence mismatch: ${JSON.stringify(shellEvidence)}`);
   }
 
@@ -172,6 +245,27 @@ try {
     path: path.join(artifactDir, "studio-editor-shell-post-edit.png"),
     fullPage: false,
   });
+
+  const compactPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const compactResponse = await compactPage.goto(baseUrl, { waitUntil: "networkidle" });
+  if (!compactResponse?.ok()) throw new Error(`Compact Studio view returned HTTP ${String(compactResponse?.status())}.`);
+  await compactPage.waitForFunction(() => Boolean(document.documentElement.dataset.studioReadyMs));
+  const compactEvidence = await compactPage.evaluate(() => {
+    const toolbar = document.querySelector(".timeline-toolbar")?.getBoundingClientRect();
+    const actions = document.querySelector(".timeline-actions")?.getBoundingClientRect();
+    const zoom = document.querySelector(".timeline-zoom")?.getBoundingClientRect();
+    return {
+      viewportOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      toolbarContained: Boolean(toolbar && actions && actions.right <= toolbar.right + 1 && actions.left >= toolbar.left - 1),
+      zoomVisible: Boolean(zoom && zoom.width > 100 && zoom.right <= window.innerWidth),
+      actionCount: document.querySelectorAll(".timeline-actions button").length,
+    };
+  });
+  if (compactEvidence.viewportOverflow || !compactEvidence.toolbarContained || !compactEvidence.zoomVisible || compactEvidence.actionCount < 8) {
+    throw new Error(`Compact direct timeline layout failed containment: ${JSON.stringify(compactEvidence)}`);
+  }
+  const compactScreenshot = path.join(artifactDir, "studio-direct-timeline-1280.png");
+  await compactPage.screenshot({ path: compactScreenshot, fullPage: false });
 
   const coverPage = await browser.newPage({ viewport: { width: 540, height: 960 } });
   const coverResponse = await coverPage.goto(`${baseUrl}?export=cover`, { waitUntil: "networkidle" });
@@ -197,12 +291,22 @@ try {
         browser: path.basename(executablePath),
         responseStatus: response.status(),
         metrics,
-        postEditRevision: 6,
+        postEditRevision: 7,
         videoClipCount,
         qualityText,
         changedPathText,
         previewEvidence,
         audioPreviewEvidence,
+        directTimelineEvidence: {
+          overviewMajorTicks,
+          detailedMajorTicks,
+          scrubbedPlayhead,
+          trimmedDuration,
+          rightDuration,
+          oneFrameNudge: playheadBeforeNudge - playheadAfterNudge,
+          timelineScreenshot,
+        },
+        compactEvidence: { ...compactEvidence, screenshot: compactScreenshot },
         shellEvidence,
         renderNotice,
         mediaPreviewScreenshot,

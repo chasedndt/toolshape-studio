@@ -25,6 +25,8 @@ interface ProbeDocument {
 
 interface ProcessOutput { stdout: string; stderr: string }
 
+const MAX_CAPTURE_BYTES = 1024 * 1024;
+
 function run(binary: string, args: string[], timeoutMs: number): Promise<ProcessOutput> {
   return new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
@@ -35,11 +37,20 @@ function run(binary: string, args: string[], timeoutMs: number): Promise<Process
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let outputLimitExceeded = false;
     const timeout = setTimeout(() => {
       timedOut = true;
       child.kill("SIGKILL");
     }, timeoutMs);
-    child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); });
+    child.stdout.on("data", (chunk: Buffer) => {
+      if (outputLimitExceeded) return;
+      if (Buffer.byteLength(stdout) + chunk.byteLength > MAX_CAPTURE_BYTES) {
+        outputLimitExceeded = true;
+        child.kill("SIGKILL");
+        return;
+      }
+      stdout += chunk.toString("utf8");
+    });
     child.stderr.on("data", (chunk: Buffer) => { stderr = `${stderr}${chunk.toString("utf8")}`.slice(-24_000); });
     child.on("error", (error) => {
       clearTimeout(timeout);
@@ -48,6 +59,7 @@ function run(binary: string, args: string[], timeoutMs: number): Promise<Process
     child.on("close", (code) => {
       clearTimeout(timeout);
       if (timedOut) reject(new Error(`${binary} exceeded the ${timeoutMs} ms media-worker timeout.`));
+      else if (outputLimitExceeded) reject(new Error(`${binary} exceeded the bounded media-worker output limit.`));
       else if (code === 0) resolve({ stdout, stderr });
       else reject(new Error(`${binary} exited with code ${String(code)}.\n${stderr}`));
     });

@@ -79,6 +79,7 @@ function validateClip(
   clip: Clip,
   track: Track,
   timelineDuration: RationalTime,
+  sourceDuration: RationalTime | undefined,
   path: string,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -104,6 +105,14 @@ function validateClip(
       severity: "warning",
       path,
       message: `${track.kind} clip extends beyond the timeline duration.`,
+    });
+  }
+  if (sourceDuration && compareRational(addRational(clip.sourceIn, clip.duration), sourceDuration) > 0) {
+    issues.push({
+      code: "timeline.clip-after-source",
+      severity: "error",
+      path,
+      message: `${track.kind} clip reads beyond the immutable source duration.`,
     });
   }
   if (clip.audio) {
@@ -256,7 +265,16 @@ export function validateStudioProject(project: StudioProject): ValidationIssue[]
       for (const [clipIndex, clip] of track.clips.entries()) {
         const clipPath = `${trackPath}.clips[${clipIndex}]`;
         register(clip.id, `${clipPath}.id`);
-        issues.push(...validateClip(clip, track, project.timeline.duration, clipPath));
+        const source = project.assets.find((asset) => asset.id === clip.assetId);
+        if (!source) {
+          issues.push({
+            code: "timeline.clip-source-missing",
+            severity: "error",
+            path: `${clipPath}.assetId`,
+            message: `${track.kind} clip references a missing source asset.`,
+          });
+        }
+        issues.push(...validateClip(clip, track, project.timeline.duration, source?.duration, clipPath));
       }
     }
   }
