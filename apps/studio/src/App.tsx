@@ -170,7 +170,7 @@ function SceneCanvas({
             .find((effect) => effect?.type === "blur" && effect.enabled);
           const style = {
             ...sceneNodeStyle(node, scale),
-            filter: blur && node.type !== "shape" ? `blur(${blur.radius * scale}px)` : undefined,
+            filter: blur && node.type !== "shape" ? `blur(${(blur.parameters.radius ?? 0) * scale}px)` : undefined,
           };
           const selected = !exportMode && selectedNodeId === node.id;
           const common = {
@@ -197,7 +197,7 @@ function SceneCanvas({
                   border: node.stroke
                     ? `${(node.strokeWidth ?? 1) * scale}px solid ${node.stroke}`
                     : undefined,
-                  filter: blur ? `blur(${blur.radius * scale}px)` : undefined,
+                  filter: blur ? `blur(${(blur.parameters.radius ?? 0) * scale}px)` : undefined,
                 }}
               />
             );
@@ -699,16 +699,20 @@ function RightRail({
                 onClick={() =>
                   commit(
                     {
-                      type: "effect.blur.set",
+                      type: "effect.set",
                       payload: {
                         sceneId: scene.id,
                         nodeId: selectedNode.id,
-                        effectId: `effect-${selectedNode.id}-blur`,
-                        radius: 6,
-                        enabled: true,
+                        effect: {
+                          id: `effect-${selectedNode.id}-blur`,
+                          type: "blur",
+                          enabled: true,
+                          parameters: { radius: 6 },
+                          revision: 0,
+                        },
                       },
                     },
-                    "Blur applied through effect.blur.set",
+                    "Blur applied through effect.set",
                   )
                 }
               >

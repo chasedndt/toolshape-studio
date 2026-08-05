@@ -34,7 +34,7 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today (26):
+Operation types today (27):
 
 | Operation | Domain |
 |---|---|
@@ -46,7 +46,8 @@ Operation types today (26):
 | `timeline.clip.set-audio` | edit |
 | `timeline.caption.upsert` | edit |
 | `animation.keyframe.set` | motion |
-| `effect.blur.set` | effects |
+| `effect.set` | effects |
+| `effect.remove` | effects |
 | `style.profile.apply` | style |
 | `timeline.clip.move` | assembly |
 | `timeline.clip.reorder` | assembly |

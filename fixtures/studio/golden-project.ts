@@ -305,8 +305,8 @@ const goldenProject: StudioProject = {
     ],
   },
   effects: [
-    { id: "effect-atmosphere", type: "blur", radius: 14, enabled: true },
-    { id: "effect-clip-blur", type: "blur", radius: 8, enabled: true },
+    { id: "effect-atmosphere", type: "blur", enabled: true, parameters: { radius: 14 }, revision: 0 },
+    { id: "effect-clip-blur", type: "blur", enabled: true, parameters: { radius: 8 }, revision: 0 },
   ],
   styleProfileRef: { id: "style-citrus-system", version: 1, name: "Citrus System" },
   renderPresets: [

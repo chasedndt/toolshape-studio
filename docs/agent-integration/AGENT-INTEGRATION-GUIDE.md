@@ -277,7 +277,8 @@ The `operations` array carries the kernel's typed operation union. Each entry ne
 | `timeline.clip.set-audio` | `trackId`, `clipId`, `gainDb`, `muted`, `fadeIn`, `fadeOut` |
 | `timeline.caption.upsert` | `trackId`, `segment` |
 | `animation.keyframe.set` | `sceneId`, `nodeId`, `property`, `keyframe` |
-| `effect.blur.set` | `sceneId`, `nodeId`, `effectId`, `radius`, `enabled` |
+| `effect.set` | `sceneId`, `nodeId`, `effect` (blur, brightness, contrast, saturation, opacity, colour-shift) |
+| `effect.remove` | `sceneId`, `nodeId`, `effectId` |
 | `style.profile.apply` | `styleProfileRef` |
 | `timeline.clip.move` | `trackId`, `clipId`, `newStart` (rational), `ripple` |
 | `timeline.clip.reorder` | `trackId`, `clipId`, `toIndex` |

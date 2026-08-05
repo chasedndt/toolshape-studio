@@ -7,6 +7,7 @@ import type {
   StudioProject,
   Track,
 } from "@toolshape/studio-domain";
+import { EFFECT_PARAMETERS } from "@toolshape/studio-domain";
 import { addRational, compareRational, rational, toSeconds } from "./rational";
 
 export interface ValidationIssue {
@@ -349,6 +350,40 @@ export function validateStudioProject(project: StudioProject): ValidationIssue[]
       path: "timeline.duration",
       message: "Timeline duration must be positive.",
     });
+  }
+
+  for (const [index, effect] of (project.effects ?? []).entries()) {
+    const path = `effects[${index}]`;
+    const ranges = EFFECT_PARAMETERS[effect.type];
+    if (!ranges) {
+      issues.push({
+        code: "effect.unknown-type",
+        severity: "error",
+        path: `${path}.type`,
+        message: `Unknown effect type: ${effect.type}.`,
+      });
+      continue;
+    }
+    for (const [name, value] of Object.entries(effect.parameters ?? {})) {
+      const range = ranges[name];
+      if (!range) {
+        issues.push({
+          code: "effect.unknown-parameter",
+          severity: "error",
+          path: `${path}.parameters.${name}`,
+          message: `${effect.type} has no parameter “${name}”.`,
+        });
+        continue;
+      }
+      if (!Number.isFinite(value) || value < range.min || value > range.max) {
+        issues.push({
+          code: "effect.parameter-out-of-range",
+          severity: "error",
+          path: `${path}.parameters.${name}`,
+          message: `${effect.type}.${name} must be between ${range.min} and ${range.max}.`,
+        });
+      }
+    }
   }
 
   for (const [index, capture] of (project.captures ?? []).entries()) {

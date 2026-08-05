@@ -1,3 +1,4 @@
+import { EFFECT_PARAMETERS } from "@toolshape/studio-domain";
 import type {
   AudioTrack,
   CaptionTrack,
@@ -274,33 +275,52 @@ export function applyStudioOperation(
       summary = `Set an easing keyframe on “${node.name}”.`;
       break;
     }
-    case "effect.blur.set": {
-      if (operation.payload.radius < 0 || operation.payload.radius > 100) {
-        throw new RangeError("Blur radius must be between 0 and 100.");
-      }
+    case "effect.set": {
       const scene = findScene(project, operation.payload.sceneId);
       const node = findNode(scene, operation.payload.nodeId);
-      const existing = project.effects.find((effect) => effect.id === operation.payload.effectId);
-      if (existing) {
-        existing.radius = operation.payload.radius;
-        existing.enabled = operation.payload.enabled;
+      const ranges = EFFECT_PARAMETERS[operation.payload.effect.type];
+      if (!ranges) {
+        throw new TypeError(`Unknown effect type: ${operation.payload.effect.type}`);
+      }
+      for (const [name, value] of Object.entries(operation.payload.effect.parameters)) {
+        const range = ranges[name];
+        if (!range) {
+          throw new RangeError(`${operation.payload.effect.type} has no parameter “${name}”.`);
+        }
+        if (!Number.isFinite(value) || value < range.min || value > range.max) {
+          throw new RangeError(
+            `${operation.payload.effect.type}.${name} must be between ${range.min} and ${range.max}.`,
+          );
+        }
+      }
+
+      const existing = project.effects.findIndex((candidate) => candidate.id === operation.payload.effect.id);
+      const next = structuredClone(operation.payload.effect);
+      if (existing >= 0) {
+        next.revision = project.effects[existing].revision + 1;
+        project.effects[existing] = next;
       } else {
-        project.effects.push({
-          id: operation.payload.effectId,
-          type: "blur",
-          radius: operation.payload.radius,
-          enabled: operation.payload.enabled,
-        });
+        next.revision = 0;
+        project.effects.push(next);
       }
-      if (!node.effectIds.includes(operation.payload.effectId)) {
-        node.effectIds.push(operation.payload.effectId);
-      }
+      if (!node.effectIds.includes(next.id)) node.effectIds.push(next.id);
       incrementNodeAndScene(node, scene);
-      changedPaths.push(
-        `effects.${operation.payload.effectId}`,
-        `scenes.${scene.id}.nodes.${node.id}.effectIds`,
-      );
-      summary = `Set blur to ${operation.payload.radius}px on “${node.name}”.`;
+      changedPaths.push(`effects.${next.id}`, `scenes.${scene.id}.nodes.${node.id}.effectIds`);
+      summary = `Set a ${next.type} effect on “${node.name}”.`;
+      break;
+    }
+    case "effect.remove": {
+      const scene = findScene(project, operation.payload.sceneId);
+      const node = findNode(scene, operation.payload.nodeId);
+      const existing = project.effects.find((candidate) => candidate.id === operation.payload.effectId);
+      if (!existing) {
+        throw new RangeError(`Unknown effect: ${operation.payload.effectId}`);
+      }
+      project.effects = project.effects.filter((candidate) => candidate.id !== existing.id);
+      node.effectIds = node.effectIds.filter((candidate) => candidate !== existing.id);
+      incrementNodeAndScene(node, scene);
+      changedPaths.push(`effects.${existing.id}`);
+      summary = `Removed the ${existing.type} effect from “${node.name}”.`;
       break;
     }
     case "style.profile.apply": {

@@ -176,25 +176,53 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
       };
     }
 
-    case "effect.blur.set": {
+    case "effect.set": {
+      const previous = before.effects.find((effect) => effect.id === operation.payload.effect.id);
+      // Setting over an existing effect restores it; a newly added one is
+      // undone by removing it, which the generalised stack can now express.
+      return previous
+        ? {
+            revertible: true,
+            operations: [
+              {
+                type: "effect.set",
+                payload: {
+                  sceneId: operation.payload.sceneId,
+                  nodeId: operation.payload.nodeId,
+                  effect: structuredClone(previous),
+                },
+              },
+            ],
+          }
+        : {
+            revertible: true,
+            operations: [
+              {
+                type: "effect.remove",
+                payload: {
+                  sceneId: operation.payload.sceneId,
+                  nodeId: operation.payload.nodeId,
+                  effectId: operation.payload.effect.id,
+                },
+              },
+            ],
+          };
+    }
+
+    case "effect.remove": {
       const previous = before.effects.find((effect) => effect.id === operation.payload.effectId);
       if (!previous) {
-        return notRevertible(
-          "revert.no-inverse-capability",
-          "Reverting a newly created effect needs an effect removal operation, which does not exist yet.",
-        );
+        return notRevertible("revert.target-missing", "The removed effect is not present in the prior snapshot.");
       }
       return {
         revertible: true,
         operations: [
           {
-            type: "effect.blur.set",
+            type: "effect.set",
             payload: {
               sceneId: operation.payload.sceneId,
               nodeId: operation.payload.nodeId,
-              effectId: operation.payload.effectId,
-              radius: previous.radius,
-              enabled: previous.enabled,
+              effect: structuredClone(previous),
             },
           },
         ],
@@ -687,7 +715,9 @@ export function operationTargets(operation: StudioOperation): string[] {
         `node:${operation.payload.sceneId}:${operation.payload.nodeId}`,
         `animation:${operation.payload.nodeId}:${operation.payload.property}`,
       ];
-    case "effect.blur.set":
+    case "effect.set":
+      return [`effect:${operation.payload.effect.id}`, `node:${operation.payload.sceneId}:${operation.payload.nodeId}`];
+    case "effect.remove":
       return [`effect:${operation.payload.effectId}`, `node:${operation.payload.sceneId}:${operation.payload.nodeId}`];
     case "style.profile.apply":
       return ["style:profile"];

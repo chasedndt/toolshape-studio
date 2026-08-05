@@ -234,14 +234,47 @@ export interface Timeline {
   tracks: Track[];
 }
 
-export interface BlurEffect {
+/**
+ * The effect stack.
+ *
+ * Every effect carries a typed parameter map rather than named fields, so
+ * adding one is data rather than a new interface, a new operation, a new
+ * inverse and a new render branch. Blur was the only effect for a long time and
+ * it was hardcoded end to end; that shape did not survive contact with a second
+ * effect.
+ *
+ * Parameters are numbers on purpose: they are the values that can be keyframed
+ * (`animation.keyframe.set`) and interpolated. An effect needing a colour or a
+ * mode carries it in `options`, which is not animatable.
+ */
+export type EffectType = "blur" | "brightness" | "contrast" | "saturation" | "opacity" | "colour-shift";
+
+export interface Effect {
   id: Id;
-  type: "blur";
-  radius: number;
+  type: EffectType;
   enabled: boolean;
+  /** Animatable numeric values, keyed by parameter name. */
+  parameters: Record<string, number>;
+  /** Non-animatable settings, such as a colour or a blend mode. */
+  options?: Record<string, string>;
+  revision: number;
 }
 
-export type Effect = BlurEffect;
+/** Bounds each effect's parameters, so an invalid value is caught by validation. */
+export interface EffectParameterRange {
+  min: number;
+  max: number;
+  fallback: number;
+}
+
+export const EFFECT_PARAMETERS: Record<EffectType, Record<string, EffectParameterRange>> = {
+  blur: { radius: { min: 0, max: 200, fallback: 0 } },
+  brightness: { amount: { min: -1, max: 1, fallback: 0 } },
+  contrast: { amount: { min: 0, max: 4, fallback: 1 } },
+  saturation: { amount: { min: 0, max: 3, fallback: 1 } },
+  opacity: { amount: { min: 0, max: 1, fallback: 1 } },
+  "colour-shift": { hueDegrees: { min: -180, max: 180, fallback: 0 } },
+};
 
 export interface StyleProfileRef {
   id: Id;
@@ -341,9 +374,15 @@ export type StudioOperation =
       { sceneId: Id; nodeId: Id; property: AnimationProperty; keyframe: Keyframe }
     >
   | Operation<
-      "effect.blur.set",
-      { sceneId: Id; nodeId: Id; effectId: Id; radius: number; enabled: boolean }
+      "effect.set",
+      /** Adds or updates any effect. Replaces the blur-only operation. */
+      {
+        sceneId: Id;
+        nodeId: Id;
+        effect: Effect;
+      }
     >
+  | Operation<"effect.remove", { sceneId: Id; nodeId: Id; effectId: Id }>
   | Operation<
       "timeline.clip.move",
       { trackId: Id; clipId: Id; newStart: RationalTime; ripple: boolean }
