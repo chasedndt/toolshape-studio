@@ -73,19 +73,21 @@ Every one of those is adjustable *after* recording, because none of it was ever 
 
 > **The structural claim:** because clicks and window focus are kept as data, an agent asked to *"zoom on every click in the settings panel"* answers by **reading the event log**. Against a flat video the same request needs frame-by-frame vision inference and cannot be verified.
 
-*Status: specified — [spec](docs/product/CAPTURE-PILLAR.md), [roadmap](docs/product/ROADMAP.md)*
+*Status: the capture document, deterministic zoom derivation, camera path, cursor smoothing, redaction editing and timeline projection are **live**. The recorder itself is not built — see the [spec](docs/product/CAPTURE-PILLAR.md) and [roadmap](docs/product/ROADMAP.md).*
 
 ### Edit — cut it like a real editor
 
 Multi-track timeline with frame-accurate control: split, trim, move, reorder, ripple delete, duplicate, speed ramp. Transitions and a keyframable effect stack. Auto-captions with styling and timing. Audio with gain, fades, normalisation and ducking. **Transcript-driven editing** — delete a sentence in the text and the video cuts with it.
 
-*Status: **live** — timeline with trim, split, move, reorder, delete, duplicate, merge and rational speed; durable render*
+*Status: **live** — timeline with trim, split, move, reorder, delete, duplicate, insert, merge, rational speed and crossfade transitions, rendering the real timeline to MP4*
 
 ### Design — brand it and ship it everywhere
 
-Layered canvas, typography, shapes and masks, image adjustment. Brand kits applying colours, fonts and logos with hard and soft rules. Templates and reusable components. And the payoff: **one source becomes every platform format**, with hierarchy, safe areas, contrast and text fit preserved — and *checked*, not hoped for.
+Layered canvas, typography, shapes and masks, image adjustment. Brand kits applying colours, fonts and logos with hard and soft rules. Templates and reusable components. And the payoff: **one source becomes every platform format**, with hierarchy, safe areas and text legibility preserved — and *checked*, not hoped for.
 
-*Status: in progress*
+That last part ships. `design.variant.create` reframes a scene into any format and `design.data.bind` fills text layers from a row of data, so an agent turns one design and three rows into nine finished variants. Each is validated by an independent checker that does **not** re-run the reframer — because a verifier that recomputes and compares would pass a wrong reframer too.
+
+*Status: variants and bulk data live; canvas editing, typography, brand kits and templates in progress*
 
 See the [pillar feature matrix](docs/product/PILLAR-FEATURE-MATRIX.md) for the full outcome-set analysis against the category references, and [positioning](docs/product/POSITIONING.md) for the canonical product language.
 
@@ -256,7 +258,8 @@ npm run dev:connected   # editor + MCP host, shared with agents
 Verification gates:
 
 ```bash
-npm run smoke:connected   # browser + host: persistence, agent visibility, conflict refusal
+npm run smoke:connected        # browser + host: persistence, agent visibility, conflict refusal
+npm run smoke:timeline-render  # renders a real crossfaded timeline and probes its duration
 npm run smoke:mcp
 npm run smoke:runtime
 npm run smoke:cli
@@ -298,7 +301,7 @@ fixtures/                 golden project
 
 Shipped: unified project model, typed operations with revisions and idempotency, atomic batches, undo/redo, SQLite restart recovery, byte-sniffed content-addressed imports, real media probing with quarantine and resource budgets, verified proxy/thumbnail/waveform derivatives, durable render jobs with progress and cancellation, direct timeline manipulation, schema-valid CLI/SDK adapters, the MCP network transport, and the super-app shell.
 
-Not yet built, and not claimed: the capture worker, the policy engine, the secret broker, network egress, at-rest encryption, sandboxed codec execution, the Tauri desktop shell, and real-time collaboration. The [threat model](docs/security/THREAT-MODEL.md) enumerates these explicitly as non-claims rather than leaving them ambiguous.
+Not yet built, and not claimed: the capture worker itself (the recorder — everything downstream of it is built), transcript generation, the generalised effect stack beyond blur, canvas editing UI, brand kits and templates, multi-format image export, the policy engine, the secret broker, network egress, at-rest encryption, sandboxed codec execution, the Tauri desktop shell, and real-time collaboration. The [threat model](docs/security/THREAT-MODEL.md) enumerates these explicitly as non-claims rather than leaving them ambiguous.
 
 **Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md)** — phased build order for all three pillars, including why agent-native screen capture is achievable without native code first. Also: [PRD v2](products/studio/PRD-V2.md) · [non-goals](docs/19-non-goals.md)
 
