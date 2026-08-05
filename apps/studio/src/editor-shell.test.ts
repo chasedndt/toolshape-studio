@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  WORKSPACES,
   createEditorShellState,
+  isFullBleedWorkspace,
   selectLeftPanel,
   selectRightPanel,
   setActiveMenu,
@@ -40,6 +42,34 @@ describe("editor shell view state", () => {
       workspace: "automate",
       leftPanel: "media",
       rightPanel: "agent",
+      visibility: { left: true, right: true, timeline: false },
+      activeMenu: null,
+    });
+  });
+
+  it("gives every workspace a unique shortcut and only Home is full bleed", () => {
+    const shortcuts = WORKSPACES.map((workspace) => workspace.shortcut);
+    expect(new Set(shortcuts).size).toBe(WORKSPACES.length);
+    expect(WORKSPACES.filter((workspace) => workspace.fullBleed).map((workspace) => workspace.id)).toEqual(["home"]);
+    expect(isFullBleedWorkspace("home")).toBe(true);
+    expect(isFullBleedWorkspace("edit")).toBe(false);
+  });
+
+  it("opens Home as a dashboard with every editing region suppressed", () => {
+    expect(createEditorShellState("home")).toEqual({
+      workspace: "home",
+      leftPanel: "media",
+      rightPanel: "agent",
+      visibility: { left: false, right: false, timeline: false },
+      activeMenu: null,
+    });
+  });
+
+  it("opens Capture with source and capture panels and no timeline", () => {
+    expect(switchWorkspace(createEditorShellState(), "capture")).toEqual({
+      workspace: "capture",
+      leftPanel: "sources",
+      rightPanel: "capture",
       visibility: { left: true, right: true, timeline: false },
       activeMenu: null,
     });

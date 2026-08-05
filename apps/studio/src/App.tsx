@@ -4,6 +4,8 @@ import {
   Captions,
   Check,
   ChevronDown,
+  Circle,
+  Clapperboard,
   Diamond,
   Eye,
   FileOutput,
@@ -14,6 +16,7 @@ import {
   Layers3,
   Lock,
   Menu,
+  MonitorPlay,
   MousePointer2,
   Music2,
   PanelBottomClose,
@@ -24,6 +27,7 @@ import {
   Redo2,
   Scissors,
   Search,
+  Shapes,
   ShieldCheck,
   SlidersHorizontal,
   SkipBack,
@@ -57,6 +61,7 @@ import { createGoldenStudioProject } from "../../../fixtures/studio/golden-proje
 import {
   WORKSPACES,
   createEditorShellState,
+  isFullBleedWorkspace,
   selectLeftPanel,
   selectRightPanel,
   setActiveMenu,
@@ -66,6 +71,7 @@ import {
   type LeftPanelId,
   type RightPanelId,
   type ShellRegion,
+  type WorkspaceId,
 } from "./editor-shell";
 import { useStudioState } from "./studio-state";
 import {
@@ -247,6 +253,7 @@ const LEFT_PANEL_DEFINITIONS: readonly {
   { id: "text", label: "Text", eyebrow: "EDITABLE COPY", icon: Type },
   { id: "audio", label: "Audio", eyebrow: "MIX GRAPH", icon: Music2 },
   { id: "captions", label: "Captions", eyebrow: "TRANSCRIPT", icon: Captions },
+  { id: "sources", label: "Sources", eyebrow: "CAPTURE INPUT", icon: MonitorPlay },
 ] as const;
 
 function SectionTitle({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
@@ -405,6 +412,21 @@ function LeftRail({
         })}
       </div>
     );
+  } else if (activePanel === "sources") {
+    panelContent = (
+      <div className="source-list">
+        {CAPTURE_SOURCES.filter((source) => match(source.label)).map((source) => (
+          <button
+            className="source-row"
+            key={source.id}
+            onClick={() => onNotice(`${source.label} · enumerated by studio.capture.list_sources · worker not implemented (Milestone 9)`)}
+          >
+            <MonitorPlay size={15} aria-hidden="true" />
+            <span><strong>{source.label}</strong><small>{source.kind} · {source.detail}</small></span>
+          </button>
+        ))}
+      </div>
+    );
   } else {
     panelContent = (
       <div className="source-list">
@@ -494,6 +516,7 @@ const RIGHT_PANEL_DEFINITIONS: readonly { id: RightPanelId; label: string; icon:
   { id: "inspector", label: "Inspector", icon: SlidersHorizontal },
   { id: "agent", label: "Agent", icon: Bot },
   { id: "quality", label: "Quality", icon: ShieldCheck },
+  { id: "capture", label: "Capture", icon: MonitorPlay },
 ] as const;
 
 function RightRail({
@@ -672,6 +695,40 @@ function RightRail({
                 <span key={label}><Check size={13} aria-hidden="true" /><strong>{label}</strong><small>Passed</small></span>
               ))}
             </div>
+          </section>
+        )}
+
+        {activePanel === "capture" && (
+          <section className="capture-settings">
+            <SectionTitle eyebrow="RECORDING" title="Capture plan" />
+            <div className="capture-consent-card">
+              <ShieldCheck size={16} aria-hidden="true" />
+              <strong>Consent required</strong>
+              <small>
+                Recording never starts without explicit OS-level authorization, and the indicator
+                cannot be suppressed — including when an agent initiates the session.
+              </small>
+            </div>
+            <div className="capture-option-list">
+              {[
+                { label: "Auto zoom", value: "From event track", hint: "Deterministic, not frame vision" },
+                { label: "Cursor smoothing", value: "Enabled", hint: "Render-time transform" },
+                { label: "Click emphasis", value: "Bounce", hint: "Derived from click events" },
+                { label: "Backdrop", value: "Gradient · 32px pad", hint: "Radius 12 · soft shadow" },
+                { label: "Keystroke capture", value: "Off", hint: "Default off · secure fields excluded" },
+                { label: "Camera overlay", value: "Bubble", hint: "Follows activity" },
+              ].map((option) => (
+                <div className="capture-option" key={option.label}>
+                  <span>{option.label}</span>
+                  <strong>{option.value}</strong>
+                  <small>{option.hint}</small>
+                </div>
+              ))}
+            </div>
+            <p className="capture-note">
+              Every value here becomes semantic project data, not baked pixels. Changing it after
+              recording is an operation, not a re-record.
+            </p>
           </section>
         )}
       </div>
@@ -1307,6 +1364,212 @@ function WorkspaceTabs({
   );
 }
 
+/**
+ * The eight capabilities an agent harness can reach over MCP. Rendered from the
+ * same list the transport advertises so the dashboard cannot drift from what is
+ * actually callable.
+ */
+const AGENT_CAPABILITIES: ReadonlyArray<{ id: string; risk: string; live: boolean }> = [
+  { id: "studio.project.inspect", risk: "read only", live: true },
+  { id: "studio.project.validate", risk: "read only", live: true },
+  { id: "studio.project.plan", risk: "simulation", live: true },
+  { id: "studio.project.apply_operations", risk: "local write", live: true },
+  { id: "studio.project.render", risk: "local write", live: true },
+  { id: "studio.job.get", risk: "read only", live: true },
+  { id: "studio.job.cancel", risk: "local write", live: true },
+  { id: "studio.operation.undo", risk: "local write", live: true },
+];
+
+const PILLARS: ReadonlyArray<{
+  workspace: WorkspaceId;
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  status: string;
+}> = [
+  {
+    workspace: "capture",
+    icon: MonitorPlay,
+    title: "Capture",
+    body: "Record a display, window or camera as a re-editable document with cursor and event tracks.",
+    status: "Milestone 9",
+  },
+  {
+    workspace: "edit",
+    icon: Clapperboard,
+    title: "Edit",
+    body: "Multi-track timeline with frame-snapped trim, split, transcript and captions.",
+    status: "Live",
+  },
+  {
+    workspace: "create",
+    icon: Shapes,
+    title: "Design",
+    body: "Layered canvas, typography, brand systems and platform variants.",
+    status: "In progress",
+  },
+];
+
+function StatCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="stat-card">
+      <span className="stat-card__label">{label}</span>
+      <strong className="stat-card__value">{value}</strong>
+      <small className="stat-card__hint">{hint}</small>
+    </div>
+  );
+}
+
+function HomeDashboard({
+  project,
+  renderJob,
+  onOpenWorkspace,
+  onNotice,
+}: {
+  project: StudioProject;
+  renderJob: ReturnType<typeof useStudioState>["renderJob"];
+  onOpenWorkspace: (workspace: WorkspaceId) => void;
+  onNotice: (notice: string) => void;
+}) {
+  const totalSeconds = toSeconds(project.timeline.duration);
+  const clipCount = project.timeline.tracks.reduce(
+    (total, track) => total + (track.kind === "caption" ? track.segments.length : track.clips.length),
+    0,
+  );
+
+  return (
+    <section className="home-dashboard" data-surface="home">
+      <header className="home-hero">
+        <div>
+          <span className="home-hero__eyebrow">AGENT-NATIVE CONTENT STUDIO</span>
+          <h1>One project. Capture, edit and design.</h1>
+          <p>
+            Every surface below is reachable by a human here and by an agent harness over MCP —
+            the same typed operations, the same validation, the same history.
+          </p>
+        </div>
+        <div className="home-hero__actions">
+          <button className="button button--accent" onClick={() => onOpenWorkspace("capture")}>
+            <MonitorPlay size={14} aria-hidden="true" />
+            New capture
+          </button>
+          <button className="button button--quiet" onClick={() => onOpenWorkspace("edit")}>
+            <Clapperboard size={14} aria-hidden="true" />
+            Open timeline
+          </button>
+        </div>
+      </header>
+
+      <div className="home-stats">
+        <StatCard label="Project" value={project.name} hint={`Revision r${project.revision}`} />
+        <StatCard label="Duration" value={`${totalSeconds.toFixed(2)}s`} hint={`${clipCount} timeline items`} />
+        <StatCard label="Assets" value={String(project.assets.length)} hint="Content-addressed originals" />
+        <StatCard
+          label="Render job"
+          value={renderJob ? renderJob.status : "idle"}
+          hint={renderJob ? `${Math.round(renderJob.progress.fraction * 100)}% · ${renderJob.progress.stage}` : "No job queued"}
+        />
+      </div>
+
+      <div className="home-columns">
+        <section className="home-panel" aria-labelledby="home-pillars">
+          <h2 id="home-pillars">Workspaces</h2>
+          <div className="pillar-grid">
+            {PILLARS.map((pillar) => (
+              <button key={pillar.workspace} className="pillar-card" onClick={() => onOpenWorkspace(pillar.workspace)}>
+                <span className="pillar-card__icon"><pillar.icon size={18} aria-hidden="true" /></span>
+                <strong>{pillar.title}</strong>
+                <small>{pillar.body}</small>
+                <i className="pillar-card__status">{pillar.status}</i>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-panel" aria-labelledby="home-agent">
+          <h2 id="home-agent">Agent surface</h2>
+          <p className="home-panel__lead">
+            Discoverable over MCP at <code>tools/list</code>. A harness needs no hardcoded knowledge of this list.
+          </p>
+          <ul className="capability-list">
+            {AGENT_CAPABILITIES.map((capability) => (
+              <li key={capability.id}>
+                <span className={`capability-dot${capability.live ? " is-live" : ""}`} aria-hidden="true" />
+                <code>{capability.id}</code>
+                <small>{capability.risk}</small>
+              </li>
+            ))}
+          </ul>
+          <button
+            className="button button--quiet"
+            onClick={() => onNotice("Start the transport with: npm run mcp:http — then point a harness at http://127.0.0.1:7777")}
+          >
+            <Bot size={14} aria-hidden="true" />
+            How to connect a harness
+          </button>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+const CAPTURE_SOURCES: ReadonlyArray<{ id: string; kind: string; label: string; detail: string }> = [
+  { id: "display-1", kind: "Display", label: "Primary display", detail: "2560 × 1440 · 60 fps" },
+  { id: "window-1", kind: "Window", label: "Application window", detail: "Follows focus changes" },
+  { id: "region-1", kind: "Region", label: "Custom region", detail: "Drag to define bounds" },
+  { id: "camera-1", kind: "Camera", label: "Camera overlay", detail: "Bubble overlay · follows cursor" },
+];
+
+function CaptureWorkspace({ onNotice }: { onNotice: (notice: string) => void }) {
+  const [selectedSource, setSelectedSource] = useState("display-1");
+
+  return (
+    <section className="canvas-workspace capture-workspace">
+      <header>
+        <div><span>CAPTURE</span><strong>Recording surface</strong><i>MILESTONE 9</i></div>
+      </header>
+      <div className="capture-stage">
+        <div className="capture-preview" role="img" aria-label="Capture preview placeholder">
+          <span className="capture-preview__frame">
+            <MonitorPlay size={32} aria-hidden="true" />
+            <strong>{CAPTURE_SOURCES.find((source) => source.id === selectedSource)?.label}</strong>
+            <small>Preview appears here once the capture worker is implemented</small>
+          </span>
+        </div>
+
+        <div className="capture-controls" role="group" aria-label="Capture controls">
+          <button
+            className="button button--accent"
+            onClick={() => onNotice("Capture requires explicit OS consent and a visible recording indicator. The worker is not implemented (Milestone 9).")}
+          >
+            <Circle size={12} aria-hidden="true" />
+            Start recording
+          </button>
+          <span className="capture-consent">
+            <ShieldCheck size={13} aria-hidden="true" />
+            Consent-gated · indicator always visible · keystrokes off by default
+          </span>
+        </div>
+
+        <div className="capture-source-grid">
+          {CAPTURE_SOURCES.map((source) => (
+            <button
+              key={source.id}
+              className={`capture-source${selectedSource === source.id ? " is-selected" : ""}`}
+              aria-pressed={selectedSource === source.id}
+              onClick={() => setSelectedSource(source.id)}
+            >
+              <span>{source.kind}</span>
+              <strong>{source.label}</strong>
+              <small>{source.detail}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview?: PreviewResolver } = {}) {
   const initialProject = useMemo(() => createGoldenStudioProject(), []);
   const {
@@ -1382,7 +1645,7 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
           undo();
         }
       }
-      if (event.altKey && /^[1-4]$/.test(event.key)) {
+      if (event.altKey && /^[1-6]$/.test(event.key)) {
         event.preventDefault();
         const workspace = WORKSPACES[Number(event.key) - 1];
         setShell((current) => switchWorkspace(current, workspace.id));
@@ -1462,6 +1725,14 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
         </div>
       </header>
 
+      {isFullBleedWorkspace(shell.workspace) ? (
+        <HomeDashboard
+          project={project}
+          renderJob={renderJob}
+          onOpenWorkspace={chooseWorkspace}
+          onNotice={setNotice}
+        />
+      ) : (
       <div className={workspaceClasses}>
         {shell.visibility.left && (
           <LeftRail
@@ -1476,6 +1747,9 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
             resolvePreview={resolvePreview}
           />
         )}
+        {shell.workspace === "capture" ? (
+          <CaptureWorkspace onNotice={setNotice} />
+        ) : (
         <section className="canvas-workspace">
           <header>
             <div><span>ARTBOARD 01</span><strong>Social portrait</strong><i>{shell.workspace.toUpperCase()}</i></div>
@@ -1504,6 +1778,7 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
             />
           </div>
         </section>
+        )}
         {shell.visibility.right && (
           <RightRail
             project={project}
@@ -1517,6 +1792,7 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
           />
         )}
       </div>
+      )}
 
       {shell.visibility.timeline && (
         <TimelinePanel
