@@ -8,6 +8,20 @@ Three pillars, one spine. This document maps what gets built, in what order, and
 
 ---
 
+## What we are building
+
+> **Studio-quality content, produced by agents, finished by you.**
+
+**Toolshape Studio is a super-app for content creators and marketers who work in screen capture** — product demos, feature announcements, tutorials, onboarding walkthroughs, launch videos, and every platform variant of those.
+
+The work that defines this audience is repetitive precision work at relentless volume: record the demo, cut the dead air, zoom on the click, caption it, brand it, export four platforms at three aspect ratios, repeat next week. Every step is rule-governed and verifiable — the exact shape of work an agent should do, and the exact work today's tools force a person to do by hand, because they are built for a mouse.
+
+**Agent-native first.** Not "a creative tool with AI features bolted on." The semantic operation surface *is* the product and the interface is one way to reach it. A human dragging a trim handle and an agent making a call submit the identical operation, through identical validation, into identical history. Everything in this roadmap is a new *operation* before it is a new *panel*, and that ordering is the point.
+
+Canonical product language, including what we deliberately do not claim, is in [POSITIONING.md](POSITIONING.md).
+
+---
+
 ## The organising principle
 
 Every pillar adds *vocabulary* to a spine that already exists:
@@ -76,8 +90,8 @@ We already have the substrate: `interpolateKeyframes` with easing exists in `pac
 | Deterministic zoom derivation | Low–medium | Pure function over an event track, fully unit-testable |
 | Styling and compositing at render | Medium | FFmpeg filter graphs; zoom pan, backdrop, crop, cursor smoothing |
 | Agent control surface | Low | New operations on an existing transport |
-| **Native OS capture worker** | **High** | Platform-specific APIs, needs Rust + a Tauri shell — neither present on this machine |
-| **Cursor / click / window tracks** | **High** | Platform-specific, and it is the whole differentiator |
+| **Native OS capture worker** | **High** | Platform-specific APIs, needs a native shell — see [NATIVE-SHELL.md](../architecture/NATIVE-SHELL.md) |
+| **Cursor / click / window tracks** | **High** | A browser sandbox refuses these by design, and they are the whole differentiator |
 
 **All the risk is in the last two rows.** Everything above them can be built and verified with an imported video plus a synthetic event track.
 
@@ -138,13 +152,31 @@ flowchart LR
 
 Everything except the recorder. Developed against an imported MP4 plus a synthetic event track, so there is no platform dependency anywhere in this milestone.
 
+**The features this delivers** — this milestone is where the product becomes recognisable:
+
+| Feature | What it does | How it is agent-controlled |
+|---|---|---|
+| **Automatic zoom** | Follows the action, derived from click clustering. Window-bounded, rate-limited so it never oscillates, suppressed during idle stretches | `plan_zoom` derives a plan from the event track; the agent previews the diff and commits or authors its own |
+| **Smooth pan** | Eased transitions between zoom regions rather than cuts | Easing curve is a parameter on the zoom keyframes |
+| **Cursor styling** | Smoothed motion path, size control, click-bounce animation, motion blur | Render parameters on the cursor track |
+| **Backdrop** | Wallpaper, gradient or solid fill; padding; corner radius; drop shadow | `set_overlay` |
+| **Crop and reframe** | Any aspect ratio — 16:9, 9:16, 1:1, 4:5 — with the zoom plan reflowing to the new frame | A render parameter; variants become trivial |
+| **Camera overlay** | Webcam bubble with position, shape, size and follow behaviour | `set_overlay` |
+| **Speed regions** | Accelerate dull stretches, slow the important ones | Reuses `timeline.clip.set-speed` from M8 |
+| **Redaction** | Mask a region, a tracked window, or a span of keystrokes | `redact` |
+| **Annotations** | Callouts and highlights over the recording | Reuses the design pillar's layer system |
+
+Underneath:
+
 - Capture document schema and migration — media, cursor track, event track, window track, zoom plan, overlay, backdrop
-- Deterministic zoom derivation from events: clustering, window-bounded regions, bounded zoom rate, idle suppression
-- Styling and compositing at render: zoom pan with easing, backdrop (wallpaper/gradient/solid, padding, radius, shadow), crop, cursor smoothing and click emphasis
+- Deterministic zoom derivation: clustering, window-bounded regions, bounded zoom rate, idle suppression
+- Render-time compositing through typed FFmpeg filter graphs
 - `studio.capture.plan_zoom`, `.set_overlay`, `.redact`, `.to_scene`
 - Capture workspace UI wired to real data
 
 **Exit:** import a raw screen recording plus an event track; an agent produces a styled, zoomed, cropped, backdropped video and verifies the output by probe.
+
+**Why this has no platform dependency:** every input is a file plus a JSON event track. Whether those came from a real recorder or a fixture is irrelevant to everything in this list.
 
 #### Milestone 10 · Browser-driven capture — first shippable agent-native Recordly
 

@@ -2,15 +2,25 @@
 
 # Toolshape Studio
 
-**An agent-native content studio. Screen capture, video editing and visual design in one semantic project — operable by an AI agent as competently as by a human.**
+### Studio-quality content, produced by agents, finished by you.
 
-[Roadmap](docs/product/ROADMAP.md) · [Architecture](docs/architecture/DIAGRAMS.md) · [PRD](products/studio/PRD-V2.md) · [Agent integration](docs/agent-integration/AGENT-INTEGRATION-GUIDE.md) · [Capabilities](docs/agent-integration/CAPABILITY-CATALOG.md) · [ADRs](docs/adr/) · [Security](docs/security/THREAT-MODEL.md)
+**Screen recording, video editing and visual design in one project — the first content studio an AI agent can operate as competently as a person.**
+
+[Roadmap](docs/product/ROADMAP.md) · [Positioning](docs/product/POSITIONING.md) · [Architecture](docs/architecture/DIAGRAMS.md) · [PRD](products/studio/PRD-V2.md) · [Agent integration](docs/agent-integration/AGENT-INTEGRATION-GUIDE.md) · [Capabilities](docs/agent-integration/CAPABILITY-CATALOG.md) · [ADRs](docs/adr/) · [Security](docs/security/THREAT-MODEL.md)
 
 </div>
 
 ![Toolshape Studio home dashboard](docs/assets/ui/workspace-home.png)
 
 ---
+
+## Who it's for
+
+**Content creators and marketers who work in screen capture** — product demos, feature announcements, tutorials, onboarding walkthroughs, launch videos, and the platform variants of all of them.
+
+The defining trait of that work isn't that it's difficult. It's that it's **repetitive precision work, at relentless volume.** Record the demo. Cut the dead air. Zoom on the click. Add captions. Apply the brand. Export for four platforms at three aspect ratios. Do it again next week.
+
+Every one of those steps is rule-governed and verifiable — exactly the shape of work an agent should do, and exactly what today's tools force a person to do by hand, because they're built for a mouse.
 
 ## The problem
 
@@ -38,15 +48,36 @@ No adapter gets a looser path than any other. That is enforced by [adapter parit
 
 A capture, a video and a design are the same object type with different fields populated — which is why an agent that can operate one can operate all three.
 
-| Pillar | What it does | Status |
-|---|---|---|
-| **Capture** | Record a display, window or camera as a *re-editable document* — cursor, click, keystroke and window tracks survive as data instead of being flattened into pixels | Specified ([spec](docs/product/CAPTURE-PILLAR.md)) |
-| **Edit** | Multi-track timeline, frame-snapped trim and split, transcript-driven cuts, captions, audio mix | **Live** |
-| **Design** | Layered canvas, typography, brand systems, platform variants, bulk data binding | In progress |
+### Capture — record a demo that stays editable
 
-The capture pillar's structural claim: because click and window events are kept as data, an agent asking to *"zoom on every click in the settings panel"* is resolved **deterministically against the event track**. Against a flat video the same request needs frame-by-frame vision inference and cannot be verified.
+What comes out is **not a flat video file**. It's a document that still knows what happened.
 
-See the [pillar feature matrix](docs/product/PILLAR-FEATURE-MATRIX.md) for the full outcome-set analysis against the category references.
+| | |
+|---|---|
+| **Automatic zoom** that follows the action, derived from where you actually clicked | **Styled backdrops** — gradients, solid fills, wallpapers, padding, rounded corners, drop shadows |
+| **Smooth cursor motion** with click emphasis and motion blur | **Crop and reframe** to any aspect ratio, zoom plan reflowing to match |
+| **Camera overlay** as a bubble that follows the activity | **Speed regions** to accelerate the dull parts, slow the important ones |
+| **Redaction** of a window, a region, or a span of keystrokes | **Annotations** from the same layer system the design pillar uses |
+
+Every one of those is adjustable *after* recording, because none of it was ever baked into the pixels. Change the zoom next week without re-recording.
+
+> **The structural claim:** because clicks and window focus are kept as data, an agent asked to *"zoom on every click in the settings panel"* answers by **reading the event log**. Against a flat video the same request needs frame-by-frame vision inference and cannot be verified.
+
+*Status: specified — [spec](docs/product/CAPTURE-PILLAR.md), [roadmap](docs/product/ROADMAP.md)*
+
+### Edit — cut it like a real editor
+
+Multi-track timeline with frame-accurate control: split, trim, move, reorder, ripple delete, duplicate, speed ramp. Transitions and a keyframable effect stack. Auto-captions with styling and timing. Audio with gain, fades, normalisation and ducking. **Transcript-driven editing** — delete a sentence in the text and the video cuts with it.
+
+*Status: **live** — timeline, trim, split, split-at-playhead, durable render*
+
+### Design — brand it and ship it everywhere
+
+Layered canvas, typography, shapes and masks, image adjustment. Brand kits applying colours, fonts and logos with hard and soft rules. Templates and reusable components. And the payoff: **one source becomes every platform format**, with hierarchy, safe areas, contrast and text fit preserved — and *checked*, not hoped for.
+
+*Status: in progress*
+
+See the [pillar feature matrix](docs/product/PILLAR-FEATURE-MATRIX.md) for the full outcome-set analysis against the category references, and [positioning](docs/product/POSITIONING.md) for the canonical product language.
 
 ---
 
