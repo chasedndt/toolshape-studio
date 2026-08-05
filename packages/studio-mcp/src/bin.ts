@@ -66,7 +66,12 @@ async function main(): Promise<void> {
   const credential: SessionCredential = { ...session, token };
   const sessions = new SessionRegistry([credential]);
 
-  const listener = await serveHttp({ server, sessions, port, host });
+  // Browser clients need an explicit origin; nothing is allowed by default.
+  const allowedOrigins = (flag(args, "--allow-origin") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const listener = await serveHttp({ server, sessions, port, host, allowedOrigins });
   if (!supplied) {
     process.stderr.write(
       `Generated a single-run bearer token. Set STUDIO_MCP_TOKEN to use a stable one.\n${token}\n`,

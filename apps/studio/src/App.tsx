@@ -26,6 +26,7 @@ import {
   Pause,
   Play,
   Redo2,
+  RefreshCw,
   RotateCcw,
   Scissors,
   Search,
@@ -77,7 +78,7 @@ import {
   type WorkspaceId,
 } from "./editor-shell";
 import type { OperationHistoryEntry } from "@toolshape/studio-kernel";
-import { useStudioState } from "./studio-state";
+import { useStudioState, type ConnectionState } from "./studio-state";
 import {
   resolveAssetPreview,
   resolveFixturePreview,
@@ -548,6 +549,16 @@ function RightRail({
   apply: ReturnType<typeof useStudioState>["apply"];
 }) {
   const validationIssues = useMemo(() => validateStudioProject(project), [project]);
+
+  // Mutations are asynchronous now that the kernel may be remote. Failures must
+  // surface rather than becoming unhandled rejections.
+  const commit = (draft: Parameters<typeof apply>[0], success: string) => {
+    void apply(draft)
+      .then(() => onNotice(success))
+      .catch((error: unknown) => {
+        onNotice(error instanceof Error ? error.message : "That change was rejected.");
+      });
+  };
   return (
     <aside className="right-rail panel-boundary" aria-label="Context panels">
       <nav className="context-tabs" role="tablist" aria-label="Editor context">
@@ -592,14 +603,21 @@ function RightRail({
               <button
                 className="button button--accent"
                 onClick={() => {
-                  const diff = apply(
+                  // Attributed to the agent, so the activity history shows it
+                  // as an agent edit rather than an operator one.
+                  void apply(
                     {
                       type: "style.profile.apply",
                       payload: { styleProfileRef: { id: "style-night-citrus", version: 1, name: "Night Citrus" } },
                     },
-                    "agent",
-                  );
-                  onNotice(`Agent candidate applied · ${diff?.changedPaths.length ?? 0} semantic paths`);
+                    { actor: "agent" },
+                  )
+                    .then((diff) => {
+                      onNotice(`Agent candidate applied · ${diff?.changedPaths.length ?? 0} semantic paths`);
+                    })
+                    .catch((error: unknown) => {
+                      onNotice(error instanceof Error ? error.message : "Agent candidate was rejected.");
+                    });
                 }}
               >
                 <WandSparkles size={14} aria-hidden="true" />
@@ -636,10 +654,13 @@ function RightRail({
               <TextControl
                 node={selectedNode}
                 onCommit={(content) =>
-                  apply({
-                    type: "scene.node.update-text",
-                    payload: { sceneId: scene.id, nodeId: selectedNode.id, content },
-                  })
+                  commit(
+                    {
+                      type: "scene.node.update-text",
+                      payload: { sceneId: scene.id, nodeId: selectedNode.id, content },
+                    },
+                    "Copy updated through scene.node.update-text",
+                  )
                 }
               />
             )}
@@ -656,14 +677,17 @@ function RightRail({
               <button
                 className="button button--quiet"
                 onClick={() =>
-                  apply({
-                    type: "scene.node.update-transform",
-                    payload: {
-                      sceneId: scene.id,
-                      nodeId: selectedNode.id,
-                      patch: { x: selectedNode.transform.x + 24 },
+                  commit(
+                    {
+                      type: "scene.node.update-transform",
+                      payload: {
+                        sceneId: scene.id,
+                        nodeId: selectedNode.id,
+                        patch: { x: selectedNode.transform.x + 24 },
+                      },
                     },
-                  })
+                    "Nudged through scene.node.update-transform",
+                  )
                 }
               >
                 Nudge +24
@@ -671,16 +695,19 @@ function RightRail({
               <button
                 className="button button--quiet"
                 onClick={() =>
-                  apply({
-                    type: "effect.blur.set",
-                    payload: {
-                      sceneId: scene.id,
-                      nodeId: selectedNode.id,
-                      effectId: `effect-${selectedNode.id}-blur`,
-                      radius: 6,
-                      enabled: true,
+                  commit(
+                    {
+                      type: "effect.blur.set",
+                      payload: {
+                        sceneId: scene.id,
+                        nodeId: selectedNode.id,
+                        effectId: `effect-${selectedNode.id}-blur`,
+                        radius: 6,
+                        enabled: true,
+                      },
                     },
-                  })
+                    "Blur applied through effect.blur.set",
+                  )
                 }
               >
                 Add blur
@@ -1051,15 +1078,16 @@ function TimelinePanel({
       toSeconds(candidate.newDuration) === toSeconds(clip.duration);
     setTrimPreview(null);
     if (unchanged) return;
-    try {
-      apply({
-        type: "timeline.clip.trim",
-        payload: { trackId, clipId: clip.id, ...candidate, ripple },
+    void apply({
+      type: "timeline.clip.trim",
+      payload: { trackId, clipId: clip.id, ...candidate, ripple },
+    })
+      .then(() => {
+        onNotice(`${source} · ${ripple ? "ripple" : "edge"} trim committed through timeline.clip.trim`);
+      })
+      .catch((error: unknown) => {
+        onNotice(error instanceof Error ? error.message : "Timeline trim was rejected.");
       });
-      onNotice(`${source} · ${ripple ? "ripple" : "edge"} trim committed through timeline.clip.trim`);
-    } catch (error) {
-      onNotice(error instanceof Error ? error.message : "Timeline trim was rejected.");
-    }
   };
 
   const handleTrimPointerDown = (
@@ -1103,24 +1131,25 @@ function TimelinePanel({
   const splitSelected = () => {
     if (!selection || !selectedClip || !canSplit) return;
     const rightClipId = `clip-${crypto.randomUUID()}`;
-    try {
-      apply({
-        type: "timeline.clip.split",
-        payload: {
-          trackId: selection.trackId,
-          clipId: selection.clipId,
-          splitAt: rational(
-            Math.round(playheadSeconds * project.timeline.frameRate.numerator / project.timeline.frameRate.denominator) * project.timeline.frameRate.denominator,
-            project.timeline.frameRate.numerator,
-          ),
-          rightClipId,
-        },
+    void apply({
+      type: "timeline.clip.split",
+      payload: {
+        trackId: selection.trackId,
+        clipId: selection.clipId,
+        splitAt: rational(
+          Math.round(playheadSeconds * project.timeline.frameRate.numerator / project.timeline.frameRate.denominator) * project.timeline.frameRate.denominator,
+          project.timeline.frameRate.numerator,
+        ),
+        rightClipId,
+      },
+    })
+      .then(() => {
+        setSelection({ trackId: selection.trackId, clipId: rightClipId });
+        onNotice(`Split at ${formatTimecode(playheadSeconds, project.timeline.frameRate)} · timeline.clip.split`);
+      })
+      .catch((error: unknown) => {
+        onNotice(error instanceof Error ? error.message : "Timeline split was rejected.");
       });
-      setSelection({ trackId: selection.trackId, clipId: rightClipId });
-      onNotice(`Split at ${formatTimecode(playheadSeconds, project.timeline.frameRate)} · timeline.clip.split`);
-    } catch (error) {
-      onNotice(error instanceof Error ? error.message : "Timeline split was rejected.");
-    }
   };
 
   const trimSelectedToPlayhead = (edge: TrimEdge) => {
@@ -1233,17 +1262,21 @@ function TimelinePanel({
             <button
               className="icon-button"
               aria-label={audioClip.audio?.muted ? "Unmute source mix" : "Mute source mix"}
-              onClick={() => apply({
-                type: "timeline.clip.set-audio",
-                payload: {
-                  trackId: "track-audio",
-                  clipId: audioClip.id,
-                  gainDb: audioClip.audio?.gainDb ?? 0,
-                  muted: !(audioClip.audio?.muted ?? false),
-                  fadeIn: audioClip.audio?.fadeIn ?? rational(0),
-                  fadeOut: audioClip.audio?.fadeOut ?? rational(0),
-                },
-              })}
+              onClick={() => {
+                void apply({
+                  type: "timeline.clip.set-audio",
+                  payload: {
+                    trackId: "track-audio",
+                    clipId: audioClip.id,
+                    gainDb: audioClip.audio?.gainDb ?? 0,
+                    muted: !(audioClip.audio?.muted ?? false),
+                    fadeIn: audioClip.audio?.fadeIn ?? rational(0),
+                    fadeOut: audioClip.audio?.fadeOut ?? rational(0),
+                  },
+                }).catch((error: unknown) => {
+                  onNotice(error instanceof Error ? error.message : "Audio change was rejected.");
+                });
+              }}
             >
               {audioClip.audio?.muted ? <Volume2 size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
             </button>
@@ -1423,6 +1456,21 @@ function WorkspaceTabs({
     </div>
   );
 }
+
+/**
+ * What the status pill says in each connection state.
+ *
+ * "Local" is stated plainly rather than dressed up as connected: edits are
+ * real and validated, but they live in this tab only and no agent can see
+ * them. Claiming otherwise would be the kind of quiet overstatement this
+ * project exists to avoid.
+ */
+const CONNECTION_LABELS: Record<ConnectionState, { title: string; detail: string }> = {
+  local: { title: "Local only", detail: "Not persisted · agents cannot see this" },
+  connecting: { title: "Connecting", detail: "Reaching the project host" },
+  connected: { title: "Connected", detail: "Shared with agents · persisted" },
+  disconnected: { title: "Disconnected", detail: "Host unreachable · edits will fail" },
+};
 
 /**
  * The eight capabilities an agent harness can reach over MCP. Rendered from the
@@ -1644,6 +1692,10 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
     queueRender,
     history,
     revert,
+    refresh,
+    pending,
+    stale,
+    connection,
   } = useStudioState(initialProject);
   const [shell, setShell] = useState(createEditorShellState);
   const [selectedNodeId, setSelectedNodeId] = useState("node-title");
@@ -1665,17 +1717,23 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
   };
 
   const revertWithNotice = (operationId: string) => {
-    try {
-      const diff = revert(operationId);
-      setNotice(`Reverted · ${diff?.summary ?? "change reversed"} · applied forward as a new revision`);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "That change could not be reverted.");
-    }
+    void revert(operationId)
+      .then((diff) => {
+        setNotice(`Reverted · ${diff?.summary ?? "change reversed"} · applied forward as a new revision`);
+      })
+      .catch((error: unknown) => {
+        setNotice(error instanceof Error ? error.message : "That change could not be reverted.");
+      });
   };
 
   const queueRenderWithNotice = () => {
-    const job = queueRender();
-    setNotice(`Render queued · ${job.job_id.slice(0, 8)} · ${job.status}`);
+    void queueRender()
+      .then((job) => {
+        setNotice(`Render queued · ${job.job_id.slice(0, 8)} · ${job.status}`);
+      })
+      .catch((error: unknown) => {
+        setNotice(error instanceof Error ? error.message : "Render could not be queued.");
+      });
   };
 
   useEffect(() => {
@@ -1711,9 +1769,9 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
       if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) {
-          if (canRedo) redo();
+          if (canRedo) void redo().catch(() => {});
         } else if (canUndo) {
-          undo();
+          void undo().catch(() => {});
         }
       }
       if (event.altKey && /^[1-6]$/.test(event.key)) {
@@ -1758,8 +1816,8 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
             <MenuAction icon={FileOutput} label="Render proof" shortcut="⌘R" onClick={() => { queueRenderWithNotice(); setShell((current) => setActiveMenu(current, null)); }} />
           </DropdownMenu>
           <DropdownMenu id="edit" label="Edit" active={shell.activeMenu === "edit"} onToggle={(menu) => setShell((current) => setActiveMenu(current, menu))}>
-            <MenuAction icon={Undo2} label="Undo" shortcut="⌘Z" disabled={!canUndo} onClick={() => { undo(); setShell((current) => setActiveMenu(current, null)); }} />
-            <MenuAction icon={Redo2} label="Redo" shortcut="⇧⌘Z" disabled={!canRedo} onClick={() => { redo(); setShell((current) => setActiveMenu(current, null)); }} />
+            <MenuAction icon={Undo2} label="Undo" shortcut="⌘Z" disabled={!canUndo} onClick={() => { void undo().catch(() => {}); setShell((current) => setActiveMenu(current, null)); }} />
+            <MenuAction icon={Redo2} label="Redo" shortcut="⇧⌘Z" disabled={!canRedo} onClick={() => { void redo().catch(() => {}); setShell((current) => setActiveMenu(current, null)); }} />
           </DropdownMenu>
           <DropdownMenu id="view" label="View" active={shell.activeMenu === "view"} onToggle={(menu) => setShell((current) => setActiveMenu(current, menu))}>
             <span className="menu-section-label">PANELS</span>
@@ -1781,10 +1839,16 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
         </nav>
         <div className="project-crumb"><span>PROJECT</span><strong>{project.name}</strong><i>r{project.revision}</i></div>
         <WorkspaceTabs active={shell.workspace} onSelect={chooseWorkspace} />
-        <div className="topbar-status"><span className="status-dot" /><span><strong>Local editable</strong><small>Private draft</small></span></div>
+        <div className={`topbar-status topbar-status--${connection}`} data-connection={connection}>
+          <span className="status-dot" />
+          <span>
+            <strong>{CONNECTION_LABELS[connection].title}</strong>
+            <small>{CONNECTION_LABELS[connection].detail}</small>
+          </span>
+        </div>
         <div className="topbar-actions">
-          <button className="icon-button" aria-label="Undo" title="Undo" onClick={undo} disabled={!canUndo}><Undo2 size={14} /></button>
-          <button className="icon-button" aria-label="Redo" title="Redo" onClick={redo} disabled={!canRedo}><Redo2 size={14} /></button>
+          <button className="icon-button" aria-label="Undo" title="Undo" onClick={() => { void undo().catch(() => {}); }} disabled={!canUndo}><Undo2 size={14} /></button>
+          <button className="icon-button" aria-label="Redo" title="Redo" onClick={() => { void redo().catch(() => {}); }} disabled={!canRedo}><Redo2 size={14} /></button>
           <button className="button button--quiet" onClick={() => setNotice("Review remains local until an authenticated sharing transport is implemented.")}>Share review</button>
           <button
             className="button button--accent"
@@ -1876,6 +1940,24 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
           resolvePreview={resolvePreview}
         />
       )}
+      {stale && (
+        <div className="stale-banner" role="alert">
+          <RefreshCw size={14} aria-hidden="true" />
+          <span>
+            <strong>The project changed elsewhere</strong>
+            <small>Your edit was refused rather than overwriting it. The latest state is loaded.</small>
+          </span>
+          <button
+            className="button button--quiet"
+            onClick={() => {
+              void refresh().catch(() => {});
+            }}
+          >
+            Reload
+          </button>
+        </div>
+      )}
+      {pending && <div className="pending-bar" role="status" aria-label="Applying change" />}
       {notice && (
         <div className="notice" role="status">
           <span>{notice}</span>

@@ -1,164 +1,229 @@
-import { useCallback, useRef, useState } from "react";
-import type {
-  SemanticDiff,
-  StudioOperation,
-  StudioProject,
-} from "@toolshape/studio-domain";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { SemanticDiff, StudioProject } from "@toolshape/studio-domain";
 import {
-  MemoryStudioRepository,
   MemoryStudioJobGateway,
-  STUDIO_SCHEMA_VERSION,
+  MemoryStudioRepository,
   StudioKernel,
-  type OperationEnvelope,
   type DurableJob,
   type OperationHistoryEntry,
 } from "@toolshape/studio-kernel";
+import {
+  StudioClient,
+  StudioDisconnectedError,
+  StudioStaleRevisionError,
+  createMemoryTransport,
+  type ApplyOptions,
+  type OperationDraft,
+  type StudioTransport,
+} from "./studio-client";
+import { createHttpTransport } from "./studio-transport-http";
 
-type DistributiveOmit<T, TKey extends PropertyKey> = T extends unknown ? Omit<T, TKey> : never;
-export type OperationDraft = DistributiveOmit<
-  StudioOperation,
-  "operationId" | "expectedRevision" | "actor"
->;
+export type { ApplyOptions, OperationDraft };
 
 /**
- * History reads are issued outside the memoised envelope builder, because they
- * run inside the invoke path itself and must not depend on the revision the
- * component last rendered with.
+ * How the editor is currently reaching the kernel.
+ *
+ * `local` is an honest label, not a failure: with no host configured the editor
+ * runs its own in-process kernel so the app is usable standalone. Edits are
+ * real and validated, but they live only in this tab and no agent can see them.
+ * The shell says so rather than implying persistence it does not have.
  */
-function makeHistoryEnvelope(projectId: string, revision: number): OperationEnvelope {
+export type ConnectionState = "local" | "connecting" | "connected" | "disconnected";
+
+/** Agent edits arrive out-of-band, so the editor re-reads on an interval. */
+const POLL_INTERVAL_MS = 4000;
+
+function readEnv(key: string): string | undefined {
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const value = env?.[key];
+  return value && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Chooses the transport.
+ *
+ * Configured endpoint wins; otherwise the editor falls back to an in-process
+ * kernel. At Milestone 11 a Tauri IPC transport slots in here and nothing above
+ * this function changes (ADR 0013).
+ */
+function resolveTransport(initialProject: StudioProject): { transport: StudioTransport; remote: boolean } {
+  const endpoint = readEnv("VITE_STUDIO_ENDPOINT");
+  const token = readEnv("VITE_STUDIO_TOKEN");
+  if (endpoint && token) {
+    return { transport: createHttpTransport({ endpoint, token }), remote: true };
+  }
+  const repository = new MemoryStudioRepository();
+  repository.createProject(initialProject);
   return {
-    schema_version: STUDIO_SCHEMA_VERSION,
-    operation_id: crypto.randomUUID(),
-    idempotency_key: `ui-history-${crypto.randomUUID()}`,
-    trace_id: `ui-trace-${crypto.randomUUID()}`,
-    actor: { id: "studio-operator", type: "human" },
-    intent: "Read activity history",
-    capability: { id: "studio.project.history", version: STUDIO_SCHEMA_VERSION },
-    target: { resource: `toolshape-studio://projects/${encodeURIComponent(projectId)}`, expected_revision: revision },
-    input: {},
-    risk: { level: "low" },
-    authorization: { grant_ids: ["studio.project.history"] },
-    execution: { dry_run: false, atomicity: "atomic" },
-    retention: { class: "project", content_storage: "local" },
-    created_at: new Date().toISOString(),
+    transport: createMemoryTransport(new StudioKernel(repository, new MemoryStudioJobGateway())),
+    remote: false,
   };
 }
 
-export function useStudioState(initialProject: StudioProject) {
+export function useStudioState(initialProject: StudioProject, injectedTransport?: StudioTransport) {
   const [project, setProject] = useState(initialProject);
-  const kernelRef = useRef<StudioKernel | null>(null);
-  if (!kernelRef.current) {
-    const repository = new MemoryStudioRepository();
-    repository.createProject(initialProject);
-    kernelRef.current = new StudioKernel(repository, new MemoryStudioJobGateway());
-  }
+  const [history, setHistory] = useState<OperationHistoryEntry[]>([]);
   const [undoToken, setUndoToken] = useState<string | null>(null);
   const [redoToken, setRedoToken] = useState<string | null>(null);
   const [lastDiff, setLastDiff] = useState<SemanticDiff | null>(null);
   const [renderJob, setRenderJob] = useState<DurableJob | null>(null);
-  const [history, setHistory] = useState<OperationHistoryEntry[]>([]);
+  const [pending, setPending] = useState(false);
+  const [stale, setStale] = useState(false);
 
-  const refreshHistory = useCallback((projectId: string, revision: number) => {
-    // Revertibility is a function of everything that happened afterwards, so a
-    // new operation can make an older entry non-revertible. The whole list is
-    // re-read rather than appended to.
-    const result = kernelRef.current!.invoke(makeHistoryEnvelope(projectId, revision));
-    setHistory(result.history ?? []);
+  const setup = useRef<{ client: StudioClient; remote: boolean } | null>(null);
+  if (!setup.current) {
+    const resolved = injectedTransport
+      ? { transport: injectedTransport, remote: false }
+      : resolveTransport(initialProject);
+    setup.current = {
+      client: new StudioClient({ transport: resolved.transport, projectId: initialProject.id }),
+      remote: resolved.remote,
+    };
+  }
+  const { client, remote } = setup.current;
+
+  const [connection, setConnection] = useState<ConnectionState>(remote ? "connecting" : "local");
+
+  const adoptState = useCallback((next: StudioProject) => {
+    setProject(next);
+    setConnection((current) => (current === "local" ? current : "connected"));
   }, []);
 
-  const invoke = useCallback((envelope: OperationEnvelope) => {
-    const result = kernelRef.current!.invoke(envelope);
-    const nextProject = result.state.project;
-    if (!nextProject) throw new Error("Studio kernel returned no project state.");
-    setProject(nextProject);
-    setLastDiff(result.state.semantic_diff.at(-1) ?? null);
-    refreshHistory(nextProject.id, nextProject.revision);
-    return result;
-  }, [refreshHistory]);
+  const readHistory = useCallback(async () => {
+    // Revertibility depends on everything that came after an entry, so the
+    // whole list is re-read rather than appended to.
+    try {
+      setHistory(await client.history());
+    } catch {
+      // History is supporting detail; failing to read it must not take down
+      // the editor. The connection state already reports a real outage.
+    }
+  }, [client]);
 
-  const makeEnvelope = useCallback((
-    capabilityId: OperationEnvelope["capability"]["id"],
-    expectedRevision: number,
-    input: OperationEnvelope["input"],
-  ): OperationEnvelope => ({
-    schema_version: STUDIO_SCHEMA_VERSION,
-    operation_id: crypto.randomUUID(),
-    idempotency_key: `ui-${crypto.randomUUID()}`,
-    trace_id: `ui-trace-${crypto.randomUUID()}`,
-    actor: { id: "studio-operator", type: "human" },
-    intent: `Apply ${capabilityId}`,
-    capability: { id: capabilityId, version: STUDIO_SCHEMA_VERSION },
-    target: { resource: `toolshape-studio://projects/${encodeURIComponent(initialProject.id)}`, expected_revision: expectedRevision },
-    input,
-    risk: { level: "low" },
-    authorization: { grant_ids: [capabilityId] },
-    execution: { dry_run: false, atomicity: "atomic" },
-    retention: { class: "project", content_storage: "local" },
-    created_at: new Date().toISOString(),
-  }), [initialProject.id]);
+  const refresh = useCallback(async () => {
+    try {
+      const state = await client.inspect();
+      adoptState(state.project);
+      setStale(false);
+      await readHistory();
+    } catch (error) {
+      if (error instanceof StudioDisconnectedError) setConnection("disconnected");
+      throw error;
+    }
+  }, [adoptState, client, readHistory]);
+
+  useEffect(() => {
+    void refresh().catch(() => {
+      // Reported through connection state; a rejected initial load is not fatal.
+    });
+  }, [refresh]);
+
+  // Poll only when talking to a host. In local mode nothing else can edit the
+  // project, so polling would be pure waste.
+  useEffect(() => {
+    if (!remote) return;
+    const timer = setInterval(() => {
+      if (pending) return;
+      void refresh().catch(() => {});
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [pending, refresh, remote]);
+
+  /**
+   * Runs a mutation and translates its failure modes.
+   *
+   * A stale rejection is surfaced and followed by a re-read, never retried at
+   * the newer revision — doing that would silently discard whatever the other
+   * editor just did, which is precisely what the revision check exists to stop.
+   */
+  const run = useCallback(
+    async <T,>(action: () => Promise<T>): Promise<T> => {
+      setPending(true);
+      try {
+        const result = await action();
+        setConnection((current) => (current === "local" ? current : "connected"));
+        return result;
+      } catch (error) {
+        if (error instanceof StudioStaleRevisionError) {
+          setStale(true);
+          await refresh().catch(() => {});
+        } else if (error instanceof StudioDisconnectedError) {
+          setConnection("disconnected");
+        }
+        throw error;
+      } finally {
+        setPending(false);
+      }
+    },
+    [refresh],
+  );
 
   const apply = useCallback(
-    (draft: OperationDraft, actor: "operator" | "agent" = "operator") => {
-      const operation = {
-        ...draft,
-        operationId: crypto.randomUUID(),
-        expectedRevision: project.revision,
-        actor,
-      } as StudioOperation;
-      const result = invoke(
-        makeEnvelope("studio.project.apply_operations", project.revision, { operations: [operation] }),
-      );
-      setUndoToken(result.undo?.token ?? null);
-      setRedoToken(null);
-      return result.state.semantic_diff[0];
-    },
-    [invoke, makeEnvelope, project.revision],
+    (draft: OperationDraft, options: ApplyOptions = {}) =>
+      run(async () => {
+        const outcome = await client.apply(draft, options);
+        adoptState(outcome.project);
+        setLastDiff(outcome.diff);
+        setUndoToken(outcome.undoToken);
+        setRedoToken(null);
+        await readHistory();
+        return outcome.diff;
+      }),
+    [adoptState, client, readHistory, run],
+  );
+
+  const revert = useCallback(
+    (operationId: string) =>
+      run(async () => {
+        const outcome = await client.revert(operationId);
+        adoptState(outcome.project);
+        setLastDiff(outcome.diff);
+        setUndoToken(outcome.undoToken);
+        setRedoToken(null);
+        await readHistory();
+        return outcome.diff;
+      }),
+    [adoptState, client, readHistory, run],
   );
 
   const undo = useCallback(() => {
-    if (!undoToken) return;
-    const result = invoke(
-      makeEnvelope("studio.operation.undo", project.revision, { undo_token: undoToken }),
-    );
-    setUndoToken(null);
-    setRedoToken(result.undo?.token ?? null);
-  }, [invoke, makeEnvelope, project.revision, undoToken]);
+    if (!undoToken) return Promise.resolve(null);
+    return run(async () => {
+      const outcome = await client.undo(undoToken);
+      adoptState(outcome.project);
+      setUndoToken(null);
+      setRedoToken(outcome.undoToken);
+      await readHistory();
+      return outcome.diff;
+    });
+  }, [adoptState, client, readHistory, run, undoToken]);
 
   const redo = useCallback(() => {
-    if (!redoToken) return;
-    const result = invoke(
-      makeEnvelope("studio.operation.undo", project.revision, { undo_token: redoToken }),
-    );
-    setRedoToken(null);
-    setUndoToken(result.undo?.token ?? null);
-  }, [invoke, makeEnvelope, project.revision, redoToken]);
-
-  const revert = useCallback(
-    (operationId: string) => {
-      const result = invoke(
-        makeEnvelope("studio.operation.revert", project.revision, { revert_operation_id: operationId }),
-      );
-      setUndoToken(result.undo?.token ?? null);
+    if (!redoToken) return Promise.resolve(null);
+    return run(async () => {
+      const outcome = await client.undo(redoToken);
+      adoptState(outcome.project);
       setRedoToken(null);
-      return result.state.semantic_diff.at(-1) ?? null;
-    },
-    [invoke, makeEnvelope, project.revision],
-  );
+      setUndoToken(outcome.undoToken);
+      await readHistory();
+      return outcome.diff;
+    });
+  }, [adoptState, client, readHistory, redoToken, run]);
 
-  const queueRender = useCallback(() => {
-    const result = invoke(
-      makeEnvelope("studio.project.render", project.revision, {
-        render: {
-          cover_asset_id: "asset-product-image",
-          preset_id: "render-social-portrait",
-          output_name: "toolshape-studio-proof.mp4",
-        },
+  const queueRender = useCallback(
+    () =>
+      run(async () => {
+        const job = await client.queueRender({
+          coverAssetId: "asset-product-image",
+          presetId: "render-social-portrait",
+          outputName: "toolshape-studio-proof.mp4",
+        });
+        setRenderJob(job);
+        await readHistory();
+        return job;
       }),
-    );
-    if (!result.job) throw new Error("Render capability returned no durable job.");
-    setRenderJob(result.job);
-    return result.job;
-  }, [invoke, makeEnvelope, project.revision]);
+    [client, readHistory, run],
+  );
 
   return {
     project,
@@ -172,5 +237,9 @@ export function useStudioState(initialProject: StudioProject) {
     lastDiff,
     renderJob,
     queueRender,
+    refresh,
+    pending,
+    stale,
+    connection,
   };
 }

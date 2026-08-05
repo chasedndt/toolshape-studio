@@ -21,6 +21,16 @@ export interface HttpTransportOptions {
   host?: string;
   /** Rejects oversized bodies before parsing. */
   maxBodyBytes?: number;
+  /**
+   * Browser origins permitted to call this host, e.g. the editor's dev server.
+   *
+   * Defaults to none, so a browser cannot reach the host until an origin is
+   * named deliberately. A wildcard is not offered: the endpoint is
+   * authenticated, and `*` would let any page in the browser attempt calls
+   * against a local host that can edit and render the user's projects. Closed
+   * by default matches how the rest of this server behaves.
+   */
+  allowedOrigins?: readonly string[];
 }
 
 const DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024;
@@ -57,9 +67,38 @@ function readBody(request: IncomingMessage, maxBytes: number): Promise<string> {
 
 export function createHttpTransport(options: HttpTransportOptions): Server {
   const maxBytes = options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
+  const allowed = new Set(options.allowedOrigins ?? []);
+
+  /**
+   * Echoes the caller's origin only when it is explicitly allowed, and marks
+   * the response as origin-varying so a shared cache cannot serve one origin's
+   * permission to another.
+   */
+  const applyCors = (request: IncomingMessage, response: ServerResponse): boolean => {
+    const origin = request.headers.origin;
+    if (!origin) return true; // Not a browser request; CORS does not apply.
+    if (!allowed.has(origin)) return false;
+    response.setHeader("access-control-allow-origin", origin);
+    response.setHeader("vary", "origin");
+    response.setHeader("access-control-allow-headers", "authorization, content-type");
+    response.setHeader("access-control-allow-methods", "POST, OPTIONS");
+    response.setHeader("access-control-max-age", "600");
+    return true;
+  };
 
   return createServer((request, response) => {
     void (async () => {
+      if (!applyCors(request, response)) {
+        writeJson(response, 403, { error: { code: -32600, message: "Origin is not allowed." } });
+        return;
+      }
+
+      if (request.method === "OPTIONS") {
+        response.writeHead(204);
+        response.end();
+        return;
+      }
+
       // Unauthenticated liveness only. Deliberately reveals nothing about
       // projects, sessions, or the capability surface.
       if (request.method === "GET" && request.url === "/health") {

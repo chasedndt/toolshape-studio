@@ -14,6 +14,7 @@ import {
   buildEnvelope,
   findTool,
   STUDIO_TOOLS,
+  serveHttp,
   type StudioSession,
 } from "../src/index";
 
@@ -343,6 +344,97 @@ describe("MCP session authentication", () => {
     expect(() => registry.authenticate(undefined)).toThrow(UnauthorizedError);
     expect(() => registry.authenticate(token)).toThrow(/Bearer scheme/i);
     expect(() => registry.authenticate(`Bearer ${"b".repeat(64)}`)).toThrow(/not recognised/i);
+  });
+});
+
+describe("MCP browser origin policy", () => {
+  const TOKEN = "z".repeat(48);
+  const ALLOWED = "http://127.0.0.1:5173";
+
+  async function withServer<T>(
+    allowedOrigins: string[],
+    body: (base: string) => Promise<T>,
+  ): Promise<T> {
+    const root = await temporaryRoot();
+    const repository = track(new SqliteStudioRepository(path.join(root, "studio.sqlite")));
+    repository.createProject(createGoldenStudioProject());
+    const mcp = new StudioMcpServer({
+      invoker: new StudioSdk(new StudioKernel(repository, new MemoryStudioJobGateway())),
+      schemaVersion: STUDIO_SCHEMA_VERSION,
+    });
+    const sessions = new SessionRegistry([{ ...SESSION, token: TOKEN }]);
+    const listener = await serveHttp({ server: mcp, sessions, port: 0, host: "127.0.0.1", allowedOrigins });
+    const address = listener.address();
+    const port = typeof address === "object" && address ? address.port : 0;
+    try {
+      return await body(`http://127.0.0.1:${port}/`);
+    } finally {
+      await new Promise<void>((resolve) => listener.close(() => resolve()));
+    }
+  }
+
+  it("refuses a browser origin that was not explicitly allowed", async () => {
+    await withServer([], async (base) => {
+      const response = await fetch(base, {
+        method: "OPTIONS",
+        headers: { origin: "https://evil.example", "access-control-request-method": "POST" },
+      });
+      expect(response.status).toBe(403);
+      expect(response.headers.get("access-control-allow-origin")).toBeNull();
+    });
+  });
+
+  it("never answers with a wildcard origin", async () => {
+    await withServer([ALLOWED], async (base) => {
+      const response = await fetch(base, {
+        method: "OPTIONS",
+        headers: { origin: ALLOWED, "access-control-request-method": "POST" },
+      });
+      expect(response.status).toBe(204);
+      expect(response.headers.get("access-control-allow-origin")).toBe(ALLOWED);
+      expect(response.headers.get("access-control-allow-origin")).not.toBe("*");
+      // A shared cache must not serve one origin's permission to another.
+      expect(response.headers.get("vary")).toBe("origin");
+    });
+  });
+
+  it("allows a permitted origin to complete a real call", async () => {
+    await withServer([ALLOWED], async (base) => {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: {
+          origin: ALLOWED,
+          authorization: `Bearer ${TOKEN}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("access-control-allow-origin")).toBe(ALLOWED);
+    });
+  });
+
+  it("still requires a token from an allowed origin", async () => {
+    await withServer([ALLOWED], async (base) => {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: { origin: ALLOWED, "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      });
+      // Origin permission is not authentication.
+      expect(response.status).toBe(401);
+    });
+  });
+
+  it("leaves non-browser callers unaffected", async () => {
+    await withServer([], async (base) => {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      });
+      expect(response.status).toBe(200);
+    });
   });
 });
 

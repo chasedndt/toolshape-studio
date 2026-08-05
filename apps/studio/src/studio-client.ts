@@ -3,6 +3,7 @@ import {
   STUDIO_SCHEMA_VERSION,
   type DurableJob,
   type OperationEnvelope,
+  type OperationHistoryEntry,
   type OperationResult,
   type StudioKernel,
 } from "@toolshape/studio-kernel";
@@ -76,6 +77,18 @@ export interface RenderRequest {
   coverAssetId: string;
   presetId: string;
   outputName: string;
+}
+
+/** Who is making the edit. Carried into both the envelope and the operation. */
+export type StudioActor = "operator" | "agent";
+
+export interface ApplyOptions {
+  idempotencyKey?: string;
+  /**
+   * Defaults to the human operator. Passing "agent" marks the edit as
+   * agent-authored, which is what the activity history attributes it to.
+   */
+  actor?: StudioActor;
 }
 
 export interface StudioClientOptions {
@@ -168,14 +181,22 @@ export class StudioClient {
   private envelope(
     capabilityId: OperationEnvelope["capability"]["id"],
     input: OperationEnvelope["input"],
-    options: { expectedRevision?: number | null; dryRun?: boolean; idempotencyKey?: string } = {},
+    options: {
+      expectedRevision?: number | null;
+      dryRun?: boolean;
+      idempotencyKey?: string;
+      actor?: StudioActor;
+    } = {},
   ): OperationEnvelope {
     return {
       schema_version: STUDIO_SCHEMA_VERSION,
       operation_id: this.newId(),
       idempotency_key: options.idempotencyKey ?? `ui-${this.newId()}`,
       trace_id: `ui-trace-${this.newId()}`,
-      actor: { id: this.actorId, type: "human" },
+      actor: {
+        id: options.actor === "agent" ? `${this.actorId}:agent` : this.actorId,
+        type: options.actor === "agent" ? "agent" : "human",
+      },
       intent: `Apply ${capabilityId}`,
       capability: { id: capabilityId, version: STUDIO_SCHEMA_VERSION },
       target: {
@@ -228,13 +249,18 @@ export class StudioClient {
     return this.knownRevision;
   }
 
-  private operationFrom(draft: OperationDraft, revision: number, idempotencyKey?: string): StudioOperation {
+  private operationFrom(
+    draft: OperationDraft,
+    revision: number,
+    idempotencyKey?: string,
+    actor: StudioActor = "operator",
+  ): StudioOperation {
     return {
       ...draft,
       // Stable when the caller supplied a key, so a retry is byte-identical.
       operationId: idempotencyKey ? deterministicUuid(`${idempotencyKey}:${revision}`) : this.newId(),
       expectedRevision: revision,
-      actor: "operator",
+      actor,
     } as StudioOperation;
   }
 
@@ -251,13 +277,37 @@ export class StudioClient {
     return { diff: result.state.semantic_diff };
   }
 
-  async apply(draft: OperationDraft, options: { idempotencyKey?: string } = {}): Promise<ApplyOutcome> {
+  async apply(draft: OperationDraft, options: ApplyOptions = {}): Promise<ApplyOutcome> {
     const revision = this.requireRevision();
     const result = await this.send(
       this.envelope(
         "studio.project.apply_operations",
-        { operations: [this.operationFrom(draft, revision, options.idempotencyKey)] },
-        { expectedRevision: revision, idempotencyKey: options.idempotencyKey },
+        { operations: [this.operationFrom(draft, revision, options.idempotencyKey, options.actor)] },
+        { expectedRevision: revision, idempotencyKey: options.idempotencyKey, actor: options.actor },
+      ),
+    );
+    return this.toApplyOutcome(result);
+  }
+
+  /** Every committed operation, with actor attribution and revertibility. */
+  async history(): Promise<OperationHistoryEntry[]> {
+    const result = await this.send(this.envelope("studio.project.history", {}));
+    return result.history ?? [];
+  }
+
+  /**
+   * Reverses one past operation, keeping everything applied after it.
+   *
+   * Distinct from `undo`, which restores a whole revision snapshot and
+   * therefore discards later work by design.
+   */
+  async revert(operationId: string): Promise<ApplyOutcome> {
+    const revision = this.requireRevision();
+    const result = await this.send(
+      this.envelope(
+        "studio.operation.revert",
+        { revert_operation_id: operationId },
+        { expectedRevision: revision },
       ),
     );
     return this.toApplyOutcome(result);

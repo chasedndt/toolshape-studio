@@ -24,6 +24,8 @@
     "mcp": "tsx packages/studio-mcp/src/bin.ts",
     "mcp:http": "tsx packages/studio-mcp/src/bin.ts --transport http --port 7777",
     "smoke:mcp": "npm --prefix apps/studio run smoke:mcp",
-    "docs:screenshots": "npm --prefix apps/studio run docs:screenshots"
+    "docs:screenshots": "npm --prefix apps/studio run docs:screenshots",
+    "dev:connected": "npm --prefix apps/studio run dev:connected",
+    "smoke:connected": "npm --prefix apps/studio run smoke:connected"
   }
 }

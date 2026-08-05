@@ -17,7 +17,9 @@
     "smoke:render-job": "tsx scripts/smoke-render-job.ts",
     "smoke:media-ingest": "tsx scripts/smoke-media-ingest.ts",
     "smoke:mcp": "tsx scripts/smoke-mcp.ts",
-    "docs:screenshots": "tsx scripts/capture-docs-screenshots.ts"
+    "docs:screenshots": "tsx scripts/capture-docs-screenshots.ts",
+    "dev:connected": "tsx scripts/dev-connected.ts",
+    "smoke:connected": "tsx scripts/smoke-connected-shell.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",

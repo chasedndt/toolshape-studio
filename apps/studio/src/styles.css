@@ -1244,3 +1244,60 @@ button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible, inp
   cursor: not-allowed;
   opacity: 0.35;
 }
+
+/* ---------------------------------------------------------------------------
+   Connection, pending and staleness affordances.
+   The editor may now be talking to a host, so the three states that change what
+   a person should do next are visible rather than implicit.
+   --------------------------------------------------------------------------- */
+
+.topbar-status--local .status-dot { background: #8d9189; box-shadow: 0 0 0 3px #24262a; }
+.topbar-status--connecting .status-dot { background: var(--blue); box-shadow: 0 0 0 3px #1b2233; }
+.topbar-status--connected .status-dot { background: #86e693; box-shadow: 0 0 0 3px #17301e; }
+.topbar-status--disconnected .status-dot { background: var(--orange); box-shadow: 0 0 0 3px #33201a; }
+
+.topbar-status--disconnected strong { color: var(--orange); }
+
+/* A thin top-edge sweep: enough to show work is in flight without moving layout. */
+.pending-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 200;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: pending-sweep 900ms linear infinite;
+}
+
+@keyframes pending-sweep {
+  from { background-position: -40% 0; }
+  to { background-position: 140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending-bar { animation: none; background-position: 0 0; background-size: 100% 100%; opacity: 0.5; }
+}
+
+.stale-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 62px;
+  z-index: 190;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 134, 89, 0.4);
+  border-radius: 10px;
+  background: #241a15;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.stale-banner svg { color: var(--orange); flex-shrink: 0; }
+.stale-banner span { display: flex; flex-direction: column; gap: 2px; }
+.stale-banner strong { font-size: 11.5px; font-weight: 600; }
+.stale-banner small { font-size: 10.5px; color: var(--muted); }

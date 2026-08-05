@@ -84,13 +84,15 @@ try {
   const audioPreviewScreenshot = path.join(artifactDir, "studio-preview-derivatives-audio.png");
   await page.screenshot({ path: audioPreviewScreenshot, fullPage: false });
 
-  await page.getByRole("tab", { name: "Review", exact: true }).click();
+  await page.locator(".workspace-tabs").getByRole("tab", { name: "Review", exact: true }).click();
   await page.waitForFunction(() => document.querySelector(".studio-shell")?.getAttribute("data-workspace") === "review");
   if (await page.locator(".project-crumb i").textContent() !== "r0") {
     throw new Error("Workspace switching advanced the canonical project revision.");
   }
-  if (await page.locator("#active-context-panel").getAttribute("data-panel-id") !== "agent") {
-    throw new Error("Review workspace did not open the agent context.");
+  // Review opens on Activity: the workspace exists to show what changed and
+  // who changed it, so the history is its default context panel.
+  if (await page.locator("#active-context-panel").getAttribute("data-panel-id") !== "activity") {
+    throw new Error("Review workspace did not open the activity context.");
   }
 
   await page.getByRole("menuitem", { name: "View" }).click();
@@ -195,7 +197,9 @@ try {
   await page.screenshot({ path: timelineScreenshot, fullPage: false });
 
   await page.getByRole("button", { name: "Nudge +24" }).click();
-  await page.getByRole("tab", { name: "Review", exact: true }).click();
+  await page.locator(".workspace-tabs").getByRole("tab", { name: "Review", exact: true }).click();
+  // Review now opens on Activity, so the agent panel is selected explicitly.
+  await page.locator(".right-rail").getByRole("tab", { name: "Agent", exact: true }).click();
   await page.getByRole("button", { name: "Apply candidate" }).click();
   await page.waitForFunction(() => document.querySelector(".project-crumb i")?.textContent === "r5");
   await page.getByRole("button", { name: /Undo/ }).click();

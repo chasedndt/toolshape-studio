@@ -28,9 +28,13 @@ Every tool in this category — screen recorders, video editors, design suites �
 
 That approach throws away everything that makes automation trustworthy. There is no revision check, so the agent silently overwrites work a human did two seconds ago. There is no idempotency, so a retried request renders twice. There is no preview, so nothing can be reviewed before it happens. There is no verification, so "done" means *a model said it looked done*. And it breaks the moment a button moves.
 
-**Toolshape Studio is built the other way around.** The semantic operation surface is the product; the GUI is one adapter over it. A human dragging a trim handle and an agent calling `studio_project_apply_operations` submit the *same typed operation*, through the same validation.
+**Toolshape Studio is built the other way around.** The semantic operation surface is the product; the GUI is one adapter over it. A human dragging a trim handle and an agent calling `studio_project_apply_operations` submit the *same typed operation*, through the same validation, into the same store and the same revision sequence.
 
-> **Current limitation, stated plainly.** The editor UI still constructs its own in-memory kernel, so browser edits do not yet persist or reach agents — the operation path is shared, the *store* is not. [Milestone 8](docs/product/ROADMAP.md) connects the UI to the real persistent kernel. Until it lands, human and agent editing are architecturally identical but operationally separate.
+That last part is verified, not asserted. `npm run smoke:connected` drives a real browser against a real host and proves four things end to end: the editor reports itself connected, a UI edit survives a full page reload, an agent edit over MCP appears in the browser without a manual refresh and attributed to the agent, and a UI write against a revision the agent has moved past is **refused** rather than silently overwriting the agent's work.
+
+```bash
+npm run dev:connected
+```
 
 ```mermaid
 flowchart LR
@@ -241,12 +245,14 @@ npm install
 npm test
 npm run typecheck
 npm run build
-npm run dev
+npm run dev             # editor, local kernel only
+npm run dev:connected   # editor + MCP host, shared with agents
 ```
 
 Verification gates:
 
 ```bash
+npm run smoke:connected   # browser + host: persistence, agent visibility, conflict refusal
 npm run smoke:mcp
 npm run smoke:runtime
 npm run smoke:cli
