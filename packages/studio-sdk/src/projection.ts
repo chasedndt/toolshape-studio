@@ -150,6 +150,7 @@ export function projectOperationResult(
       // Omitted rather than null-filled so absence stays meaningful.
       ...(includeProject ? { project: result.state.project } : {}),
     },
+    ...(result.history ? { history: result.history } : {}),
     job_ref: result.job_ref ? resourceRefFromInternal(result.job_ref) : null,
     artifact_refs: (result.artifact_refs ?? []).map(resourceRefFromInternal),
     verification: { ...result.verification, evidence },

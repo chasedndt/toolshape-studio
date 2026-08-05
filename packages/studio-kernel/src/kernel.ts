@@ -1,6 +1,18 @@
 import type { SemanticDiff, StudioOperation, StudioProject } from "@toolshape/studio-domain";
-import { applyStudioOperation, validateStudioProject } from "@toolshape/studio-engine";
-import { assertOperationEnvelope, STUDIO_SCHEMA_VERSION, type OperationEnvelope, type OperationResult } from "./contracts";
+import {
+  applyStudioOperation,
+  detectRevertConflicts,
+  planOperationInverse,
+  validateStudioProject,
+  type InverseOperationDraft,
+} from "@toolshape/studio-engine";
+import {
+  assertOperationEnvelope,
+  STUDIO_SCHEMA_VERSION,
+  type OperationEnvelope,
+  type OperationHistoryEntry,
+  type OperationResult,
+} from "./contracts";
 import { stableDigest } from "./digest";
 import {
   assertStudioRenderRequest,
@@ -196,9 +208,36 @@ export class StudioKernel {
       return result;
     }
 
+    if (envelope.capability.id === "studio.project.history") {
+      const result = makeResult(
+        envelope,
+        startedAt,
+        "completed",
+        current.revision,
+        current.revision,
+        current,
+        [],
+        "not_applicable",
+      );
+      result.history = this.buildHistory(projectId);
+      return result;
+    }
+
     let working = structuredClone(current);
     const diffs: SemanticDiff[] = [];
-    if (envelope.capability.id === "studio.operation.undo") {
+    if (envelope.capability.id === "studio.operation.revert") {
+      const plan = this.planRevert(projectId, envelope.input.revert_operation_id);
+      for (const draft of plan) {
+        const applied = applyStudioOperation(working, {
+          ...draft,
+          operationId: globalThis.crypto.randomUUID(),
+          actor: envelope.actor.type === "agent" ? "agent" : "operator",
+          expectedRevision: working.revision,
+        } as StudioOperation);
+        working = applied.project;
+        diffs.push(applied.diff);
+      }
+    } else if (envelope.capability.id === "studio.operation.undo") {
       const token = envelope.input.undo_token;
       const match = typeof token === "string" ? /^undo:([^:]+):(\d+):(\d+)$/.exec(token) : null;
       if (!match || match[1] !== projectId || Number(match[3]) !== current.revision) {
@@ -252,5 +291,123 @@ export class StudioKernel {
       });
     }
     return result;
+  }
+
+  /**
+   * Extracts the domain operations a logged envelope carried.
+   * Envelopes for reads, renders and undos carry none.
+   */
+  private operationsOf(entry: { envelope: OperationEnvelope }): StudioOperation[] {
+    const operations = entry.envelope.input.operations;
+    return Array.isArray(operations) ? (operations as StudioOperation[]) : [];
+  }
+
+  /**
+   * Builds the visible activity history.
+   *
+   * Revertibility is evaluated here rather than stored, because it is a
+   * function of everything that happened afterwards: an edit that was safely
+   * reversible a moment ago stops being so the instant another operation
+   * touches the same object.
+   */
+  private buildHistory(projectId: string): OperationHistoryEntry[] {
+    const log = this.repository.listOperations(projectId);
+    return log.map((entry, index) => {
+      const operations = this.operationsOf(entry);
+      const later = log.slice(index + 1).flatMap((candidate) => this.operationsOf(candidate));
+      const base: OperationHistoryEntry = {
+        operation_id: entry.operationId,
+        revision_before: entry.revisionBefore,
+        revision_after: entry.revisionAfter,
+        actor_type: entry.envelope.actor.type,
+        actor_id: entry.envelope.actor.id,
+        harness_id: entry.envelope.actor.delegated_by ?? null,
+        capability: entry.envelope.capability.id,
+        operation_types: operations.map((operation) => operation.type),
+        summary: entry.envelope.intent,
+        created_at: entry.createdAt,
+        revertible: false,
+      };
+
+      if (operations.length === 0) {
+        return {
+          ...base,
+          revert_blocked_code: "revert.no-operations",
+          revert_blocked_reason: "This entry changed no project objects, so there is nothing to reverse.",
+        };
+      }
+
+      const before = this.repository.getRevision(projectId, entry.revisionBefore);
+      if (!before) {
+        return {
+          ...base,
+          revert_blocked_code: "revert.snapshot-unavailable",
+          revert_blocked_reason: "The project state before this operation is no longer available.",
+        };
+      }
+
+      for (const operation of operations) {
+        const plan = planOperationInverse(operation, before);
+        if (!plan.revertible) {
+          return { ...base, revert_blocked_code: plan.code, revert_blocked_reason: plan.reason };
+        }
+      }
+
+      const conflicts = operations.flatMap((operation) => detectRevertConflicts(operation, later));
+      if (conflicts.length > 0) {
+        return {
+          ...base,
+          revert_blocked_code: "revert.conflict",
+          revert_blocked_reason:
+            "A later edit touched the same objects. Reverting now would discard that later work.",
+          conflicts: conflicts.map((conflict) => ({
+            operation_id: conflict.operationId,
+            type: conflict.type,
+            target: conflict.target,
+          })),
+        };
+      }
+
+      return { ...base, revertible: true };
+    });
+  }
+
+  /**
+   * Resolves the inverse operations for a past operation, refusing rather than
+   * guessing when reversal would be unsafe or is not expressible.
+   */
+  private planRevert(projectId: string, operationId: unknown): InverseOperationDraft[] {
+    if (typeof operationId !== "string" || operationId.length === 0) {
+      throw new TypeError("input.revert_operation_id is required.");
+    }
+    const log = this.repository.listOperations(projectId);
+    const index = log.findIndex((entry) => entry.operationId === operationId);
+    if (index < 0) throw new RangeError(`Unknown operation: ${operationId}`);
+
+    const entry = log[index];
+    const operations = this.operationsOf(entry);
+    if (operations.length === 0) {
+      throw new RangeError("This entry changed no project objects, so there is nothing to reverse.");
+    }
+
+    const before = this.repository.getRevision(projectId, entry.revisionBefore);
+    if (!before) throw new RangeError("The project state before this operation is no longer available.");
+
+    const later = log.slice(index + 1).flatMap((candidate) => this.operationsOf(candidate));
+    const conflicts = operations.flatMap((operation) => detectRevertConflicts(operation, later));
+    if (conflicts.length > 0) {
+      throw new RangeError(
+        `A later edit touched ${conflicts[0].target}. Reverting now would discard that work.`,
+      );
+    }
+
+    // Reverse order, so a multi-operation batch unwinds the way it was applied.
+    const drafts: InverseOperationDraft[] = [];
+    for (const operation of [...operations].reverse()) {
+      const plan = planOperationInverse(operation, before);
+      if (!plan.revertible) throw new RangeError(plan.reason);
+      drafts.push(...plan.operations);
+    }
+    return drafts;
   }
 }

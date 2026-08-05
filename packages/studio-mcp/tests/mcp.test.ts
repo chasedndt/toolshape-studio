@@ -92,7 +92,10 @@ describe("MCP protocol surface", () => {
     const { server, repository } = await createServer();
     const response = server.handle({ jsonrpc: "2.0", id: 1, method: "tools/list" }, SESSION);
     const tools = (response as { result: { tools: Array<{ name: string; inputSchema: unknown }> } }).result.tools;
-    expect(tools).toHaveLength(8);
+    // Derived rather than hardcoded: a new capability should extend the
+    // advertised surface automatically, not fail an unrelated count assertion.
+    expect(tools).toHaveLength(STUDIO_TOOLS.length);
+    expect(new Set(tools.map((tool) => tool.name)).size).toBe(STUDIO_TOOLS.length);
     for (const tool of tools) {
       expect(tool.inputSchema).toMatchObject({ type: "object" });
     }

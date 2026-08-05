@@ -80,8 +80,16 @@ async function main(): Promise<void> {
     // 5. Discovery — the harness learns the surface with no hardcoded knowledge.
     const listed = await (await rpc("tools/list")).json() as { result: { tools: Array<{ name: string }> } };
     const names = listed.result.tools.map((tool) => tool.name);
-    assert(names.length === 8, `expected 8 tools, got ${names.length}`);
-    assert(names.includes("studio_project_apply_operations"), "apply_operations must be discoverable");
+    for (const required of [
+      "studio_project_inspect",
+      "studio_project_plan",
+      "studio_project_apply_operations",
+      "studio_project_render",
+      "studio_project_history",
+      "studio_operation_revert",
+    ]) {
+      assert(names.includes(required), `${required} must be discoverable`);
+    }
 
     // 6. Inspect for the current revision.
     const inspected = await callTool("studio_project_inspect", { project_id: project.id });

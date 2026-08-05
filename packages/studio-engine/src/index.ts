@@ -4,3 +4,4 @@ export * from "./operations";
 export * from "./rational";
 export * from "./validation";
 
+export * from "./inverse";

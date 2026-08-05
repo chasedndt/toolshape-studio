@@ -71,6 +71,17 @@ function toolCallFor(envelope: OperationEnvelope): { name: string; arguments: Re
         name: "studio_operation_undo",
         arguments: { project_id: projectId, undo_token: envelope.input.undo_token },
       };
+    case "studio.project.history":
+      return { name: "studio_project_history", arguments: { project_id: projectId } };
+    case "studio.operation.revert":
+      return {
+        name: "studio_operation_revert",
+        arguments: {
+          project_id: projectId,
+          expected_revision: envelope.target.expected_revision ?? undefined,
+          revert_operation_id: envelope.input.revert_operation_id,
+        },
+      };
     default: {
       const exhaustive: never = envelope.capability.id;
       throw new TypeError(`Unhandled capability: ${String(exhaustive)}`);

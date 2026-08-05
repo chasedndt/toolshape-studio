@@ -214,6 +214,52 @@ export const STUDIO_TOOLS: readonly StudioToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "studio_project_history",
+    title: "Read activity history",
+    capability: "studio.project.history",
+    mutating: false,
+    risk: "read_only",
+    description:
+      "List every operation applied to the project, oldest first, with who made it -- human or " +
+      "agent -- which capability was used, and what changed. Each entry reports whether it can be " +
+      "reverted individually, and when it cannot, the reason: either its inverse is not expressible " +
+      "in the current operation vocabulary, or a later edit touched the same objects and reverting " +
+      "would discard that work.",
+    inputSchema: {
+      type: "object",
+      properties: { project_id: PROJECT_ID },
+      required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "studio_operation_revert",
+    title: "Revert one operation",
+    capability: "studio.operation.revert",
+    mutating: true,
+    risk: "reversible_local_write",
+    description:
+      "Reverse a single past operation while keeping everything applied after it. This is not undo: " +
+      "nothing is rewound and no history is rewritten. The inverse is computed and applied forward " +
+      "as a new operation producing a new revision, so both the original and its reversal remain " +
+      "visible. Refused when a later edit touched the same objects, rather than guessing at a merge. " +
+      "Call studio_project_history first to see which entries are revertible.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: PROJECT_ID,
+        expected_revision: { type: "integer", minimum: 0 },
+        revert_operation_id: {
+          type: "string",
+          minLength: 1,
+          description: "operation_id of the entry to reverse, from studio_project_history.",
+        },
+      },
+      required: ["project_id", "expected_revision", "revert_operation_id"],
+      additionalProperties: false,
+    },
+  },
 ] as const;
 
 export function findTool(name: string): StudioToolDefinition | undefined {

@@ -16,6 +16,21 @@ export interface CommitRecord {
   result: OperationResult;
 }
 
+/**
+ * One committed operation, in order.
+ *
+ * The envelope is retained rather than just a summary because selective revert
+ * needs the original payload to compute an inverse — a summary string cannot be
+ * reversed.
+ */
+export interface OperationLogEntry {
+  operationId: string;
+  revisionBefore: number;
+  revisionAfter: number;
+  envelope: OperationEnvelope;
+  createdAt: string;
+}
+
 export interface StudioRepository {
   createProject(project: StudioProject): void;
   getProject(projectId: string): StudioProject | null;
@@ -23,6 +38,8 @@ export interface StudioRepository {
   getIdempotency(key: string): IdempotencyRecord | null;
   recordIdempotency(record: IdempotencyRecord): void;
   commit(record: CommitRecord): void;
+  /** Committed operations in application order, oldest first. */
+  listOperations(projectId: string): OperationLogEntry[];
 }
 
 export class RepositoryRevisionConflictError extends Error {
@@ -36,6 +53,7 @@ export class MemoryStudioRepository implements StudioRepository {
   private readonly projects = new Map<string, StudioProject>();
   private readonly revisions = new Map<string, Map<number, StudioProject>>();
   private readonly idempotency = new Map<string, IdempotencyRecord>();
+  private readonly operations = new Map<string, OperationLogEntry[]>();
 
   createProject(project: StudioProject): void {
     if (this.projects.has(project.id)) throw new RangeError(`Project already exists: ${project.id}`);
@@ -78,5 +96,18 @@ export class MemoryStudioRepository implements StudioRepository {
       inputDigest: record.inputDigest,
       result: structuredClone(record.result),
     });
+    const log = this.operations.get(record.projectId) ?? [];
+    log.push({
+      operationId: record.envelope.operation_id,
+      revisionBefore: record.expectedRevision,
+      revisionAfter: record.project.revision,
+      envelope: structuredClone(record.envelope),
+      createdAt: new Date().toISOString(),
+    });
+    this.operations.set(record.projectId, log);
+  }
+
+  listOperations(projectId: string): OperationLogEntry[] {
+    return (this.operations.get(projectId) ?? []).map((entry) => structuredClone(entry));
   }
 }

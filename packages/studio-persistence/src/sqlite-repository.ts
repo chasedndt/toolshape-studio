@@ -14,6 +14,7 @@ import {
   type StudioJobRepository,
   type StudioRepository,
   type StudioRenderRequest,
+  type OperationLogEntry,
 } from "@toolshape/studio-kernel";
 
 interface ProjectRow {
@@ -251,6 +252,27 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
       .prepare("SELECT state_json FROM project_revisions WHERE project_id = ? AND revision = ?")
       .get(projectId, revision) as unknown as RevisionRow | undefined;
     return row ? migrateStudioProject(JSON.parse(row.state_json)) : null;
+  }
+
+  listOperations(projectId: string): OperationLogEntry[] {
+    const rows = this.database
+      .prepare(
+        "SELECT operation_id, revision_before, revision_after, envelope_json, created_at FROM operation_log WHERE project_id = ? ORDER BY revision_after ASC",
+      )
+      .all(projectId) as Array<{
+        operation_id: string;
+        revision_before: number;
+        revision_after: number;
+        envelope_json: string;
+        created_at: string;
+      }>;
+    return rows.map((row) => ({
+      operationId: row.operation_id,
+      revisionBefore: row.revision_before,
+      revisionAfter: row.revision_after,
+      envelope: JSON.parse(row.envelope_json) as OperationLogEntry["envelope"],
+      createdAt: row.created_at,
+    }));
   }
 
   getIdempotency(key: string): IdempotencyRecord | null {

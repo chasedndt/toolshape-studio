@@ -1,5 +1,5 @@
 import type { SemanticDiff, StudioProject } from "@toolshape/studio-domain";
-import type { StudioCapabilityId } from "@toolshape/studio-kernel";
+import type { OperationHistoryEntry, StudioCapabilityId } from "@toolshape/studio-kernel";
 
 export interface ContractResourceRef {
   type: string;
@@ -110,6 +110,8 @@ export interface ContractOperationResult {
      */
     project?: StudioProject;
   };
+  /** Populated by studio.project.history. */
+  history?: OperationHistoryEntry[];
   job_ref?: ContractResourceRef | null;
   artifact_refs?: ContractResourceRef[];
   verification: {

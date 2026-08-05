@@ -11,7 +11,9 @@ export type StudioCapabilityId =
   | "studio.project.render"
   | "studio.job.get"
   | "studio.job.cancel"
-  | "studio.operation.undo";
+  | "studio.operation.undo"
+  | "studio.project.history"
+  | "studio.operation.revert";
 
 export interface OperationEnvelope {
   schema_version: string;
@@ -27,6 +29,8 @@ export interface OperationEnvelope {
     undo_token?: string;
     render?: StudioRenderRequest;
     job_id?: string;
+    /** Operation to reverse, for studio.operation.revert. */
+    revert_operation_id?: string;
   } & Record<string, unknown>;
   context_refs?: string[];
   secret_refs?: string[];
@@ -35,6 +39,33 @@ export interface OperationEnvelope {
   execution: { dry_run: boolean; atomicity: "atomic" | "staged" | "partial_declared"; timeout_ms?: number | null; priority?: "low" | "normal" | "high" };
   retention: { class: "ephemeral" | "session" | "project" | "account" | "legal_hold"; content_storage: "none" | "local" | "encrypted_sync" | "provider_declared"; expires_at?: string | null };
   created_at: string;
+}
+
+/**
+ * One entry in the visible activity history.
+ *
+ * `revertible` is computed rather than stored, because it depends on what
+ * happened *after* the operation: an edit that was safely reversible a moment
+ * ago stops being so as soon as something else touches the same object.
+ */
+export interface OperationHistoryEntry {
+  operation_id: string;
+  revision_before: number;
+  revision_after: number;
+  /** "human", "agent" or "service" — who actually made this change. */
+  actor_type: "human" | "agent" | "service";
+  actor_id: string;
+  harness_id?: string | null;
+  capability: StudioCapabilityId;
+  operation_types: string[];
+  summary: string;
+  created_at: string;
+  revertible: boolean;
+  /** Why not, when revertible is false. Always populated in that case. */
+  revert_blocked_reason?: string;
+  revert_blocked_code?: string;
+  /** Later operations that would be discarded by reverting this one. */
+  conflicts?: Array<{ operation_id: string; type: string; target: string }>;
 }
 
 export interface OperationResult {
@@ -53,6 +84,8 @@ export interface OperationResult {
   artifact_refs?: string[];
   job?: DurableJob;
   artifacts?: ArtifactRecord[];
+  /** Populated by studio.project.history. */
+  history?: OperationHistoryEntry[];
   verification: { status: "passed" | "failed" | "pending" | "not_applicable"; evidence: Array<Record<string, unknown>>; limitations?: string[] };
   warnings: Array<{ code: string; message: string; details?: Record<string, unknown> }>;
   usage: { duration_ms: number; model_tokens?: null };
@@ -70,6 +103,8 @@ const CAPABILITIES = new Set<StudioCapabilityId>([
   "studio.job.get",
   "studio.job.cancel",
   "studio.operation.undo",
+  "studio.project.history",
+  "studio.operation.revert",
 ]);
 
 export function assertOperationEnvelope(value: unknown): asserts value is OperationEnvelope {

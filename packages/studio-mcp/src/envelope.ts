@@ -21,6 +21,7 @@ export interface ToolCallArguments {
   idempotency_key?: string;
   undo_token?: string;
   job_id?: string;
+  revert_operation_id?: string;
   cover_asset_id?: string;
   preset_id?: string;
   output_name?: string;
@@ -52,6 +53,10 @@ function inputFor(tool: StudioToolDefinition, args: ToolCallArguments): Record<s
       return { job_id: args.job_id };
     case "studio.operation.undo":
       return { undo_token: args.undo_token };
+    case "studio.project.history":
+      return {};
+    case "studio.operation.revert":
+      return { revert_operation_id: args.revert_operation_id };
     default: {
       const exhaustive: never = tool.capability;
       throw new TypeError(`Unhandled capability: ${String(exhaustive)}`);

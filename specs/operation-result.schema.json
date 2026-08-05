@@ -193,6 +193,13 @@
     },
     "completed_at": {
       "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Activity history from studio.project.history: one entry per committed operation with actor attribution and per-entry revertibility."
     }
   }
 }
