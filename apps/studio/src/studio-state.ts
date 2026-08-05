@@ -30,8 +30,16 @@ export type { ApplyOptions, OperationDraft };
  */
 export type ConnectionState = "local" | "connecting" | "connected" | "disconnected";
 
-/** Agent edits arrive out-of-band, so the editor re-reads on an interval. */
-const POLL_INTERVAL_MS = 4000;
+/**
+ * Agent edits arrive out-of-band, so the editor re-reads on an interval.
+ *
+ * Two seconds is a deliberate trade: an agent's change should feel like it
+ * lands rather than eventually appearing, and the cost is one small local
+ * request against a host that is usually on the same machine. An event stream
+ * would remove the polling entirely and is the right answer once the Tauri
+ * shell provides a persistent channel (ADR 0013).
+ */
+const POLL_INTERVAL_MS = 2000;
 
 function readEnv(key: string): string | undefined {
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;

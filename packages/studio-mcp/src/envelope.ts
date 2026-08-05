@@ -96,6 +96,7 @@ export function buildEnvelope(options: BuildEnvelopeOptions): ContractOperationE
       principal_id: session.principalId,
       agent_id: session.agentId,
       harness_id: session.harnessId,
+      actor_type: session.actorType ?? "agent",
       delegation_chain: [session.principalId, session.agentId],
     },
     intent: `${tool.title} via MCP (${session.harnessId})`,

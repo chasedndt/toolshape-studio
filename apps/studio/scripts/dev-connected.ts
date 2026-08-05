@@ -54,13 +54,28 @@ async function main(): Promise<void> {
   // A fresh token per run. The editor is handed it through Vite's env, so
   // nothing is written to disk and no default credential exists to leak.
   const token = process.env.STUDIO_MCP_TOKEN ?? randomBytes(32).toString("hex");
+  const agentToken = process.env.STUDIO_AGENT_TOKEN ?? randomBytes(32).toString("hex");
+
+  // Two credentials, because the same transport now carries two kinds of
+  // caller. The editor is a person and must be recorded as one; a harness is
+  // an agent. The credential decides, not the request — a caller still cannot
+  // assert its own identity.
   const sessions = new SessionRegistry([
     {
       principalId: "local-operator",
-      agentId: "studio-editor",
+      agentId: "local-operator",
       harnessId: "studio-ui",
+      actorType: "human",
       grantIds: ["studio.*"],
       token,
+    },
+    {
+      principalId: "local-operator",
+      agentId: "external-harness",
+      harnessId: "mcp-client",
+      actorType: "agent",
+      grantIds: ["studio.*"],
+      token: agentToken,
     },
   ]);
 

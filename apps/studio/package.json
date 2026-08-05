@@ -19,7 +19,8 @@
     "smoke:mcp": "tsx scripts/smoke-mcp.ts",
     "docs:screenshots": "tsx scripts/capture-docs-screenshots.ts",
     "dev:connected": "tsx scripts/dev-connected.ts",
-    "smoke:connected": "tsx scripts/smoke-connected-shell.ts"
+    "smoke:connected": "tsx scripts/smoke-connected-shell.ts",
+    "docs:demo": "tsx scripts/capture-agent-demo.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",

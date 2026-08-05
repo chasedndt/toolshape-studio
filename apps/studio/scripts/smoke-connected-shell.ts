@@ -13,7 +13,7 @@
  *   4. a UI write against a revision the agent has moved past is refused and
  *      surfaced rather than silently overwriting the agent's work.
  */
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm, access } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -99,6 +99,22 @@ async function agentApply(projectId: string, revision: number, content: string):
 async function revisionInUi(page: Page): Promise<number> {
   const text = await page.locator(".project-crumb i").textContent();
   return Number((text ?? "r-1").replace("r", ""));
+}
+
+/**
+ * Terminates a spawned dev server and its children.
+ *
+ * With `shell: true` on Windows, `kill()` ends the shell and leaves the real
+ * process listening — so the next run connects to a server holding the
+ * previous configuration. Killing the tree avoids that.
+ */
+function killTree(child: ChildProcess | undefined): void {
+  if (!child?.pid) return;
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    return;
+  }
+  child.kill("SIGTERM");
 }
 
 async function main(): Promise<void> {
@@ -201,7 +217,7 @@ async function main(): Promise<void> {
     );
   } finally {
     await browser.close();
-    vite?.kill();
+    killTree(vite);
     await new Promise<void>((resolve) => listener.close(() => resolve()));
     repository.close();
     await rm(root, { recursive: true, force: true });

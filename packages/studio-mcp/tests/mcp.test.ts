@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 import { MemoryStudioJobGateway, STUDIO_SCHEMA_VERSION, StudioKernel } from "@toolshape/studio-kernel";
 import { SqliteStudioRepository } from "@toolshape/studio-persistence";
-import { StudioSdk, type ContractOperationEnvelope, type ContractOperationResult } from "@toolshape/studio-sdk";
+import {
+  StudioSdk,
+  contractEnvelopeToKernel,
+  type ContractOperationEnvelope,
+  type ContractOperationResult,
+} from "@toolshape/studio-sdk";
 import {
   MCP_PROTOCOL_VERSION,
   SessionRegistry,
@@ -456,6 +461,41 @@ describe("MCP envelope construction", () => {
     expect(envelope.actor.principal_id).toBe("operator-1");
     expect(envelope.actor.agent_id).toBe("agent-1");
     expect(envelope.authorization.grant_ids).toEqual(["studio.*"]);
+  });
+
+  it("attributes an edit to the actor type the credential declares", () => {
+    // Regression guard. The contract had no actor type, so the kernel inferred
+    // one by comparing agent_id to principal_id — which classified every call
+    // through MCP as an agent, including the editor's own. The activity
+    // history then reported a person's edits as an agent's.
+    const human = buildEnvelope({
+      tool: findTool("studio_project_apply_operations")!,
+      args: { project_id: "p1", expected_revision: 0, operations: [] },
+      session: { ...SESSION, agentId: "studio-editor", actorType: "human" },
+      schemaVersion: STUDIO_SCHEMA_VERSION,
+    });
+    expect(human.actor.actor_type).toBe("human");
+    expect(contractEnvelopeToKernel(human).actor.type).toBe("human");
+
+    const agent = buildEnvelope({
+      tool: findTool("studio_project_apply_operations")!,
+      args: { project_id: "p1", expected_revision: 0, operations: [] },
+      session: { ...SESSION, actorType: "agent" },
+      schemaVersion: STUDIO_SCHEMA_VERSION,
+    });
+    expect(contractEnvelopeToKernel(agent).actor.type).toBe("agent");
+  });
+
+  it("defaults an unlabelled session to agent", () => {
+    // An MCP session is an agent unless the credential says otherwise, so the
+    // safer classification is the default.
+    const envelope = buildEnvelope({
+      tool: findTool("studio_project_inspect")!,
+      args: { project_id: "p1" },
+      session: { ...SESSION, actorType: undefined },
+      schemaVersion: STUDIO_SCHEMA_VERSION,
+    });
+    expect(envelope.actor.actor_type).toBe("agent");
   });
 
   it("forces dry_run for the simulation capability", () => {

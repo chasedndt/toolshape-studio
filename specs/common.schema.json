@@ -89,6 +89,15 @@
             "type": "string"
           },
           "maxItems": 16
+        },
+        "actor_type": {
+          "type": "string",
+          "enum": [
+            "human",
+            "agent",
+            "service"
+          ],
+          "description": "What kind of actor this is. Optional for compatibility; when absent the kernel infers it by comparing agent_id to principal_id, which misattributes a human session that a transport gave a distinct agent identity."
         }
       }
     },

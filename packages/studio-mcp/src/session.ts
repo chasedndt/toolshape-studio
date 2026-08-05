@@ -21,6 +21,13 @@ export interface StudioSession {
   /** Which harness runtime is connected (e.g. "hermes", "openclaw", "claude-code"). */
   harnessId: string;
   /**
+   * What this session represents. Defaults to an agent, which is what an MCP
+   * session usually is — but the editor connects over the same transport, and
+   * its edits are a person's. Attribution in the activity history is only
+   * truthful if the credential says which.
+   */
+  actorType?: "human" | "agent" | "service";
+  /**
    * Capability grants this session may exercise. Each entry is either a
    * capability ID (`studio.project.inspect`) or the wildcard `studio.*`.
    *
@@ -87,6 +94,7 @@ export class SessionRegistry {
           principalId: credential.principalId,
           agentId: credential.agentId,
           harnessId: credential.harnessId,
+          actorType: credential.actorType ?? "agent",
           grantIds: [...credential.grantIds],
         };
       }

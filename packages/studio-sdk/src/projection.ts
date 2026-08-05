@@ -45,7 +45,13 @@ export function contractEnvelopeToKernel(envelope: ContractOperationEnvelope): O
     trace_id: envelope.trace_id,
     actor: {
       id: envelope.actor.principal_id,
-      type: envelope.actor.agent_id === envelope.actor.principal_id ? "human" : "agent",
+      // Explicit when supplied. The comparison below is a legacy fallback for
+      // envelopes predating actor_type: it treats any distinct agent_id as an
+      // agent, which misattributes a human session that a transport gave its
+      // own agent identity to.
+      type:
+        envelope.actor.actor_type ??
+        (envelope.actor.agent_id === envelope.actor.principal_id ? "human" : "agent"),
       delegated_by: envelope.actor.delegation_chain?.at(-2) ?? null,
     },
     intent: envelope.intent,

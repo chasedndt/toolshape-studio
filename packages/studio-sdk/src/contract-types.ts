@@ -17,6 +17,16 @@ export interface ContractOperationEnvelope {
     principal_id: string;
     agent_id: string;
     harness_id: string;
+    /**
+     * What kind of actor this is.
+     *
+     * Optional for compatibility, but callers should set it. Without it the
+     * kernel has to infer the type by comparing agent_id to principal_id, and
+     * that inference is wrong for any transport that assigns a distinct agent
+     * identity to a human session — which is exactly what happens when the
+     * editor itself connects over MCP.
+     */
+    actor_type?: "human" | "agent" | "service";
     chaseos_session_id?: string | null;
     delegation_chain?: string[];
   };
