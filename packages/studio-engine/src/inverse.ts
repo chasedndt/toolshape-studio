@@ -1,3 +1,4 @@
+import { compareRational as compareRationalTimes } from "./rational";
 import type {
   Clip,
   SceneNode,
@@ -291,6 +292,21 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
         ],
       };
 
+    case "timeline.clip.insert":
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.delete",
+            payload: {
+              trackId: operation.payload.trackId,
+              clipId: operation.payload.clip.id,
+              ripple: operation.payload.ripple,
+            },
+          },
+        ],
+      };
+
     case "timeline.clip.duplicate":
       return {
         revertible: true,
@@ -302,21 +318,51 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
         ],
       };
 
-    case "timeline.clip.merge":
-      return notRevertible(
-        "revert.no-inverse-capability",
-        "Reverting a merge needs the original split point, which the merge did not record.",
-      );
+    case "timeline.clip.merge": {
+      // The boundary is not lost: in the snapshot both clips still exist, so
+      // the split point is simply where the right one began.
+      const left = findClip(before, operation.payload.trackId, operation.payload.leftClipId);
+      const right = findClip(before, operation.payload.trackId, operation.payload.rightClipId);
+      if (!left || !right) {
+        return notRevertible("revert.target-missing", "The clips this operation merged are no longer both present.");
+      }
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.split",
+            payload: {
+              trackId: operation.payload.trackId,
+              clipId: operation.payload.leftClipId,
+              splitAt: structuredClone(right.start),
+              rightClipId: operation.payload.rightClipId,
+            },
+          },
+        ],
+      };
+    }
 
-    case "timeline.clip.delete":
-      // Restoring a deleted clip means reconstructing it from the before
-      // snapshot, which needs an insert operation carrying a whole clip. That
-      // does not exist, and declaring the limit beats offering a revert that
-      // fails when clicked.
-      return notRevertible(
-        "revert.no-inverse-capability",
-        "Restoring a deleted clip needs a clip insert operation, which does not exist yet.",
-      );
+    case "timeline.clip.delete": {
+      const clip = findClip(before, operation.payload.trackId, operation.payload.clipId);
+      if (!clip) {
+        return notRevertible("revert.target-missing", "The deleted clip is not present in the prior snapshot.");
+      }
+      // The snapshot holds the whole clip, so insert restores it exactly:
+      // same source range, same position, same asset.
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.insert",
+            payload: {
+              trackId: operation.payload.trackId,
+              clip: structuredClone(clip),
+              ripple: operation.payload.ripple,
+            },
+          },
+        ],
+      };
+    }
 
     case "timeline.clip.move": {
       const clip = findClip(before, operation.payload.trackId, operation.payload.clipId);
@@ -366,17 +412,42 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
       };
     }
 
-    case "timeline.clip.reorder":
-      return notRevertible(
-        "revert.no-inverse-capability",
-        "Reverting a reorder needs the previous clip ordering, which the operation did not record.",
-      );
+    case "timeline.clip.reorder": {
+      const track = findTrack(before, operation.payload.trackId);
+      if (!track || track.kind === "caption") {
+        return notRevertible("revert.target-missing", "The track this operation reordered no longer exists.");
+      }
+      // The previous ordering is exactly what the snapshot shows.
+      const previousIndex = [...track.clips]
+        .sort((a, b) => compareRationalTimes(a.start, b.start))
+        .findIndex((candidate) => candidate.id === operation.payload.clipId);
+      if (previousIndex < 0) {
+        return notRevertible("revert.target-missing", "The reordered clip is not present in the prior snapshot.");
+      }
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.reorder",
+            payload: { trackId: operation.payload.trackId, clipId: operation.payload.clipId, toIndex: previousIndex },
+          },
+        ],
+      };
+    }
 
-    case "scene.node.remove":
-      return notRevertible(
-        "revert.no-inverse-capability",
-        "Restoring a removed node needs the node itself, which the operation did not record.",
-      );
+    case "scene.node.remove": {
+      const node = findNode(before, operation.payload.sceneId, operation.payload.nodeId);
+      if (!node) {
+        return notRevertible("revert.target-missing", "The removed node is not present in the prior snapshot.");
+      }
+      // The node itself is in the snapshot; removing it lost nothing.
+      return {
+        revertible: true,
+        operations: [
+          { type: "scene.node.add", payload: { sceneId: operation.payload.sceneId, node: structuredClone(node) } },
+        ],
+      };
+    }
 
     default: {
       const exhaustive: never = operation;
@@ -429,6 +500,8 @@ export function operationTargets(operation: StudioOperation): string[] {
         `clip:${operation.payload.trackId}:${operation.payload.leftClipId}`,
         `clip:${operation.payload.trackId}:${operation.payload.rightClipId}`,
       ];
+    case "timeline.clip.insert":
+      return [`track:${operation.payload.trackId}`, `clip:${operation.payload.trackId}:${operation.payload.clip.id}`];
     case "scene.node.remove":
       return [`scene:${operation.payload.sceneId}`, `node:${operation.payload.sceneId}:${operation.payload.nodeId}`];
     case "timeline.caption.upsert":

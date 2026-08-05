@@ -187,19 +187,24 @@ describe("operation inverse planning", () => {
     expect(restored.scenes[0].nodeIds).not.toContain("node-added");
   });
 
-  it("still refuses to restore a deleted clip, and says why", () => {
-    // Deletion is deliberately not revertible: restoring the clip needs an
-    // insert operation carrying a whole clip, which does not exist. Declaring
-    // the limit beats offering a revert that fails when it is used.
+  it("restores a deleted clip, now that insert exists", () => {
     const before = createGoldenStudioProject();
-    const plan = planOperationInverse(
-      operation("timeline.clip.delete", { trackId: "track-video", clipId: "clip-main", ripple: false }, 0),
+    const split = apply(
       before,
+      operation(
+        "timeline.clip.split",
+        { trackId: "track-video", clipId: "clip-main", splitAt: rational(3), rightClipId: "clip-gone" },
+        0,
+        "77777777-7777-4777-8777-777777777777",
+      ),
     );
-    expect(plan.revertible).toBe(false);
-    if (plan.revertible) return;
-    expect(plan.code).toBe("revert.no-inverse-capability");
-    expect(plan.reason).toMatch(/insert/i);
+    const plan = planOperationInverse(
+      operation("timeline.clip.delete", { trackId: "track-video", clipId: "clip-gone", ripple: false }, 1),
+      split,
+    );
+    expect(plan.revertible).toBe(true);
+    if (!plan.revertible) return;
+    expect(plan.operations[0].type).toBe("timeline.clip.insert");
   });
 
   it("refuses to invert a keyframe that did not previously exist", () => {

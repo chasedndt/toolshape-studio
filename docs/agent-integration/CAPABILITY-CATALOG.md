@@ -34,7 +34,7 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today (17):
+Operation types today (18):
 
 | Operation | Domain |
 |---|---|
@@ -54,13 +54,16 @@ Operation types today (17):
 | `timeline.clip.duplicate` | assembly |
 | `timeline.clip.merge` | assembly |
 | `timeline.clip.set-speed` | assembly |
+| `timeline.clip.insert` | assembly |
 | `scene.node.remove` | design |
 
 Speed is a **rational ratio**, not a float: `2/1` is double speed, and a clip taken to `1/3` and back returns to its exact original duration (ADR 0003).
 
 Merge is deliberately narrow — it joins two clips only when they are adjacent on the timeline and contiguous in the same source, which is exactly the shape a split produces. That correspondence is what makes it a true inverse rather than an approximation.
 
-Still **absent**: inserting a clip from a payload, which is why deleting one is not revertible.
+**Every timeline and scene operation is individually revertible.** The inverse planner receives the project as it was immediately before an operation ran, so anything the snapshot holds is recoverable — a merge's split point, a reorder's previous ordering, a removed node, and a deleted clip all come back exactly.
+
+What remains non-revertible is a genuine vocabulary gap rather than lost information: creating a caption, a keyframe, or the first effect or style profile, because no removal operation exists for those yet. Those entries say so.
 
 ### studio.project.render
 Queues a durable render job and returns immediately with `accepted_job`. The public input names an asset, a preset and a safe output filename — it **never** carries FFmpeg arguments. Command construction and path resolution happen inside the trusted worker (ADR 0007).

@@ -126,7 +126,7 @@ This is `git revert`, not `git reset`: the inverse is computed and applied **for
 Two things make it honest rather than magical, and both are visible above:
 
 - **The middle entry is blocked** because a later edit touched the same object. Reverting it would silently discard that newer work, so it's refused with the reason rather than guessed at.
-- **Operations whose inverse doesn't exist yet** say so. Restoring a deleted clip needs an insert operation carrying a whole clip, which isn't in the vocabulary — so deletion declares itself non-revertible instead of failing when you click.
+- **Operations whose inverse genuinely doesn't exist** say so. Every timeline and scene edit reverts, including deletion — but creating a caption or a keyframe has no removal operation yet, so those declare the limit instead of failing when you click.
 
 Agents get the identical surface: `studio_project_history` and `studio_operation_revert`.
 

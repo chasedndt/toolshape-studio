@@ -337,6 +337,11 @@ export type StudioOperation =
       /** `speed` is a ratio, not a duration: 2/1 is double speed. */
       { trackId: Id; clipId: Id; speed: RationalTime; ripple: boolean }
     >
+  | Operation<
+      "timeline.clip.insert",
+      /** Carries the whole clip, so a deleted one can be put back exactly. */
+      { trackId: Id; clip: Clip; ripple: boolean }
+    >
   | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 

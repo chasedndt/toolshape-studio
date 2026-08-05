@@ -455,6 +455,28 @@ export function applyStudioOperation(
       summary = `Reordered “${clip.name}” to position ${operation.payload.toIndex + 1}.`;
       break;
     }
+    case "timeline.clip.insert": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      if (track.clips.some((candidate) => candidate.id === operation.payload.clip.id)) {
+        throw new RangeError(`Clip already exists: ${operation.payload.clip.id}`);
+      }
+      const inserted = structuredClone(operation.payload.clip);
+      if (operation.payload.ripple) {
+        for (const candidate of track.clips) {
+          if (compareRational(candidate.start, inserted.start) >= 0) {
+            candidate.start = addRational(candidate.start, inserted.duration);
+            candidate.revision += 1;
+            changedPaths.push(`timeline.tracks.${track.id}.clips.${candidate.id}.start`);
+          }
+        }
+      }
+      track.clips.push(inserted);
+      track.clips.sort((left, right) => compareRational(left.start, right.start));
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.clips.${inserted.id}`);
+      summary = `Inserted “${inserted.name}”.`;
+      break;
+    }
     case "scene.node.remove": {
       const scene = findScene(project, operation.payload.sceneId);
       const node = findNode(scene, operation.payload.nodeId);

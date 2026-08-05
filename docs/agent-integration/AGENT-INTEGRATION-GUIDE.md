@@ -285,6 +285,7 @@ The `operations` array carries the kernel's typed operation union. Each entry ne
 | `timeline.clip.duplicate` | `trackId`, `clipId`, `newClipId`, `at` (rational) |
 | `timeline.clip.merge` | `trackId`, `leftClipId`, `rightClipId` |
 | `timeline.clip.set-speed` | `trackId`, `clipId`, `speed` (rational ratio), `ripple` |
+| `timeline.clip.insert` | `trackId`, `clip` (whole clip), `ripple` |
 | `scene.node.remove` | `sceneId`, `nodeId` |
 
 Times are **rational**, not floats: `{"numerator": 2, "denominator": 1}` is exactly two seconds. This is deliberate — floating-point frame arithmetic accumulates error across edits. See [ADR 0003](../adr/0003-rational-time-model.md).

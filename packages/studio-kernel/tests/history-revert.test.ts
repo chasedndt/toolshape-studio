@@ -106,54 +106,36 @@ describe("activity history", () => {
 
   it("marks an operation non-revertible with a reason when its inverse does not exist", () => {
     const { kernel, projectId } = createKernel();
-    // A split first, so the track has two clips and the delete is permitted.
+    // Creating a caption is not reversible: there is no caption-removal
+    // operation, so the entry declares the limit rather than offering a revert
+    // that would fail. This is a genuine vocabulary gap, unlike deletion, which
+    // insert now covers.
     kernel.invoke(
-      envelope(
-        projectId,
-        "studio.project.apply_operations",
-        {
+      envelope(projectId, "studio.project.apply_operations", {
           operations: [
             {
               operationId: uuid(),
-              type: "timeline.clip.split",
+              type: "timeline.caption.upsert",
               actor: "operator",
               expectedRevision: 0,
               payload: {
-                trackId: "track-video",
-                clipId: "clip-main",
-                splitAt: rational(2),
-                rightClipId: "clip-split-right",
+                trackId: "track-captions",
+                segment: {
+                  id: "caption-brand-new",
+                  start: rational(0),
+                  end: rational(1),
+                  text: "A caption that did not exist before.",
+                  revision: 0,
+                },
               },
             } as StudioOperation,
           ],
-        },
-        0,
-      ),
-    );
-    kernel.invoke(
-      envelope(
-        projectId,
-        "studio.project.apply_operations",
-        {
-          operations: [
-            {
-              operationId: uuid(),
-              type: "timeline.clip.delete",
-              actor: "operator",
-              expectedRevision: 1,
-              payload: { trackId: "track-video", clipId: "clip-split-right", ripple: false },
-            } as StudioOperation,
-          ],
-        },
-        1,
-      ),
+        }, 0),
     );
     const entries = history(kernel, projectId);
-    // Restoring a deleted clip needs an insert operation that does not exist,
-    // so it declares the limit rather than offering a revert that would fail.
-    expect(entries[1].revertible).toBe(false);
-    expect(entries[1].revert_blocked_code).toBe("revert.no-inverse-capability");
-    expect(entries[1].revert_blocked_reason).toMatch(/insert/i);
+    expect(entries[0].revertible).toBe(false);
+    expect(entries[0].revert_blocked_code).toBe("revert.no-inverse-capability");
+    expect(entries[0].revert_blocked_reason).toMatch(/removal/i);
   });
 
   it("marks a split revertible now that merge exists", () => {
@@ -297,50 +279,31 @@ describe("selective revert", () => {
   it("refuses to revert an operation whose inverse is not expressible", () => {
     const { kernel, projectId } = createKernel();
     kernel.invoke(
-      envelope(
-        projectId,
-        "studio.project.apply_operations",
-        {
+      envelope(projectId, "studio.project.apply_operations", {
           operations: [
             {
               operationId: uuid(),
-              type: "timeline.clip.split",
+              type: "timeline.caption.upsert",
               actor: "operator",
               expectedRevision: 0,
               payload: {
-                trackId: "track-video",
-                clipId: "clip-main",
-                splitAt: rational(2),
-                rightClipId: "clip-split-two",
+                trackId: "track-captions",
+                segment: {
+                  id: "caption-brand-new",
+                  start: rational(0),
+                  end: rational(1),
+                  text: "A caption that did not exist before.",
+                  revision: 0,
+                },
               },
             } as StudioOperation,
           ],
-        },
-        0,
-      ),
-    );
-    kernel.invoke(
-      envelope(
-        projectId,
-        "studio.project.apply_operations",
-        {
-          operations: [
-            {
-              operationId: uuid(),
-              type: "timeline.clip.delete",
-              actor: "operator",
-              expectedRevision: 1,
-              payload: { trackId: "track-video", clipId: "clip-split-two", ripple: false },
-            } as StudioOperation,
-          ],
-        },
-        1,
-      ),
+        }, 0),
     );
     const entries = history(kernel, projectId);
     expect(() =>
-      kernel.invoke(envelope(projectId, "studio.operation.revert", { revert_operation_id: entries[1].operation_id }, 2)),
-    ).toThrow(/insert/i);
+      kernel.invoke(envelope(projectId, "studio.operation.revert", { revert_operation_id: entries[0].operation_id }, 1)),
+    ).toThrow(/removal/i);
   });
 
   it("rejects an unknown operation id", () => {
