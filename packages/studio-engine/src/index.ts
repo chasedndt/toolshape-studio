@@ -7,3 +7,4 @@ export * from "./validation";
 export * from "./inverse";
 export * from "./zoom-derivation";
 export * from "./camera-path";
+export * from "./variants";
