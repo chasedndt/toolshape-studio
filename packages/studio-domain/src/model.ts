@@ -169,12 +169,33 @@ export interface Clip {
   effectIds: Id[];
 }
 
+export type TransitionKind = "crossfade" | "fade-to-black" | "dip-to-white";
+
+/**
+ * A transition between two adjacent clips.
+ *
+ * Stored on the track rather than on either clip, because it belongs to the
+ * boundary between them: neither clip owns it, and deleting one must not leave
+ * the other holding half a transition.
+ */
+export interface Transition {
+  id: Id;
+  kind: TransitionKind;
+  /** The clip the transition runs out of. */
+  fromClipId: Id;
+  /** The clip it runs into. */
+  toClipId: Id;
+  duration: RationalTime;
+  revision: number;
+}
+
 export interface VideoTrack {
   id: Id;
   name: string;
   kind: "video";
   locked: boolean;
   clips: Clip[];
+  transitions?: Transition[];
 }
 
 export interface AudioTrack {
@@ -365,6 +386,8 @@ export type StudioOperation =
       /** Projects a capture into an editable track. The capture is not consumed. */
       { captureId: Id; trackId: Id }
     >
+  | Operation<"timeline.transition.set", { trackId: Id; transition: Transition }>
+  | Operation<"timeline.transition.remove", { trackId: Id; transitionId: Id }>
   | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 

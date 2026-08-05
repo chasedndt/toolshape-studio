@@ -396,6 +396,13 @@ export function applyStudioOperation(
       const removedStart = clip.start;
       const removedDuration = clip.duration;
       track.clips = track.clips.filter((candidate) => candidate.id !== clip.id);
+      // A transition is a boundary between two clips. Removing one clip leaves
+      // the other holding half a transition, so it goes with it.
+      if (track.kind === "video" && track.transitions) {
+        track.transitions = track.transitions.filter(
+          (candidate) => candidate.fromClipId !== clip.id && candidate.toClipId !== clip.id,
+        );
+      }
       if (operation.payload.ripple) {
         for (const candidate of track.clips) {
           if (compareRational(candidate.start, removedStart) >= 0) {
@@ -518,6 +525,66 @@ export function applyStudioOperation(
       capture.revision += 1;
       changedPaths.push(`captures.${capture.id}.redactions.${existing.id}`);
       summary = `Removed a ${existing.kind} redaction from “${capture.source.label}”.`;
+      break;
+    }
+    case "timeline.transition.set": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      if (track.kind !== "video") {
+        throw new TypeError("Transitions are only supported on video tracks.");
+      }
+      const from = findClip(track, operation.payload.transition.fromClipId);
+      const to = findClip(track, operation.payload.transition.toClipId);
+      if (compareRational(operation.payload.transition.duration, rational(0)) <= 0) {
+        throw new RangeError("Transition duration must be positive.");
+      }
+      // Adjacency is required because a transition is a boundary, not a
+      // free-floating overlay: two clips with a gap between them have nothing
+      // to cross-fade through.
+      if (compareRational(addRational(from.start, from.duration), to.start) !== 0) {
+        throw new RangeError("A transition requires the two clips to be adjacent.");
+      }
+      // It consumes tail and head, so neither clip may be shorter than it.
+      if (
+        compareRational(operation.payload.transition.duration, from.duration) > 0 ||
+        compareRational(operation.payload.transition.duration, to.duration) > 0
+      ) {
+        throw new RangeError("A transition cannot be longer than either clip it joins.");
+      }
+
+      track.transitions ??= [];
+      const existing = track.transitions.findIndex(
+        (candidate) =>
+          candidate.id === operation.payload.transition.id ||
+          (candidate.fromClipId === from.id && candidate.toClipId === to.id),
+      );
+      const next = structuredClone(operation.payload.transition);
+      if (existing >= 0) {
+        next.revision = track.transitions[existing].revision + 1;
+        track.transitions[existing] = next;
+      } else {
+        next.revision = 0;
+        track.transitions.push(next);
+      }
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.transitions.${next.id}`);
+      summary = `Set a ${next.kind} between “${from.name}” and “${to.name}”.`;
+      break;
+    }
+    case "timeline.transition.remove": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      if (track.kind !== "video") {
+        throw new TypeError("Transitions are only supported on video tracks.");
+      }
+      const existing = (track.transitions ?? []).find(
+        (candidate) => candidate.id === operation.payload.transitionId,
+      );
+      if (!existing) {
+        throw new RangeError(`Unknown transition: ${operation.payload.transitionId}`);
+      }
+      track.transitions = (track.transitions ?? []).filter((candidate) => candidate.id !== existing.id);
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.transitions.${existing.id}`);
+      summary = `Removed a ${existing.kind} transition.`;
       break;
     }
     case "capture.to-scene": {

@@ -34,7 +34,7 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today (22):
+Operation types today (24):
 
 | Operation | Domain |
 |---|---|
@@ -60,6 +60,8 @@ Operation types today (22):
 | `capture.redaction.add` | capture |
 | `capture.redaction.remove` | capture |
 | `capture.to-scene` | capture |
+| `timeline.transition.set` | edit |
+| `timeline.transition.remove` | edit |
 
 Speed is a **rational ratio**, not a float: `2/1` is double speed, and a clip taken to `1/3` and back returns to its exact original duration (ADR 0003).
 

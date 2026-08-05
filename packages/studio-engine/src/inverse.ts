@@ -311,6 +311,68 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
       };
     }
 
+    case "timeline.transition.set": {
+      const track = before.timeline.tracks.find(
+        (candidate) => candidate.id === operation.payload.trackId,
+      );
+      const previous =
+        track && track.kind === "video"
+          ? (track.transitions ?? []).find(
+              (candidate) =>
+                candidate.id === operation.payload.transition.id ||
+                (candidate.fromClipId === operation.payload.transition.fromClipId &&
+                  candidate.toClipId === operation.payload.transition.toClipId),
+            )
+          : undefined;
+
+      // Setting over an existing transition restores the old one; setting a
+      // new one is undone by removing it.
+      return previous
+        ? {
+            revertible: true,
+            operations: [
+              {
+                type: "timeline.transition.set",
+                payload: { trackId: operation.payload.trackId, transition: structuredClone(previous) },
+              },
+            ],
+          }
+        : {
+            revertible: true,
+            operations: [
+              {
+                type: "timeline.transition.remove",
+                payload: { trackId: operation.payload.trackId, transitionId: operation.payload.transition.id },
+              },
+            ],
+          };
+    }
+
+    case "timeline.transition.remove": {
+      const track = before.timeline.tracks.find(
+        (candidate) => candidate.id === operation.payload.trackId,
+      );
+      const previous =
+        track && track.kind === "video"
+          ? (track.transitions ?? []).find((candidate) => candidate.id === operation.payload.transitionId)
+          : undefined;
+      if (!previous) {
+        return notRevertible(
+          "revert.target-missing",
+          "The removed transition is not present in the prior snapshot.",
+        );
+      }
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.transition.set",
+            payload: { trackId: operation.payload.trackId, transition: structuredClone(previous) },
+          },
+        ],
+      };
+    }
+
     case "capture.to-scene":
       return notRevertible(
         "revert.no-inverse-capability",
@@ -559,6 +621,15 @@ export function operationTargets(operation: StudioOperation): string[] {
       return [`capture:${operation.payload.captureId}`, `capture-zoom:${operation.payload.captureId}`];
     case "capture.to-scene":
       return [`capture:${operation.payload.captureId}`, `track:${operation.payload.trackId}`];
+    case "timeline.transition.set":
+      // A transition binds two clips, so editing either of them conflicts.
+      return [
+        `transition:${operation.payload.trackId}:${operation.payload.transition.id}`,
+        `clip:${operation.payload.trackId}:${operation.payload.transition.fromClipId}`,
+        `clip:${operation.payload.trackId}:${operation.payload.transition.toClipId}`,
+      ];
+    case "timeline.transition.remove":
+      return [`transition:${operation.payload.trackId}:${operation.payload.transitionId}`];
     case "capture.redaction.add":
       return [
         `capture:${operation.payload.captureId}`,

@@ -291,6 +291,8 @@ The `operations` array carries the kernel's typed operation union. Each entry ne
 | `capture.redaction.add` | `captureId`, `redaction` |
 | `capture.redaction.remove` | `captureId`, `redactionId` |
 | `capture.to-scene` | `captureId`, `trackId` |
+| `timeline.transition.set` | `trackId`, `transition` (crossfade, fade-to-black, dip-to-white) |
+| `timeline.transition.remove` | `trackId`, `transitionId` |
 
 Times are **rational**, not floats: `{"numerator": 2, "denominator": 1}` is exactly two seconds. This is deliberate — floating-point frame arithmetic accumulates error across edits. See [ADR 0003](../adr/0003-rational-time-model.md).
 

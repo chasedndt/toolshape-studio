@@ -79,6 +79,21 @@ async function main(): Promise<void> {
       ripple: false,
     });
 
+    // A one-second crossfade overlaps the two clips, so the output must be one
+    // second shorter than their sum. Getting the xfade offset wrong is the
+    // classic failure here and it shows up as a duration mismatch.
+    project = apply(project, "timeline.transition.set", {
+      trackId: "track-video",
+      transition: {
+        id: "transition-smoke",
+        kind: "crossfade",
+        fromClipId: "clip-main",
+        toClipId: "clip-tail",
+        duration: rational(1),
+        revision: 0,
+      },
+    });
+
     const outputPath = path.join(root, "timeline.mp4");
     const plan = createTimelineRenderPlan({
       project,
@@ -92,8 +107,12 @@ async function main(): Promise<void> {
     });
 
     assert(plan.segments.length === 2, `expected 2 segments, got ${plan.segments.length}`);
-    const expected = plan.segments.reduce((total, segment) => total + segment.durationSeconds, 0);
-    assert(Math.abs(expected - 5) < 0.01, `expected a 5s timeline, planned ${expected}`);
+    const segmentTotal = plan.segments.reduce((total, segment) => total + segment.durationSeconds, 0);
+    assert(Math.abs(segmentTotal - 5) < 0.01, `expected 5s of segments, planned ${segmentTotal}`);
+    // 3s + 2s with a 1s crossfade overlapping them.
+    const expected = plan.expectation.durationSeconds;
+    assert(Math.abs(expected - 4) < 0.01, `expected a 4s output after the crossfade, planned ${expected}`);
+    assert(plan.args.join(" ").includes("xfade="), "the plan must composite the transition");
 
     const graph = plan.args.join(" ");
     assert(!graph.includes("sine="), "the plan must not synthesise audio");
@@ -103,17 +122,18 @@ async function main(): Promise<void> {
     assert(render.status === 0, `render failed: ${render.stderr?.slice(-600)}`);
 
     const actual = ffprobeDuration(plan.partialOutputPath);
-    // A cover render would have produced the timeline's declared 8s duration;
-    // a real concat of a 3s and a 2s segment produces 5s.
+    // A cover render would give the timeline's declared 8s; a plain concat
+    // would give 5s; only a correctly offset crossfade gives 4s.
     assert(
-      Math.abs(actual - 5) < 0.35,
-      `rendered duration ${actual}s does not match the 5s timeline — a still-image fallback would give 8s`,
+      Math.abs(actual - 4) < 0.35,
+      `rendered duration ${actual}s does not match the 4s crossfaded timeline`,
     );
 
     process.stdout.write(
       `${JSON.stringify({
         status: "completed",
         segments: plan.segments.length,
+        segment_seconds: Number(segmentTotal.toFixed(3)),
         planned_seconds: Number(expected.toFixed(3)),
         rendered_seconds: Number(actual.toFixed(3)),
         timeline_declared_seconds: toSeconds(project.timeline.duration),
