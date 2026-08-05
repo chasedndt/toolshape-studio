@@ -34,7 +34,7 @@ Simulates operations and returns the semantic diff without mutating. `dry_run` i
 ### studio.project.apply_operations
 Applies a batch of typed operations atomically and advances the revision. Rejects on stale `expected_revision`. Returns a single-use undo token. Supply a stable `idempotency_key` to make retries safe.
 
-Operation types today (10):
+Operation types today (17):
 
 | Operation | Domain |
 |---|---|
@@ -48,8 +48,19 @@ Operation types today (10):
 | `animation.keyframe.set` | motion |
 | `effect.blur.set` | effects |
 | `style.profile.apply` | style |
+| `timeline.clip.move` | assembly |
+| `timeline.clip.reorder` | assembly |
+| `timeline.clip.delete` | assembly |
+| `timeline.clip.duplicate` | assembly |
+| `timeline.clip.merge` | assembly |
+| `timeline.clip.set-speed` | assembly |
+| `scene.node.remove` | design |
 
-Notably **absent**, and the reason Milestone 8 exists: there is no way to move, reorder, delete, duplicate, or re-speed a clip. Split and trim alone cannot assemble a video.
+Speed is a **rational ratio**, not a float: `2/1` is double speed, and a clip taken to `1/3` and back returns to its exact original duration (ADR 0003).
+
+Merge is deliberately narrow — it joins two clips only when they are adjacent on the timeline and contiguous in the same source, which is exactly the shape a split produces. That correspondence is what makes it a true inverse rather than an approximation.
+
+Still **absent**: inserting a clip from a payload, which is why deleting one is not revertible.
 
 ### studio.project.render
 Queues a durable render job and returns immediately with `accepted_job`. The public input names an asset, a preset and a safe output filename — it **never** carries FFmpeg arguments. Command construction and path resolution happen inside the trusted worker (ADR 0007).

@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Circle,
+  CopyPlus,
   Clapperboard,
   Diamond,
   Eye,
@@ -38,6 +39,7 @@ import {
   Sparkles,
   StepBack,
   StepForward,
+  Trash2,
   Type,
   Undo2,
   User,
@@ -1152,6 +1154,51 @@ function TimelinePanel({
       });
   };
 
+  const runOnSelected = (draft: Parameters<typeof apply>[0], success: string) => {
+    void apply(draft)
+      .then(() => onNotice(success))
+      .catch((error: unknown) => {
+        onNotice(error instanceof Error ? error.message : "That edit was rejected.");
+      });
+  };
+
+  const deleteSelected = () => {
+    if (!selection || !selectedClip) return;
+    runOnSelected(
+      { type: "timeline.clip.delete", payload: { trackId: selection.trackId, clipId: selection.clipId, ripple } },
+      `Deleted “${selectedClip.name}” · ${ripple ? "gap closed" : "gap left"} · timeline.clip.delete`,
+    );
+    setSelection(null);
+  };
+
+  const duplicateSelected = () => {
+    if (!selection || !selectedClip) return;
+    const newClipId = `clip-${crypto.randomUUID()}`;
+    runOnSelected(
+      {
+        type: "timeline.clip.duplicate",
+        payload: {
+          trackId: selection.trackId,
+          clipId: selection.clipId,
+          newClipId,
+          at: rational(Math.round(selectedEnd * 1000), 1000),
+        },
+      },
+      `Duplicated “${selectedClip.name}” · timeline.clip.duplicate`,
+    );
+  };
+
+  const setSelectedSpeed = (numerator: number, denominator: number) => {
+    if (!selection || !selectedClip) return;
+    runOnSelected(
+      {
+        type: "timeline.clip.set-speed",
+        payload: { trackId: selection.trackId, clipId: selection.clipId, speed: rational(numerator, denominator), ripple },
+      },
+      `“${selectedClip.name}” at ${numerator}/${denominator}x · timeline.clip.set-speed`,
+    );
+  };
+
   const trimSelectedToPlayhead = (edge: TrimEdge) => {
     if (!selection || !selectedClip || !canTrimToPlayhead) return;
     const candidate = computeTrimCandidate({
@@ -1255,7 +1302,26 @@ function TimelinePanel({
           </button>
           <button className="button button--quiet timeline-boundary-action" disabled={!canTrimToPlayhead} onClick={() => trimSelectedToPlayhead("start")} title="Trim selected clip start to playhead ([)">Set in</button>
           <button className="button button--quiet timeline-boundary-action" disabled={!canTrimToPlayhead} onClick={() => trimSelectedToPlayhead("end")} title="Trim selected clip end to playhead (])">Set out</button>
-          <button className={`button button--quiet ripple-toggle${ripple ? " is-active" : ""}`} aria-pressed={ripple} onClick={() => setRipple((current) => !current)} title="Shift downstream clips after an end trim">
+          <button className="button button--quiet" disabled={!selectedClip} onClick={duplicateSelected} title="Duplicate the selected clip after itself">
+            <CopyPlus size={13} aria-hidden="true" /> Duplicate
+          </button>
+          <button className="button button--quiet" disabled={!selectedClip} onClick={deleteSelected} title="Delete the selected clip">
+            <Trash2 size={13} aria-hidden="true" /> Delete
+          </button>
+          <span className="speed-group" role="group" aria-label="Clip speed">
+            {([[1, 2, "0.5x"], [1, 1, "1x"], [2, 1, "2x"]] as const).map(([numerator, denominator, label]) => (
+              <button
+                key={label}
+                className="button button--quiet"
+                disabled={!selectedClip}
+                onClick={() => setSelectedSpeed(numerator, denominator)}
+                title={`Set the selected clip to ${label} speed`}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
+          <button className={`button button--quiet ripple-toggle${ripple ? " is-active" : ""}`} aria-pressed={ripple} onClick={() => setRipple((current) => !current)} title="Shift downstream clips after an end trim, delete or speed change">
             Ripple
           </button>
           {audioClip && (

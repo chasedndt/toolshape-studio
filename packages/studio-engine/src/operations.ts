@@ -14,6 +14,7 @@ import { assertStudioProjectValid } from "./validation";
 import {
   addRational,
   compareRational,
+  divideRational,
   rational,
   subtractRational,
 } from "./rational";
@@ -296,6 +297,174 @@ export function applyStudioOperation(
       project.styleProfileRef = structuredClone(operation.payload.styleProfileRef);
       changedPaths.push("styleProfileRef");
       summary = `Applied style profile “${operation.payload.styleProfileRef.name}” v${operation.payload.styleProfileRef.version}.`;
+      break;
+    }
+    case "timeline.clip.move": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const clip = findClip(track, operation.payload.clipId);
+      if (compareRational(operation.payload.newStart, rational(0)) < 0) {
+        throw new RangeError("A clip cannot move before the start of the timeline.");
+      }
+      const previousStart = clip.start;
+      const delta = subtractRational(operation.payload.newStart, previousStart);
+      // A move repositions; it does not change what the clip reads. sourceIn
+      // and duration are deliberately untouched — that is what makes this
+      // different from a trim.
+      clip.start = operation.payload.newStart;
+      clip.revision += 1;
+      if (operation.payload.ripple) {
+        for (const candidate of track.clips) {
+          if (candidate.id !== clip.id && compareRational(candidate.start, previousStart) > 0) {
+            candidate.start = addRational(candidate.start, delta);
+            candidate.revision += 1;
+            changedPaths.push(`timeline.tracks.${track.id}.clips.${candidate.id}.start`);
+          }
+        }
+      }
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.clips.${clip.id}.start`);
+      summary = `Moved “${clip.name}”.`;
+      break;
+    }
+    case "timeline.clip.set-speed": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const clip = findClip(track, operation.payload.clipId);
+      if (compareRational(operation.payload.speed, rational(0)) <= 0) {
+        throw new RangeError("Clip speed must be positive.");
+      }
+      const previousEnd = addRational(clip.start, clip.duration);
+      // Exact division, so repeated speed changes round-trip without drift.
+      const nextDuration = divideRational(clip.duration, operation.payload.speed);
+      if (compareRational(nextDuration, rational(0)) <= 0) {
+        throw new RangeError("Speed change would collapse the clip to nothing.");
+      }
+      clip.duration = nextDuration;
+      clip.revision += 1;
+      if (operation.payload.ripple) {
+        const rippleDelta = subtractRational(addRational(clip.start, nextDuration), previousEnd);
+        for (const candidate of track.clips) {
+          if (candidate.id !== clip.id && compareRational(candidate.start, previousEnd) >= 0) {
+            candidate.start = addRational(candidate.start, rippleDelta);
+            candidate.revision += 1;
+            changedPaths.push(`timeline.tracks.${track.id}.clips.${candidate.id}.start`);
+          }
+        }
+      }
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.clips.${clip.id}.duration`);
+      summary = `Set “${clip.name}” to ${operation.payload.speed.numerator}/${operation.payload.speed.denominator}x speed.`;
+      break;
+    }
+    case "timeline.clip.duplicate": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const clip = findClip(track, operation.payload.clipId);
+      if (track.clips.some((candidate) => candidate.id === operation.payload.newClipId)) {
+        throw new RangeError(`Clip already exists: ${operation.payload.newClipId}`);
+      }
+      if (compareRational(operation.payload.at, rational(0)) < 0) {
+        throw new RangeError("A duplicate cannot start before the timeline.");
+      }
+      // References the same immutable asset. Duplication copies a view of the
+      // source, never the media itself (ADR 0002).
+      const copy = structuredClone(clip);
+      copy.id = operation.payload.newClipId;
+      copy.name = `${clip.name} copy`;
+      copy.start = operation.payload.at;
+      copy.revision = 0;
+      track.clips.push(copy);
+      track.clips.sort((left, right) => compareRational(left.start, right.start));
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.clips.${copy.id}`);
+      summary = `Duplicated “${clip.name}”.`;
+      break;
+    }
+    case "timeline.clip.delete": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const clip = findClip(track, operation.payload.clipId);
+      if (track.clips.length <= 1) {
+        throw new RangeError("Cannot delete the last clip on a track.");
+      }
+      const removedStart = clip.start;
+      const removedDuration = clip.duration;
+      track.clips = track.clips.filter((candidate) => candidate.id !== clip.id);
+      if (operation.payload.ripple) {
+        for (const candidate of track.clips) {
+          if (compareRational(candidate.start, removedStart) >= 0) {
+            candidate.start = subtractRational(candidate.start, removedDuration);
+            candidate.revision += 1;
+            changedPaths.push(`timeline.tracks.${track.id}.clips.${candidate.id}.start`);
+          }
+        }
+      }
+      project.timeline.revision += 1;
+      changedPaths.push(`timeline.tracks.${track.id}.clips.${clip.id}`);
+      summary = `${operation.payload.ripple ? "Ripple d" : "D"}eleted “${clip.name}”.`;
+      break;
+    }
+    case "timeline.clip.merge": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const left = findClip(track, operation.payload.leftClipId);
+      const right = findClip(track, operation.payload.rightClipId);
+      if (left.id === right.id) {
+        throw new RangeError("Cannot merge a clip with itself.");
+      }
+      if (left.assetId !== right.assetId) {
+        throw new RangeError("Only clips reading the same source asset can be merged.");
+      }
+      // Deliberately narrow: merging is the inverse of a split, so it accepts
+      // exactly the shape a split produces. Joining clips that are not
+      // contiguous in the source would invent footage that never existed.
+      if (compareRational(addRational(left.start, left.duration), right.start) !== 0) {
+        throw new RangeError("Clips must be adjacent on the timeline to merge.");
+      }
+      if (compareRational(addRational(left.sourceIn, left.duration), right.sourceIn) !== 0) {
+        throw new RangeError("Clips must be contiguous in the source to merge.");
+      }
+      left.duration = addRational(left.duration, right.duration);
+      left.revision += 1;
+      track.clips = track.clips.filter((candidate) => candidate.id !== right.id);
+      project.timeline.revision += 1;
+      changedPaths.push(
+        `timeline.tracks.${track.id}.clips.${left.id}.duration`,
+        `timeline.tracks.${track.id}.clips.${right.id}`,
+      );
+      summary = `Merged “${right.name}” into “${left.name}”.`;
+      break;
+    }
+    case "timeline.clip.reorder": {
+      const track = findClipTrack(project, operation.payload.trackId);
+      const clip = findClip(track, operation.payload.clipId);
+      const ordered = [...track.clips].sort((a, b) => compareRational(a.start, b.start));
+      if (operation.payload.toIndex < 0 || operation.payload.toIndex >= ordered.length) {
+        throw new RangeError(`Reorder index is out of range: ${operation.payload.toIndex}`);
+      }
+      const from = ordered.findIndex((candidate) => candidate.id === clip.id);
+      const [moved] = ordered.splice(from, 1);
+      ordered.splice(operation.payload.toIndex, 0, moved);
+      // Re-pack end to end. Reordering without repacking would leave every clip
+      // where it was, which is a visual no-op and not what the operation means.
+      let cursor = rational(0);
+      for (const candidate of ordered) {
+        candidate.start = cursor;
+        candidate.revision += 1;
+        cursor = addRational(cursor, candidate.duration);
+        changedPaths.push(`timeline.tracks.${track.id}.clips.${candidate.id}.start`);
+      }
+      track.clips = ordered;
+      project.timeline.revision += 1;
+      summary = `Reordered “${clip.name}” to position ${operation.payload.toIndex + 1}.`;
+      break;
+    }
+    case "scene.node.remove": {
+      const scene = findScene(project, operation.payload.sceneId);
+      const node = findNode(scene, operation.payload.nodeId);
+      scene.nodes = scene.nodes.filter((candidate) => candidate.id !== node.id);
+      // The scene keeps a parallel ordering array; leaving it behind produces a
+      // node-list mismatch the validator rejects.
+      scene.nodeIds = scene.nodeIds.filter((candidate) => candidate !== node.id);
+      scene.revision += 1;
+      changedPaths.push(`scenes.${scene.id}.nodes.${node.id}`);
+      summary = `Removed “${node.name}”.`;
       break;
     }
   }

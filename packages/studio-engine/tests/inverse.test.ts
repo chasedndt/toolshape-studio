@@ -122,53 +122,84 @@ describe("operation inverse planning", () => {
     expect(node!.transform.x).toBe(originalNode!.transform.x);
   });
 
-  it("refuses to invert an operation whose inverse needs a capability that does not exist", () => {
+  it("inverts a split by merging the halves back into the original clip", () => {
     const before = createGoldenStudioProject();
+    const original = before.timeline.tracks.find((t) => t.id === "track-video");
+    const originalClip = original?.kind !== "caption" ? original!.clips.find((c) => c.id === "clip-main")! : undefined;
 
-    // A split would need a merge or delete to undo, and neither is in the
-    // operation vocabulary yet. Declaring that plainly beats failing obscurely.
-    const split = planOperationInverse(
-      operation(
-        "timeline.clip.split",
-        {
-          trackId: "track-video",
-          clipId: "clip-main",
-          splitAt: rational(2),
-          rightClipId: "clip-new",
-        },
-        0,
-      ),
-      before,
+    const split = operation(
+      "timeline.clip.split",
+      {
+        trackId: "track-video",
+        clipId: "clip-main",
+        splitAt: rational(2),
+        rightClipId: "clip-inverse-right",
+      },
+      0,
+      "99999999-9999-4999-8999-999999999999",
     );
-    expect(split.revertible).toBe(false);
-    if (split.revertible) return;
-    expect(split.code).toBe("revert.no-inverse-capability");
-    expect(split.reason).toMatch(/merge|delete/i);
+    const after = apply(before, split);
+
+    const plan = planOperationInverse(split, before);
+    expect(plan.revertible).toBe(true);
+    if (!plan.revertible) return;
+
+    const restored = apply(after, { ...plan.operations[0], expectedRevision: after.revision } as StudioOperation);
+    const track = restored.timeline.tracks.find((t) => t.id === "track-video");
+    const clips = track?.kind !== "caption" ? track!.clips : [];
+    // The half is gone and the original geometry is exactly restored.
+    expect(clips.find((c) => c.id === "clip-inverse-right")).toBeUndefined();
+    const result = clips.find((c) => c.id === "clip-main")!;
+    expect(toSeconds(result.start)).toBe(toSeconds(originalClip!.start));
+    expect(toSeconds(result.duration)).toBe(toSeconds(originalClip!.duration));
+    expect(toSeconds(result.sourceIn)).toBe(toSeconds(originalClip!.sourceIn));
   });
 
-  it("refuses to invert the creation of something it cannot remove", () => {
+  it("inverts adding a node by removing it", () => {
     const before = createGoldenStudioProject();
-    const add = planOperationInverse(
-      operation(
-        "scene.node.add",
-        {
-          sceneId: before.activeSceneId,
-          node: {
-            id: "node-new",
-            type: "shape",
-            name: "New shape",
-            transform: { x: 0, y: 0, width: 10, height: 10, rotation: 0, opacity: 1 },
-            shape: "rect",
-            fill: "#fff",
-          },
-        } as Extract<StudioOperation, { type: "scene.node.add" }>["payload"],
-        0,
-      ),
+    const add = operation(
+      "scene.node.add",
+      {
+        sceneId: before.activeSceneId,
+        node: {
+          id: "node-added",
+          type: "shape",
+          name: "Added shape",
+          revision: 0,
+          transform: { x: 0, y: 0, width: 10, height: 10, rotationDeg: 0, opacity: 1 },
+          animations: {},
+          shape: "rectangle",
+          fill: "#ffffff",
+        },
+      } as Extract<StudioOperation, { type: "scene.node.add" }>["payload"],
+      0,
+      "88888888-8888-4888-8888-888888888888",
+    );
+    const after = apply(before, add);
+    expect(after.scenes[0].nodes.some((n) => n.id === "node-added")).toBe(true);
+
+    const plan = planOperationInverse(add, before);
+    expect(plan.revertible).toBe(true);
+    if (!plan.revertible) return;
+
+    const restored = apply(after, { ...plan.operations[0], expectedRevision: after.revision } as StudioOperation);
+    expect(restored.scenes[0].nodes.some((n) => n.id === "node-added")).toBe(false);
+    expect(restored.scenes[0].nodeIds).not.toContain("node-added");
+  });
+
+  it("still refuses to restore a deleted clip, and says why", () => {
+    // Deletion is deliberately not revertible: restoring the clip needs an
+    // insert operation carrying a whole clip, which does not exist. Declaring
+    // the limit beats offering a revert that fails when it is used.
+    const before = createGoldenStudioProject();
+    const plan = planOperationInverse(
+      operation("timeline.clip.delete", { trackId: "track-video", clipId: "clip-main", ripple: false }, 0),
       before,
     );
-    expect(add.revertible).toBe(false);
-    if (add.revertible) return;
-    expect(add.code).toBe("revert.no-inverse-capability");
+    expect(plan.revertible).toBe(false);
+    if (plan.revertible) return;
+    expect(plan.code).toBe("revert.no-inverse-capability");
+    expect(plan.reason).toMatch(/insert/i);
   });
 
   it("refuses to invert a keyframe that did not previously exist", () => {

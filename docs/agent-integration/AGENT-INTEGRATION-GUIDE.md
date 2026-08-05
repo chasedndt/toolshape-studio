@@ -279,6 +279,13 @@ The `operations` array carries the kernel's typed operation union. Each entry ne
 | `animation.keyframe.set` | `sceneId`, `nodeId`, `property`, `keyframe` |
 | `effect.blur.set` | `sceneId`, `nodeId`, `effectId`, `radius`, `enabled` |
 | `style.profile.apply` | `styleProfileRef` |
+| `timeline.clip.move` | `trackId`, `clipId`, `newStart` (rational), `ripple` |
+| `timeline.clip.reorder` | `trackId`, `clipId`, `toIndex` |
+| `timeline.clip.delete` | `trackId`, `clipId`, `ripple` |
+| `timeline.clip.duplicate` | `trackId`, `clipId`, `newClipId`, `at` (rational) |
+| `timeline.clip.merge` | `trackId`, `leftClipId`, `rightClipId` |
+| `timeline.clip.set-speed` | `trackId`, `clipId`, `speed` (rational ratio), `ripple` |
+| `scene.node.remove` | `sceneId`, `nodeId` |
 
 Times are **rational**, not floats: `{"numerator": 2, "denominator": 1}` is exactly two seconds. This is deliberate — floating-point frame arithmetic accumulates error across edits. See [ADR 0003](../adr/0003-rational-time-model.md).
 

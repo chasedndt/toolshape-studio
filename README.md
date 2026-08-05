@@ -79,7 +79,7 @@ Every one of those is adjustable *after* recording, because none of it was ever 
 
 Multi-track timeline with frame-accurate control: split, trim, move, reorder, ripple delete, duplicate, speed ramp. Transitions and a keyframable effect stack. Auto-captions with styling and timing. Audio with gain, fades, normalisation and ducking. **Transcript-driven editing** — delete a sentence in the text and the video cuts with it.
 
-*Status: **live** — timeline, trim, split, split-at-playhead, durable render*
+*Status: **live** — timeline with trim, split, move, reorder, delete, duplicate, merge and rational speed; durable render*
 
 ### Design — brand it and ship it everywhere
 
@@ -126,7 +126,7 @@ This is `git revert`, not `git reset`: the inverse is computed and applied **for
 Two things make it honest rather than magical, and both are visible above:
 
 - **The middle entry is blocked** because a later edit touched the same object. Reverting it would silently discard that newer work, so it's refused with the reason rather than guessed at.
-- **Operations whose inverse doesn't exist yet** say so. Undoing a split needs a merge; undoing an insertion needs a delete. Neither is in the vocabulary yet, so those declare themselves non-revertible instead of failing when you click.
+- **Operations whose inverse doesn't exist yet** say so. Restoring a deleted clip needs an insert operation carrying a whole clip, which isn't in the vocabulary — so deletion declares itself non-revertible instead of failing when you click.
 
 Agents get the identical surface: `studio_project_history` and `studio_operation_revert`.
 

@@ -1301,3 +1301,7 @@ button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible, inp
 .stale-banner span { display: flex; flex-direction: column; gap: 2px; }
 .stale-banner strong { font-size: 11.5px; font-weight: 600; }
 .stale-banner small { font-size: 10.5px; color: var(--muted); }
+
+/* Speed presets sit together so they read as one control rather than three. */
+.speed-group { display: inline-flex; gap: 2px; }
+.speed-group .button { min-width: 34px; padding: 0 7px; }

@@ -263,15 +263,119 @@ export function planOperationInverse(operation: StudioOperation, before: StudioP
     }
 
     case "timeline.clip.split":
-      return notRevertible(
-        "revert.no-inverse-capability",
-        "Reverting a split needs a clip merge or delete operation, which does not exist yet.",
-      );
+      // A split produces exactly the shape merge accepts: two adjacent clips,
+      // contiguous in the same source. That correspondence is what makes merge
+      // a true inverse rather than an approximation.
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.merge",
+            payload: {
+              trackId: operation.payload.trackId,
+              leftClipId: operation.payload.clipId,
+              rightClipId: operation.payload.rightClipId,
+            },
+          },
+        ],
+      };
 
     case "scene.node.add":
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "scene.node.remove",
+            payload: { sceneId: operation.payload.sceneId, nodeId: operation.payload.node.id },
+          },
+        ],
+      };
+
+    case "timeline.clip.duplicate":
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.delete",
+            payload: { trackId: operation.payload.trackId, clipId: operation.payload.newClipId, ripple: false },
+          },
+        ],
+      };
+
+    case "timeline.clip.merge":
       return notRevertible(
         "revert.no-inverse-capability",
-        "Reverting an added node needs a node delete operation, which does not exist yet.",
+        "Reverting a merge needs the original split point, which the merge did not record.",
+      );
+
+    case "timeline.clip.delete":
+      // Restoring a deleted clip means reconstructing it from the before
+      // snapshot, which needs an insert operation carrying a whole clip. That
+      // does not exist, and declaring the limit beats offering a revert that
+      // fails when clicked.
+      return notRevertible(
+        "revert.no-inverse-capability",
+        "Restoring a deleted clip needs a clip insert operation, which does not exist yet.",
+      );
+
+    case "timeline.clip.move": {
+      const clip = findClip(before, operation.payload.trackId, operation.payload.clipId);
+      if (!clip) {
+        return notRevertible("revert.target-missing", "The clip this operation moved no longer exists.");
+      }
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.move",
+            payload: {
+              trackId: operation.payload.trackId,
+              clipId: operation.payload.clipId,
+              newStart: structuredClone(clip.start),
+              // A ripple revert would displace neighbours a second time;
+              // conflict detection is what keeps a rippled track consistent.
+              ripple: false,
+            },
+          },
+        ],
+      };
+    }
+
+    case "timeline.clip.set-speed": {
+      const clip = findClip(before, operation.payload.trackId, operation.payload.clipId);
+      if (!clip) {
+        return notRevertible("revert.target-missing", "The clip this operation re-timed no longer exists.");
+      }
+      // Restoring the prior duration directly, rather than applying the
+      // reciprocal speed, so the inverse holds even if the clip was re-timed
+      // more than once.
+      return {
+        revertible: true,
+        operations: [
+          {
+            type: "timeline.clip.trim",
+            payload: {
+              trackId: operation.payload.trackId,
+              clipId: operation.payload.clipId,
+              newStart: structuredClone(clip.start),
+              newDuration: structuredClone(clip.duration),
+              ripple: false,
+            },
+          },
+        ],
+      };
+    }
+
+    case "timeline.clip.reorder":
+      return notRevertible(
+        "revert.no-inverse-capability",
+        "Reverting a reorder needs the previous clip ordering, which the operation did not record.",
+      );
+
+    case "scene.node.remove":
+      return notRevertible(
+        "revert.no-inverse-capability",
+        "Restoring a removed node needs the node itself, which the operation did not record.",
       );
 
     default: {
@@ -302,6 +406,31 @@ export function operationTargets(operation: StudioOperation): string[] {
       ];
     case "timeline.clip.set-audio":
       return [`clip:${operation.payload.trackId}:${operation.payload.clipId}`];
+    case "timeline.clip.move":
+    case "timeline.clip.set-speed":
+      // A ripple shifts every downstream clip, so it owns the track.
+      return operation.payload.ripple
+        ? [`track:${operation.payload.trackId}`, `clip:${operation.payload.trackId}:${operation.payload.clipId}`]
+        : [`clip:${operation.payload.trackId}:${operation.payload.clipId}`];
+    case "timeline.clip.delete":
+    case "timeline.clip.reorder":
+      // Deletion and reordering both change positions across the track, so a
+      // clip-level target would let an earlier revert corrupt them silently.
+      return [`track:${operation.payload.trackId}`, `clip:${operation.payload.trackId}:${operation.payload.clipId}`];
+    case "timeline.clip.duplicate":
+      return [
+        `track:${operation.payload.trackId}`,
+        `clip:${operation.payload.trackId}:${operation.payload.clipId}`,
+        `clip:${operation.payload.trackId}:${operation.payload.newClipId}`,
+      ];
+    case "timeline.clip.merge":
+      return [
+        `track:${operation.payload.trackId}`,
+        `clip:${operation.payload.trackId}:${operation.payload.leftClipId}`,
+        `clip:${operation.payload.trackId}:${operation.payload.rightClipId}`,
+      ];
+    case "scene.node.remove":
+      return [`scene:${operation.payload.sceneId}`, `node:${operation.payload.sceneId}:${operation.payload.nodeId}`];
     case "timeline.caption.upsert":
       return [`caption:${operation.payload.trackId}:${operation.payload.segment.id}`];
     case "scene.node.add":

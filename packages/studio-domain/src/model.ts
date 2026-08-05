@@ -312,6 +312,32 @@ export type StudioOperation =
       "effect.blur.set",
       { sceneId: Id; nodeId: Id; effectId: Id; radius: number; enabled: boolean }
     >
+  | Operation<
+      "timeline.clip.move",
+      { trackId: Id; clipId: Id; newStart: RationalTime; ripple: boolean }
+    >
+  | Operation<
+      "timeline.clip.reorder",
+      { trackId: Id; clipId: Id; toIndex: number }
+    >
+  | Operation<
+      "timeline.clip.delete",
+      { trackId: Id; clipId: Id; ripple: boolean }
+    >
+  | Operation<
+      "timeline.clip.duplicate",
+      { trackId: Id; clipId: Id; newClipId: Id; at: RationalTime }
+    >
+  | Operation<
+      "timeline.clip.merge",
+      { trackId: Id; leftClipId: Id; rightClipId: Id }
+    >
+  | Operation<
+      "timeline.clip.set-speed",
+      /** `speed` is a ratio, not a duration: 2/1 is double speed. */
+      { trackId: Id; clipId: Id; speed: RationalTime; ripple: boolean }
+    >
+  | Operation<"scene.node.remove", { sceneId: Id; nodeId: Id }>
   | Operation<"style.profile.apply", { styleProfileRef: StyleProfileRef }>;
 
 export interface SemanticDiff {

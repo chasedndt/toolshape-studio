@@ -106,6 +106,7 @@ describe("activity history", () => {
 
   it("marks an operation non-revertible with a reason when its inverse does not exist", () => {
     const { kernel, projectId } = createKernel();
+    // A split first, so the track has two clips and the delete is permitted.
     kernel.invoke(
       envelope(
         projectId,
@@ -129,10 +130,68 @@ describe("activity history", () => {
         0,
       ),
     );
+    kernel.invoke(
+      envelope(
+        projectId,
+        "studio.project.apply_operations",
+        {
+          operations: [
+            {
+              operationId: uuid(),
+              type: "timeline.clip.delete",
+              actor: "operator",
+              expectedRevision: 1,
+              payload: { trackId: "track-video", clipId: "clip-split-right", ripple: false },
+            } as StudioOperation,
+          ],
+        },
+        1,
+      ),
+    );
     const entries = history(kernel, projectId);
-    expect(entries[0].revertible).toBe(false);
-    expect(entries[0].revert_blocked_code).toBe("revert.no-inverse-capability");
-    expect(entries[0].revert_blocked_reason).toMatch(/merge|delete/i);
+    // Restoring a deleted clip needs an insert operation that does not exist,
+    // so it declares the limit rather than offering a revert that would fail.
+    expect(entries[1].revertible).toBe(false);
+    expect(entries[1].revert_blocked_code).toBe("revert.no-inverse-capability");
+    expect(entries[1].revert_blocked_reason).toMatch(/insert/i);
+  });
+
+  it("marks a split revertible now that merge exists", () => {
+    const { kernel, projectId } = createKernel();
+    kernel.invoke(
+      envelope(
+        projectId,
+        "studio.project.apply_operations",
+        {
+          operations: [
+            {
+              operationId: uuid(),
+              type: "timeline.clip.split",
+              actor: "operator",
+              expectedRevision: 0,
+              payload: {
+                trackId: "track-video",
+                clipId: "clip-main",
+                splitAt: rational(2),
+                rightClipId: "clip-now-revertible",
+              },
+            } as StudioOperation,
+          ],
+        },
+        0,
+      ),
+    );
+    const entries = history(kernel, projectId);
+    expect(entries[0].revertible).toBe(true);
+
+    // And reverting it actually rejoins the halves.
+    const reverted = kernel.invoke(
+      envelope(projectId, "studio.operation.revert", { revert_operation_id: entries[0].operation_id }, 1),
+    );
+    const track = reverted.state.project!.timeline.tracks.find((candidate) => candidate.id === "track-video");
+    const clips = track?.kind !== "caption" ? track!.clips : [];
+    expect(clips.find((candidate) => candidate.id === "clip-now-revertible")).toBeUndefined();
+    expect(toSeconds(clips.find((candidate) => candidate.id === "clip-main")!.duration)).toBe(8);
   });
 
   it("marks an earlier operation non-revertible once a later one touches the same clip", () => {
@@ -260,10 +319,28 @@ describe("selective revert", () => {
         0,
       ),
     );
+    kernel.invoke(
+      envelope(
+        projectId,
+        "studio.project.apply_operations",
+        {
+          operations: [
+            {
+              operationId: uuid(),
+              type: "timeline.clip.delete",
+              actor: "operator",
+              expectedRevision: 1,
+              payload: { trackId: "track-video", clipId: "clip-split-two", ripple: false },
+            } as StudioOperation,
+          ],
+        },
+        1,
+      ),
+    );
     const entries = history(kernel, projectId);
     expect(() =>
-      kernel.invoke(envelope(projectId, "studio.operation.revert", { revert_operation_id: entries[0].operation_id }, 1)),
-    ).toThrow(/merge|delete/i);
+      kernel.invoke(envelope(projectId, "studio.operation.revert", { revert_operation_id: entries[1].operation_id }, 2)),
+    ).toThrow(/insert/i);
   });
 
   it("rejects an unknown operation id", () => {

@@ -47,6 +47,21 @@ export function multiplyRational(value: RationalTime, factor: number): RationalT
   return rational(value.numerator * factor, value.denominator);
 }
 
+/**
+ * Divides one exact time by another.
+ *
+ * Used for speed changes, where the new duration is `duration / speed`. Going
+ * through `multiplyRational` with a JavaScript number would reintroduce the
+ * floating-point error the rational model exists to avoid — a clip taken to
+ * 1/3 speed and back would not return to its original duration (ADR 0003).
+ */
+export function divideRational(value: RationalTime, divisor: RationalTime): RationalTime {
+  if (divisor.numerator === 0) {
+    throw new RangeError("Cannot divide an exact time by zero.");
+  }
+  return rational(value.numerator * divisor.denominator, value.denominator * divisor.numerator);
+}
+
 export function compareRational(left: RationalTime, right: RationalTime): number {
   const delta = left.numerator * right.denominator - right.numerator * left.denominator;
   assertSafeInteger(delta, "Rational comparison result");
