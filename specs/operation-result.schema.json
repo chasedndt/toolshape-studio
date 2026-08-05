@@ -60,6 +60,10 @@
           "items": {
             "type": "object"
           }
+        },
+        "project": {
+          "type": "object",
+          "description": "Canonical project state at revision_after. Present on read capabilities and on mutations that resolved to a project. Deliberately unconstrained here: StudioProject is defined and migrated by the domain package, and duplicating its shape in this schema would create two sources of truth that drift."
         }
       }
     },

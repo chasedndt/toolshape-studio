@@ -3,6 +3,7 @@ import type {
   DurableJob,
   OperationEnvelope,
   OperationResult,
+  StudioCapabilityId,
 } from "@toolshape/studio-kernel";
 import type {
   ContractArtifactDocument,
@@ -108,7 +109,29 @@ export function projectJobDocument(job: DurableJob): ContractJobDocument {
   };
 }
 
-export function projectOperationResult(result: OperationResult): ContractOperationResult {
+/**
+ * Capabilities whose caller is asking about project state, and therefore
+ * receive it.
+ *
+ * Deliberately not every capability. A render returns a durable job, a plan
+ * returns a diff over an unchanged project, and a job query returns a job —
+ * attaching the full project to those inflates every response with something
+ * the caller did not ask for. Reads and mutations return it because otherwise
+ * the caller must immediately re-inspect to see what happened (ADR 0014).
+ */
+const CAPABILITIES_RETURNING_PROJECT = new Set<StudioCapabilityId>([
+  "studio.project.inspect",
+  "studio.project.validate",
+  "studio.project.apply_operations",
+  "studio.operation.undo",
+]);
+
+export function projectOperationResult(
+  result: OperationResult,
+  capabilityId?: StudioCapabilityId,
+): ContractOperationResult {
+  const includeProject =
+    capabilityId !== undefined && CAPABILITIES_RETURNING_PROJECT.has(capabilityId) && Boolean(result.state.project);
   const evidence = result.verification.evidence.map((item) => {
     const possible = item as { type?: string; job?: DurableJob };
     return possible.type === "durable_job" && possible.job
@@ -124,6 +147,8 @@ export function projectOperationResult(result: OperationResult): ContractOperati
       revision_before: result.state.revision_before,
       revision_after: result.state.revision_after,
       semantic_diff: result.state.semantic_diff,
+      // Omitted rather than null-filled so absence stays meaningful.
+      ...(includeProject ? { project: result.state.project } : {}),
     },
     job_ref: result.job_ref ? resourceRefFromInternal(result.job_ref) : null,
     artifact_refs: (result.artifact_refs ?? []).map(resourceRefFromInternal),

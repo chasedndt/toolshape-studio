@@ -1,4 +1,4 @@
-import type { SemanticDiff } from "@toolshape/studio-domain";
+import type { SemanticDiff, StudioProject } from "@toolshape/studio-domain";
 import type { StudioCapabilityId } from "@toolshape/studio-kernel";
 
 export interface ContractResourceRef {
@@ -99,6 +99,16 @@ export interface ContractOperationResult {
     revision_before?: number | null;
     revision_after?: number | null;
     semantic_diff?: SemanticDiff[];
+    /**
+     * Canonical project state at `revision_after`.
+     *
+     * Without this, `studio.project.inspect` returns a revision number and no
+     * project, which makes the capability useless to any external caller — an
+     * agent could not read what it was about to edit, and the editor could not
+     * render. StudioProject is the canonical domain object, not a kernel
+     * internal, so exposing it does not weaken ADR 0008. See ADR 0014.
+     */
+    project?: StudioProject;
   };
   job_ref?: ContractResourceRef | null;
   artifact_refs?: ContractResourceRef[];

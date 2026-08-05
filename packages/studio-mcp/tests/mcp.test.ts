@@ -128,6 +128,20 @@ describe("MCP capability dispatch", () => {
     repository.close();
   });
 
+  it("returns the canonical project so a caller can read what it is about to edit", async () => {
+    // Regression guard: the public contract projection previously dropped
+    // state.project, so inspect returned a revision and nothing else. An agent
+    // could not read the project, and the editor could not render it.
+    const { server, projectId, repository } = await createServer();
+    const payload = payloadOf(call(server, "studio_project_inspect", { project_id: projectId }));
+    const project = (payload.state as { project?: { id: string; timeline?: unknown; assets?: unknown[] } }).project;
+    expect(project).toBeDefined();
+    expect(project!.id).toBe(projectId);
+    expect(project!.timeline).toBeDefined();
+    expect(Array.isArray(project!.assets)).toBe(true);
+    repository.close();
+  });
+
   it("previews a split as a semantic diff without advancing the revision", async () => {
     const { server, projectId, repository } = await createServer();
     const operations = [

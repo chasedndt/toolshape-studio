@@ -17,7 +17,7 @@ export class StudioSdk implements StudioInvoker {
   invoke(envelope: ContractOperationEnvelope): ContractOperationResult {
     const validated = validateOperationEnvelopeDocument(envelope);
     const internal = this.kernel.invoke(contractEnvelopeToKernel(validated));
-    return validateOperationResultDocument(projectOperationResult(internal));
+    return validateOperationResultDocument(projectOperationResult(internal, validated.capability.id));
   }
 }
 
