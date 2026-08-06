@@ -1305,3 +1305,58 @@ button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible, inp
 /* Speed presets sit together so they read as one control rather than three. */
 .speed-group { display: inline-flex; gap: 2px; }
 .speed-group .button { min-width: 34px; padding: 0 7px; }
+
+/* Export control ---------------------------------------------------------- */
+.export-control { position: relative; }
+.export-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: 232px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #14171c;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, .5);
+}
+.export-panel__title {
+  margin: 0 0 8px;
+  color: #666c66;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.export-panel__row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.export-chip {
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #30343a;
+  border-radius: 5px;
+  color: #b8bbb5;
+  background: #17191e;
+  cursor: pointer;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: .03em;
+}
+.export-chip:hover { border-color: #4a4f56; }
+.export-chip.is-active { color: var(--accent-ink); border-color: var(--accent); background: var(--accent); }
+.export-panel__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: #b8bbb5;
+  font-size: 10px;
+  cursor: pointer;
+}
+.export-panel__hint {
+  margin: 0 0 8px;
+  color: #7c827c;
+  font-size: 9px;
+  /* The filename can be long; wrapping beats a panel that grows off-screen. */
+  overflow-wrap: anywhere;
+}
+.export-panel__go { width: 100%; }

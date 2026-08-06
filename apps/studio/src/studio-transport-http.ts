@@ -144,6 +144,18 @@ export function createHttpTransport(options: HttpTransportOptions): StudioTransp
         throw new Error(error?.message ?? "The operation was rejected.");
       }
 
+      // The public contract carries a durable job inside verification
+      // evidence, while the internal result shape expects it on `job`. Without
+      // lifting it back out, every job-queuing capability over HTTP reports
+      // "returned no durable job" after having queued one perfectly well —
+      // work happens, the editor says it failed, and the operator presses the
+      // button again.
+      const evidence = (payload.verification as { evidence?: Array<Record<string, unknown>> } | undefined)
+        ?.evidence?.find((item) => item.type === "durable_job");
+      if (evidence?.job && !payload.job) {
+        return { ...payload, job: evidence.job } as unknown as OperationResult;
+      }
+
       return payload as unknown as OperationResult;
     },
   };

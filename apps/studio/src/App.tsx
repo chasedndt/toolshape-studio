@@ -51,6 +51,7 @@ import {
   ZoomIn,
   ZoomOut,
   type LucideIcon,
+  Download,
 } from "lucide-react";
 import type {
   Asset,
@@ -1439,6 +1440,125 @@ function TimelinePanel({
   );
 }
 
+/**
+ * The export control.
+ *
+ * Toolshape is agent-first, which is a statement about where the operations
+ * live, not a reason to make a person open a terminal to get a PNG out. This
+ * calls the same studio.design.export capability an agent calls, so a human
+ * export is revision-checked the same way and lands in the same history with
+ * the same provenance. One path, two front doors.
+ */
+type ExportFormat = "svg" | "png" | "jpeg" | "webp" | "pdf";
+
+function ExportControl({
+  scenes,
+  activeSceneId,
+  busy,
+  onExport,
+}: {
+  scenes: ReadonlyArray<{ id: string; name: string; size: { width: number; height: number } }>;
+  activeSceneId: string;
+  busy: boolean;
+  onExport: (request: { sceneIds: string[]; format: ExportFormat; scale: number }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [format, setFormat] = useState<ExportFormat>("png");
+  const [scale, setScale] = useState(2);
+  const [everyScene, setEveryScene] = useState(false);
+
+  // Closes on any click outside, so the panel never sits over the canvas after
+  // the user has moved on from it.
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = () => setOpen(false);
+    window.addEventListener("click", dismiss);
+    return () => window.removeEventListener("click", dismiss);
+  }, [open]);
+
+  const targets = everyScene ? scenes.map((scene) => scene.id) : [activeSceneId];
+  // Scale is meaningless for a vector format, so it is hidden rather than shown
+  // doing nothing.
+  const scalable = format !== "svg" && format !== "pdf";
+
+  return (
+    <div className={`export-control${open ? " is-open" : ""}`}>
+      <button
+        className="button button--quiet"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        disabled={busy}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((current) => !current);
+        }}
+      >
+        <Download size={14} aria-hidden="true" />
+        Export
+      </button>
+      {open && (
+        <div className="export-panel" role="dialog" aria-label="Export designs" onClick={(event) => event.stopPropagation()}>
+          <p className="export-panel__title">Export</p>
+
+          <div className="export-panel__row" role="group" aria-label="Format">
+            {(["png", "jpeg", "webp", "svg", "pdf"] as const).map((candidate) => (
+              <button
+                key={candidate}
+                className={`export-chip${format === candidate ? " is-active" : ""}`}
+                aria-pressed={format === candidate}
+                onClick={() => setFormat(candidate)}
+              >
+                {candidate.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {scalable && (
+            <div className="export-panel__row" role="group" aria-label="Scale">
+              {[1, 2, 3].map((candidate) => (
+                <button
+                  key={candidate}
+                  className={`export-chip${scale === candidate ? " is-active" : ""}`}
+                  aria-pressed={scale === candidate}
+                  onClick={() => setScale(candidate)}
+                >
+                  {candidate}×
+                </button>
+              ))}
+            </div>
+          )}
+
+          <label className="export-panel__check">
+            <input
+              type="checkbox"
+              checked={everyScene}
+              onChange={(event) => setEveryScene(event.target.checked)}
+            />
+            <span>All {scenes.length} scenes</span>
+          </label>
+
+          <p className="export-panel__hint">
+            {targets.length === 1
+              ? `${scenes.find((scene) => scene.id === activeSceneId)?.name ?? "Scene"} · ${format.toUpperCase()}${scalable ? ` · ${scale}×` : ""}`
+              : `${targets.length} files · ${format.toUpperCase()}${scalable ? ` · ${scale}×` : ""}`}
+          </p>
+
+          <button
+            className="button button--accent export-panel__go"
+            disabled={busy || targets.length === 0}
+            onClick={() => {
+              onExport({ sceneIds: targets, format, scale });
+              setOpen(false);
+            }}
+          >
+            Export {targets.length === 1 ? "design" : `${targets.length} files`}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DropdownMenu({
   id,
   label,
@@ -1760,6 +1880,7 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
     lastDiff,
     renderJob,
     queueRender,
+    exportDesign,
     history,
     revert,
     refresh,
@@ -1793,6 +1914,20 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
       })
       .catch((error: unknown) => {
         setNotice(error instanceof Error ? error.message : "That change could not be reverted.");
+      });
+  };
+
+  const exportWithNotice = (request: { sceneIds: string[]; format: ExportFormat; scale: number }) => {
+    void exportDesign(request)
+      .then((job) => {
+        if (!job) return;
+        const count = request.sceneIds.length;
+        setNotice(
+          `Export queued · ${count} ${count === 1 ? "file" : "files"} · ${request.format.toUpperCase()} · ${job.job_id.slice(0, 8)}`,
+        );
+      })
+      .catch((error: unknown) => {
+        setNotice(error instanceof Error ? error.message : "Export could not be queued.");
       });
   };
 
@@ -1920,6 +2055,12 @@ export function App({ resolvePreview = resolveFixturePreview }: { resolvePreview
           <button className="icon-button" aria-label="Undo" title="Undo" onClick={() => { void undo().catch(() => {}); }} disabled={!canUndo}><Undo2 size={14} /></button>
           <button className="icon-button" aria-label="Redo" title="Redo" onClick={() => { void redo().catch(() => {}); }} disabled={!canRedo}><Redo2 size={14} /></button>
           <button className="button button--quiet" onClick={() => setNotice("Review remains local until an authenticated sharing transport is implemented.")}>Share review</button>
+          <ExportControl
+            scenes={project.scenes}
+            activeSceneId={project.activeSceneId}
+            busy={pending}
+            onExport={exportWithNotice}
+          />
           <button
             className="button button--accent"
             onClick={queueRenderWithNotice}

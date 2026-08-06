@@ -3,7 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { STUDIO_SCHEMA_VERSION, StudioKernel } from "@toolshape/studio-kernel";
 import { SqliteStudioRepository } from "@toolshape/studio-persistence";
-import { DurableRenderJobService } from "@toolshape/studio-render";
+import { DurableRenderJobService, startJobWorker } from "@toolshape/studio-render";
 import { StudioSdk } from "@toolshape/studio-sdk";
 import { serveHttp } from "./http";
 import { StudioMcpServer } from "./server";
@@ -49,8 +49,18 @@ async function main(): Promise<void> {
     grantIds: (flag(args, "--grants") ?? "studio.*").split(",").map((grant) => grant.trim()).filter(Boolean),
   };
 
+  // Started before either transport, because a queued job has to run whichever
+  // way the caller reached the host. Without it a render or an export is
+  // accepted and then sits in the database, which reads as work in progress
+  // rather than as work that will never happen.
+  const worker = startJobWorker(renderJobs, {
+    onError: (error) => process.stderr.write(`job worker error: ${String(error)}
+`),
+  });
+
   if (transport === "stdio") {
     await serveStdio({ server, session });
+    await worker.stop();
     repository.close();
     return;
   }
@@ -80,9 +90,13 @@ async function main(): Promise<void> {
   process.stderr.write(`Toolshape Studio MCP listening on http://${host}:${port}\n`);
 
   const shutdown = (): void => {
-    listener.close(() => {
-      repository.close();
-      process.exit(0);
+    // The worker stops before the database closes, so a job in flight finishes
+    // rather than failing against a closed handle.
+    void worker.stop().then(() => {
+      listener.close(() => {
+        repository.close();
+        process.exit(0);
+      });
     });
   };
   process.on("SIGINT", shutdown);

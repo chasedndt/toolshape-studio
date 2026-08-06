@@ -25,7 +25,8 @@
     "smoke:capture-render": "tsx scripts/smoke-capture-render.ts",
     "smoke:image-export": "tsx scripts/smoke-image-export.ts",
     "smoke:agent-export": "tsx scripts/smoke-agent-export.ts",
-    "smoke:audio-mix": "tsx scripts/smoke-audio-mix.ts"
+    "smoke:audio-mix": "tsx scripts/smoke-audio-mix.ts",
+    "smoke:human-export": "tsx scripts/smoke-human-export.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",

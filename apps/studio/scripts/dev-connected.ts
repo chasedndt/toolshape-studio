@@ -19,7 +19,7 @@ import process from "node:process";
 import { createGoldenStudioProject } from "../../../fixtures/studio/golden-project";
 import { STUDIO_SCHEMA_VERSION, StudioKernel } from "@toolshape/studio-kernel";
 import { SqliteStudioRepository } from "@toolshape/studio-persistence";
-import { DurableRenderJobService } from "@toolshape/studio-render";
+import { DurableRenderJobService, startJobWorker } from "@toolshape/studio-render";
 import { StudioSdk } from "@toolshape/studio-sdk";
 import { SessionRegistry, StudioMcpServer, serveHttp } from "@toolshape/studio-mcp";
 
@@ -86,6 +86,14 @@ async function main(): Promise<void> {
     host: "127.0.0.1",
     allowedOrigins: [UI_ORIGIN],
   });
+  // Nothing was draining the queue, so a render or an export was accepted and
+  // then sat in the database. The caller was told the work had been queued,
+  // which was true, and would have waited for it indefinitely.
+  const worker = startJobWorker(renderJobs, {
+    onJob: (job) => process.stdout.write(`job ${job.type} ${job.job_id.slice(0, 8)} ${job.status}\n`),
+    onError: (error) => process.stderr.write(`job worker error: ${String(error)}\n`),
+  });
+
   process.stdout.write(`MCP host listening on http://127.0.0.1:${PORT}\n`);
   process.stdout.write(`Project database: ${databasePath}\n\n`);
 
@@ -102,9 +110,14 @@ async function main(): Promise<void> {
 
   const shutdown = (): void => {
     vite.kill();
-    listener.close(() => {
-      repository.close();
-      process.exit(0);
+    // The worker is stopped before the database closes, so a job in flight
+    // finishes rather than failing against a closed handle and leaving a
+    // half-written artifact behind.
+    void worker.stop().then(() => {
+      listener.close(() => {
+        repository.close();
+        process.exit(0);
+      });
     });
   };
   vite.on("exit", shutdown);

@@ -7,3 +7,4 @@ export * from "./scene-svg";
 export * from "./image-export";
 export * from "./svg-rasteriser";
 export * from "./audio-mix";
+export * from "./job-worker";

@@ -73,6 +73,15 @@ export interface PlanOutcome {
   diff: SemanticDiff[];
 }
 
+export interface ExportRequest {
+  sceneIds: string[];
+  format: "svg" | "png" | "jpeg" | "webp" | "pdf";
+  scale?: number;
+  quality?: number;
+  transparentBackground?: boolean;
+  outputName: string;
+}
+
 export interface RenderRequest {
   coverAssetId: string;
   presetId: string;
@@ -338,6 +347,40 @@ export class StudioClient {
     );
     if (!result.job) {
       throw new StudioOperationRejectedError("Render returned no durable job.", "studio.render.no-job");
+    }
+    return result.job;
+  }
+
+  /**
+   * Queues a design export.
+   *
+   * Goes through the same capability the agent surface uses. A button that
+   * called a shortcut of its own would be a second path to the same outcome,
+   * with its own revision handling and its own way of being wrong — and the
+   * export would stop appearing in the history everyone shares.
+   */
+  async queueExport(request: ExportRequest): Promise<DurableJob> {
+    const revision = this.requireRevision();
+    const result = await this.send(
+      this.envelope(
+        "studio.design.export",
+        {
+          export: {
+            scene_ids: request.sceneIds,
+            format: request.format,
+            ...(request.scale === undefined ? {} : { scale: request.scale }),
+            ...(request.quality === undefined ? {} : { quality: request.quality }),
+            ...(request.transparentBackground === undefined
+              ? {}
+              : { transparent_background: request.transparentBackground }),
+            output_name: request.outputName,
+          },
+        },
+        { expectedRevision: revision },
+      ),
+    );
+    if (!result.job) {
+      throw new StudioOperationRejectedError("Export returned no durable job.", "studio.export.no-job");
     }
     return result.job;
   }

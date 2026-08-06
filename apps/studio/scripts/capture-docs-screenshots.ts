@@ -202,6 +202,21 @@ try {
     captured.push("detail-activity");
   }
 
+  // --- Export control -------------------------------------------------------
+  // Documented because the agent-first framing invites the question of whether
+  // a person can still just press a button. They can, and this is it.
+  await dismissNotice(page);
+  const exportButton = page.getByRole("button", { name: "Export", exact: true });
+  if (await exportButton.isVisible().catch(() => false)) {
+    await exportButton.click();
+    const exportPanel = page.locator(".export-control");
+    await page.waitForTimeout(200);
+    await exportPanel.screenshot({ path: path.join(outputDir, "detail-export.png") });
+    captured.push("detail-export");
+    await page.keyboard.press("Escape");
+    await page.mouse.click(10, 400);
+  }
+
   // --- Timeline detail ------------------------------------------------------
   await openWorkspace(page, "Edit");
   const timeline = page.locator(".timeline-panel");

@@ -265,6 +265,7 @@ npm run smoke:capture-render   # renders a styled capture and samples the pixels
 npm run smoke:image-export     # exports a design to svg/png/jpeg/webp/pdf and samples the pixels
 npm run smoke:agent-export     # a networked agent exports variants over HTTP and the files decode
 npm run smoke:audio-mix        # renders real audio and measures placement, fades, loudness and ducking
+npm run smoke:human-export     # clicks Export in a real browser and checks the file that lands on disk
 npm run smoke:mcp
 npm run smoke:runtime
 npm run smoke:cli

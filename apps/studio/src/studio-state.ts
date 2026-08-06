@@ -13,6 +13,7 @@ import {
   StudioStaleRevisionError,
   createMemoryTransport,
   type ApplyOptions,
+  type ExportRequest,
   type OperationDraft,
   type StudioTransport,
 } from "./studio-client";
@@ -75,6 +76,7 @@ export function useStudioState(initialProject: StudioProject, injectedTransport?
   const [redoToken, setRedoToken] = useState<string | null>(null);
   const [lastDiff, setLastDiff] = useState<SemanticDiff | null>(null);
   const [renderJob, setRenderJob] = useState<DurableJob | null>(null);
+  const [exportJob, setExportJob] = useState<DurableJob | null>(null);
   const [pending, setPending] = useState(false);
   const [stale, setStale] = useState(false);
 
@@ -233,9 +235,37 @@ export function useStudioState(initialProject: StudioProject, injectedTransport?
     [client, readHistory, run],
   );
 
+  /**
+   * Exports scenes from the editor.
+   *
+   * Same capability the agent surface calls, so a human export lands in the
+   * shared history with the same provenance as an agent's — the point of an
+   * agent-first product is not that people go without buttons, it is that both
+   * go through one path.
+   */
+  const exportDesign = useCallback(
+    (request: { sceneIds: string[]; format: ExportRequest["format"]; scale?: number }) =>
+      run(async () => {
+        const job = await client.queueExport({
+          sceneIds: request.sceneIds,
+          format: request.format,
+          ...(request.scale === undefined ? {} : { scale: request.scale }),
+          // Named after the revision, so two exports of different states do not
+          // land in the same directory and overwrite each other.
+          outputName: `export-r${project.revision}-${request.format}`,
+        });
+        setExportJob(job);
+        await readHistory();
+        return job;
+      }),
+    [client, project.revision, readHistory, run],
+  );
+
   return {
     project,
     history,
+    exportJob,
+    exportDesign,
     apply,
     revert,
     undo,
