@@ -31,6 +31,7 @@
     "smoke:timeline-render": "npm --prefix apps/studio run smoke:timeline-render",
     "smoke:capture-render": "npm --prefix apps/studio run smoke:capture-render",
     "smoke:image-export": "npm --prefix apps/studio run smoke:image-export",
-    "smoke:agent-export": "npm --prefix apps/studio run smoke:agent-export"
+    "smoke:agent-export": "npm --prefix apps/studio run smoke:agent-export",
+    "smoke:audio-mix": "npm --prefix apps/studio run smoke:audio-mix"
   }
 }

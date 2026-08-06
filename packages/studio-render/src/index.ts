@@ -6,3 +6,4 @@ export * from "./capture-render-plan";
 export * from "./scene-svg";
 export * from "./image-export";
 export * from "./svg-rasteriser";
+export * from "./audio-mix";

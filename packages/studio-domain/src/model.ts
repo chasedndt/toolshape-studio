@@ -204,6 +204,15 @@ export interface AudioTrack {
   kind: "audio";
   locked: boolean;
   clips: Clip[];
+  /**
+   * What the track carries, which is what lets the render duck music under
+   * speech.
+   *
+   * Optional, and absence means speech rather than music: leaving a track
+   * unducked is the safe default, because quiet dialogue is a defect while
+   * unducked music is a matter of taste.
+   */
+  role?: "voice" | "music" | "effects";
 }
 
 export interface CaptionSegment {
