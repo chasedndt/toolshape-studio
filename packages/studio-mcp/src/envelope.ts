@@ -25,6 +25,11 @@ export interface ToolCallArguments {
   cover_asset_id?: string;
   preset_id?: string;
   output_name?: string;
+  scene_ids?: string[];
+  format?: "svg" | "png" | "jpeg" | "webp" | "pdf";
+  scale?: number;
+  quality?: number;
+  transparent_background?: boolean;
 }
 
 /** Maps a tool's declared risk onto the public contract's risk vocabulary. */
@@ -45,6 +50,17 @@ function inputFor(tool: StudioToolDefinition, args: ToolCallArguments): Record<s
         render: {
           cover_asset_id: args.cover_asset_id,
           preset_id: args.preset_id,
+          output_name: args.output_name,
+        },
+      };
+    case "studio.design.export":
+      return {
+        export: {
+          scene_ids: args.scene_ids,
+          format: args.format,
+          scale: args.scale,
+          quality: args.quality,
+          transparent_background: args.transparent_background,
           output_name: args.output_name,
         },
       };

@@ -9,6 +9,7 @@ import {
   StudioSdk,
   contractEnvelopeToKernel,
   type ContractOperationEnvelope,
+  jobDocumentFromResult,
   type ContractOperationResult,
 } from "@toolshape/studio-sdk";
 import {
@@ -547,6 +548,79 @@ describe("MCP envelope construction", () => {
       });
       expect(envelope.capability.id).toBe(tool.capability);
     }
+  });
+});
+
+describe("design export over MCP", () => {
+  it("queues an export as a job rather than returning bytes inline", async () => {
+    // An export produces files, sometimes nine of them. Returning them through
+    // the tool result would put megabytes into an agent's context to no
+    // purpose; a job reference lets the agent poll and fetch what it needs.
+    const { server, projectId, repository } = await createServer();
+    const payload = payloadOf(
+      call(server, "studio_design_export", {
+        project_id: projectId,
+        expected_revision: 0,
+        scene_ids: ["scene-hero"],
+        format: "svg",
+        output_name: "launch",
+      }),
+    );
+    expect(payload.status).toBe("accepted_job");
+    // The job travels as verification evidence with a job_ref beside it, which
+    // is what the caller polls.
+    expect((payload.job_ref as { type: string }).type).toBe("studio_job");
+    expect(jobDocumentFromResult(payload as unknown as ContractOperationResult).type).toBe(
+      "studio.design.export",
+    );
+    repository.close();
+  });
+
+  it("names every exported scene among the job inputs", async () => {
+    // Provenance has to survive the adapter: an artifact that cannot say which
+    // scene produced it is not traceable back to the design.
+    const { server, projectId, repository } = await createServer();
+    const payload = payloadOf(
+      call(server, "studio_design_export", {
+        project_id: projectId,
+        expected_revision: 0,
+        scene_ids: ["scene-hero"],
+        format: "png",
+        scale: 2,
+        output_name: "launch",
+      }),
+    );
+    const job = jobDocumentFromResult(payload as unknown as ContractOperationResult);
+    expect(job.inputs.some((input) => JSON.stringify(input).includes("scene-hero"))).toBe(true);
+    repository.close();
+  });
+
+  it("refuses an unknown scene at the adapter boundary", async () => {
+    const { server, projectId, repository } = await createServer();
+    const response = call(server, "studio_design_export", {
+      project_id: projectId,
+      expected_revision: 0,
+      scene_ids: ["scene-absent"],
+      format: "svg",
+      output_name: "launch",
+    });
+    expect(JSON.stringify(response)).toMatch(/unknown scene/i);
+    repository.close();
+  });
+
+  it("refuses a stale revision rather than exporting an older design", async () => {
+    // Exporting at a revision the caller did not expect produces a file that
+    // looks current and is not.
+    const { server, projectId, repository } = await createServer();
+    const response = call(server, "studio_design_export", {
+      project_id: projectId,
+      expected_revision: 99,
+      scene_ids: ["scene-hero"],
+      format: "svg",
+      output_name: "launch",
+    });
+    expect(JSON.stringify(response)).toMatch(/revision/i);
+    repository.close();
   });
 });
 

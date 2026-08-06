@@ -1,5 +1,5 @@
 import type { SemanticDiff, StudioOperation, StudioProject } from "@toolshape/studio-domain";
-import type { ArtifactRecord, DurableJob, StudioRenderRequest } from "./jobs";
+import type { ArtifactRecord, DurableJob, StudioExportRequest, StudioRenderRequest } from "./jobs";
 
 export const STUDIO_SCHEMA_VERSION = "0.1.0";
 
@@ -9,6 +9,7 @@ export type StudioCapabilityId =
   | "studio.project.apply_operations"
   | "studio.project.validate"
   | "studio.project.render"
+  | "studio.design.export"
   | "studio.job.get"
   | "studio.job.cancel"
   | "studio.operation.undo"
@@ -28,6 +29,7 @@ export interface OperationEnvelope {
     operations?: StudioOperation[];
     undo_token?: string;
     render?: StudioRenderRequest;
+    export?: StudioExportRequest;
     job_id?: string;
     /** Operation to reverse, for studio.operation.revert. */
     revert_operation_id?: string;
@@ -100,6 +102,7 @@ const CAPABILITIES = new Set<StudioCapabilityId>([
   "studio.project.apply_operations",
   "studio.project.validate",
   "studio.project.render",
+  "studio.design.export",
   "studio.job.get",
   "studio.job.cancel",
   "studio.operation.undo",

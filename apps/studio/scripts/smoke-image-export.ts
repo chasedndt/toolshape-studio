@@ -13,9 +13,13 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import type { Scene, SceneNode } from "@toolshape/studio-domain";
-import { createImageExportPlan, createVariantExportPlans } from "@toolshape/studio-render";
+import {
+  createImageExportPlan,
+  createVariantExportPlans,
+  executeImageExport,
+  findBrowserExecutable,
+} from "@toolshape/studio-render";
 import { chromium } from "playwright-core";
-import { executeImageExport, findBrowserExecutable } from "./lib/rasterise";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(`SMOKE FAILED: ${message}`);

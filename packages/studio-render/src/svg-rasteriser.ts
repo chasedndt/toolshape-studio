@@ -1,7 +1,7 @@
 import { access, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium, type Browser } from "playwright-core";
-import type { ImageExportPlan } from "@toolshape/studio-render";
+import type { ImageExportPlan } from "./image-export";
 
 /**
  * Turns an export plan into bytes.

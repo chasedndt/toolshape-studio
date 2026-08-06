@@ -216,6 +216,7 @@ Worked examples and error handling: **[Agent integration guide](docs/agent-integ
 | `studio_project_plan` | Preview operations as a semantic diff | simulation |
 | `studio_project_apply_operations` | Apply typed operations atomically | local write |
 | `studio_project_render` | Queue a durable render job | local write |
+| `studio_design_export` | Queue a durable export of scenes to svg, png, jpeg, webp or pdf | local write |
 | `studio_job_get` | Poll progress, stage and outputs | read only |
 | `studio_job_cancel` | Cooperative cancellation | local write |
 | `studio_operation_undo` | Reverse via a single-use undo token | local write |
@@ -262,6 +263,7 @@ npm run smoke:connected        # browser + host: persistence, agent visibility, 
 npm run smoke:timeline-render  # renders a real crossfaded timeline and probes its duration
 npm run smoke:capture-render   # renders a styled capture and samples the pixels
 npm run smoke:image-export     # exports a design to svg/png/jpeg/webp/pdf and samples the pixels
+npm run smoke:agent-export     # a networked agent exports variants over HTTP and the files decode
 npm run smoke:mcp
 npm run smoke:runtime
 npm run smoke:cli

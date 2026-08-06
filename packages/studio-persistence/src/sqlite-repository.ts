@@ -13,6 +13,8 @@ import {
   type OperationResult,
   type StudioJobRepository,
   type StudioRepository,
+  type StudioExportRequest,
+  type StudioJobRequest,
   type StudioRenderRequest,
   type OperationLogEntry,
 } from "@toolshape/studio-kernel";
@@ -408,7 +410,7 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
       );
   }
 
-  insertJob(job: DurableJob, request: StudioRenderRequest): void {
+  insertJob(job: DurableJob, request: StudioJobRequest): void {
     this.database.exec("BEGIN IMMEDIATE");
     try {
       this.database
@@ -423,7 +425,7 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
           job.project_revision,
           job.type,
           job.status,
-          JSON.stringify({ kind: "studio.render" }),
+          JSON.stringify({ kind: job.type }),
           job.progress.fraction,
           job.progress.stage,
           job.progress.message,
@@ -438,7 +440,7 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
           JSON.stringify(request),
           job.updated_at,
         );
-      this.insertEvent(job, "Render queued.");
+      this.insertEvent(job, job.type === "studio.design.export" ? "Export queued." : "Render queued.");
       this.database.exec("COMMIT");
     } catch (error) {
       this.database.exec("ROLLBACK");
@@ -459,6 +461,24 @@ export class SqliteStudioRepository implements StudioRepository, StudioJobReposi
       .get(jobId) as unknown as { render_request_json: string } | undefined;
     if (!row) throw new RangeError(`Unknown job: ${jobId}`);
     return JSON.parse(row.render_request_json) as StudioRenderRequest;
+  }
+
+  /**
+   * Both request kinds share one column.
+   *
+   * The alternative was a second table whose rows are joined to the same jobs
+   * by id, which buys nothing: a job has exactly one request, and the shape of
+   * it is already determined by `type`.
+   */
+  getExportRequest(jobId: string): StudioExportRequest {
+    const row = this.database
+      .prepare("SELECT type, render_request_json FROM jobs WHERE job_id = ?")
+      .get(jobId) as unknown as { type: string; render_request_json: string } | undefined;
+    if (!row) throw new RangeError(`Unknown job: ${jobId}`);
+    if (row.type !== "studio.design.export") {
+      throw new TypeError(`Job ${jobId} is a ${row.type}, not an export.`);
+    }
+    return JSON.parse(row.render_request_json) as StudioExportRequest;
   }
 
   claimNextJob(): DurableJob | null {

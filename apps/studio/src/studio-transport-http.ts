@@ -71,6 +71,20 @@ function toolCallFor(envelope: OperationEnvelope): { name: string; arguments: Re
         name: "studio_operation_undo",
         arguments: { project_id: projectId, undo_token: envelope.input.undo_token },
       };
+    case "studio.design.export":
+      return {
+        name: "studio_design_export",
+        arguments: {
+          project_id: projectId,
+          expected_revision: envelope.target.expected_revision ?? undefined,
+          scene_ids: envelope.input.export?.scene_ids,
+          format: envelope.input.export?.format,
+          scale: envelope.input.export?.scale,
+          quality: envelope.input.export?.quality,
+          transparent_background: envelope.input.export?.transparent_background,
+          output_name: envelope.input.export?.output_name,
+        },
+      };
     case "studio.project.history":
       return { name: "studio_project_history", arguments: { project_id: projectId } };
     case "studio.operation.revert":

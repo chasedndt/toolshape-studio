@@ -6,7 +6,8 @@
   "dependencies": {
     "@toolshape/studio-domain": "file:../studio-domain",
     "@toolshape/studio-engine": "file:../studio-engine",
-    "@toolshape/studio-kernel": "file:../studio-kernel"
+    "@toolshape/studio-kernel": "file:../studio-kernel",
+    "playwright-core": "^1.54.1"
   },
   "exports": {
     ".": "./src/index.ts"

@@ -15,6 +15,7 @@ import {
 } from "./contracts";
 import { stableDigest } from "./digest";
 import {
+  assertStudioExportRequest,
   assertStudioRenderRequest,
   type DurableJob,
   type StudioJobGateway,
@@ -125,6 +126,7 @@ export class StudioKernel {
 
     if (
       envelope.capability.id === "studio.project.render" ||
+      envelope.capability.id === "studio.design.export" ||
       envelope.capability.id === "studio.job.get" ||
       envelope.capability.id === "studio.job.cancel"
     ) {
@@ -134,6 +136,14 @@ export class StudioKernel {
       if (envelope.capability.id === "studio.project.render") {
         assertStudioRenderRequest(envelope.input.render);
         job = this.jobs.queueRender(current, envelope.input.render, {
+          operationId: envelope.operation_id,
+          traceId: envelope.trace_id,
+          createdAt: envelope.created_at,
+        });
+        status = "accepted_job";
+      } else if (envelope.capability.id === "studio.design.export") {
+        assertStudioExportRequest(envelope.input.export);
+        job = this.jobs.queueExport(current, envelope.input.export, {
           operationId: envelope.operation_id,
           traceId: envelope.trace_id,
           createdAt: envelope.created_at,

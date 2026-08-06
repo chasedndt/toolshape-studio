@@ -156,6 +156,56 @@ export const STUDIO_TOOLS: readonly StudioToolDefinition[] = [
     },
   },
   {
+    name: "studio_design_export",
+    title: "Export designs",
+    capability: "studio.design.export",
+    mutating: true,
+    risk: "reversible_local_write",
+    description:
+      "Queue a durable job that exports scenes to image files and return immediately with a job " +
+      "reference. Takes a list of scene ids rather than one, because a design reframed into nine " +
+      "platform variants is normally wanted as nine files in one go. Poll studio_job_get for " +
+      "progress; each exported file is registered as its own artifact, so a single variant can be " +
+      "fetched without the rest. Formats: svg (no rasteriser needed), png, jpeg, webp, pdf.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: PROJECT_ID,
+        expected_revision: { type: "integer", minimum: 0 },
+        scene_ids: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string", minLength: 1 },
+          description: "Scenes to export, from inspect. Each becomes one file.",
+        },
+        format: { type: "string", enum: ["svg", "png", "jpeg", "webp", "pdf"] },
+        scale: {
+          type: "number",
+          exclusiveMinimum: 0,
+          maximum: 16,
+          description: "Multiplier on the scene size. 2 gives a retina-resolution export.",
+        },
+        quality: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          description: "Lossy formats only. Rejected on svg, png and pdf rather than ignored.",
+        },
+        transparent_background: {
+          type: "boolean",
+          description: "Drop the scene background. Rejected for formats with no alpha channel.",
+        },
+        output_name: {
+          type: "string",
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
+          description: "Safe directory name for the batch. The host resolves the location.",
+        },
+      },
+      required: ["project_id", "expected_revision", "scene_ids", "format", "output_name"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "studio_job_get",
     title: "Get job",
     capability: "studio.job.get",
