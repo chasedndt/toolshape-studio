@@ -1,7 +1,7 @@
 # Capture pillar specification
 
 **Date:** 2026-08-05
-**Status:** PARTIAL — the capture document lives on the project at schema v4, and deterministic zoom derivation, the camera path (framing, aspect reframing, cursor smoothing), authored zoom plans and redaction editing are implemented and tested. Projection into an editable timeline track ships as `capture.to-scene`. The capture worker, OS APIs and backdrop rendering remain unbuilt.
+**Status:** PARTIAL — the capture document lives on the project at schema v4, and deterministic zoom derivation, the camera path (framing, aspect reframing, cursor smoothing), authored zoom plans and redaction editing are implemented and tested. Projection into an editable timeline track ships as `capture.to-scene`. Styled rendering ships too: the zoom plan becomes time-varying crop, the backdrop fills the padding, and redactions are drawn opaquely over their time range. The capture worker and OS APIs remain unbuilt.
 **Parent:** `products/studio/PRD-V2.md` §3
 
 ---

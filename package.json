@@ -28,6 +28,7 @@
     "dev:connected": "npm --prefix apps/studio run dev:connected",
     "smoke:connected": "npm --prefix apps/studio run smoke:connected",
     "docs:demo": "npm --prefix apps/studio run docs:demo",
-    "smoke:timeline-render": "npm --prefix apps/studio run smoke:timeline-render"
+    "smoke:timeline-render": "npm --prefix apps/studio run smoke:timeline-render",
+    "smoke:capture-render": "npm --prefix apps/studio run smoke:capture-render"
   }
 }
