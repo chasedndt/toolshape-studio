@@ -22,7 +22,8 @@
     "smoke:connected": "tsx scripts/smoke-connected-shell.ts",
     "docs:demo": "tsx scripts/capture-agent-demo.ts",
     "smoke:timeline-render": "tsx scripts/smoke-timeline-render.ts",
-    "smoke:capture-render": "tsx scripts/smoke-capture-render.ts"
+    "smoke:capture-render": "tsx scripts/smoke-capture-render.ts",
+    "smoke:image-export": "tsx scripts/smoke-image-export.ts"
   },
   "dependencies": {
     "@toolshape/studio-domain": "file:../../packages/studio-domain",

@@ -260,6 +260,8 @@ Verification gates:
 ```bash
 npm run smoke:connected        # browser + host: persistence, agent visibility, conflict refusal
 npm run smoke:timeline-render  # renders a real crossfaded timeline and probes its duration
+npm run smoke:capture-render   # renders a styled capture and samples the pixels
+npm run smoke:image-export     # exports a design to svg/png/jpeg/webp/pdf and samples the pixels
 npm run smoke:mcp
 npm run smoke:runtime
 npm run smoke:cli
