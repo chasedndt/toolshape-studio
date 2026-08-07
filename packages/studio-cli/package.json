@@ -10,5 +10,6 @@
     "@toolshape/studio-persistence": "file:../studio-persistence",
     "@toolshape/studio-render": "file:../studio-render",
     "@toolshape/studio-sdk": "file:../studio-sdk"
-  }
+  },
+  "license": "Elastic-2.0"
 }

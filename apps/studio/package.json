@@ -50,5 +50,6 @@
     "typescript": "^5.8.3",
     "vite": "^7.0.5",
     "vitest": "^3.2.4"
-  }
+  },
+  "license": "Elastic-2.0"
 }

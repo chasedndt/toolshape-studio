@@ -10,5 +10,8 @@
     "@toolshape/studio-render": "file:../studio-render",
     "@toolshape/studio-sdk": "file:../studio-sdk"
   },
-  "exports": { ".": "./src/index.ts" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "Elastic-2.0"
 }

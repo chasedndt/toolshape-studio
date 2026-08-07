@@ -328,3 +328,21 @@ Toolshape Studio targets the *outcome sets* of established capture, video and de
 `Toolshape` and `Toolshape Studio` are provisional engineering names. They have passed only a preliminary exact-name scan ([`naming/COLLISION-SCAN.md`](naming/COLLISION-SCAN.md)) and are **not** trademark, domain, package-registry or app-store cleared.
 
 Licensing and product-strategy material in this repository is an engineering decision aid, not legal advice.
+
+---
+
+## Licence
+
+Toolshape Studio is **source-available** under the [Elastic License 2.0](LICENSE) — © 2026 ChaseInTech. It is not open source, and the distinction is worth stating plainly rather than blurring.
+
+**You may**, free of charge and without limit: read the source, run it locally or on your own servers, use it in production internally, modify it, and point your own agent harnesses at it. That permission is deliberate. Toolshape claims an agent harness can operate it as competently as a person, and a harness developer who cannot run it will build against something else.
+
+**You may not**: offer it to third parties as a hosted or managed service providing a substantial set of its features; disable or work around licence-key functionality; or strip the licensing and copyright notices.
+
+The source is public because agent harnesses execute this software. An operator running an autonomous agent against a media tool has a legitimate need to read what that tool does when instructed — and a record of having been able to.
+
+Commercial terms, a private-deployment licence that waives the hosted-service limitation, and the reasoning behind choosing ELv2 over Apache 2.0 and BSL 1.1 are in [`docs/product/COMMERCIAL-MODEL.md`](docs/product/COMMERCIAL-MODEL.md).
+
+### Third-party components
+
+Rendering shells out to an **ffmpeg you install yourself**; none is bundled. That matters: common ffmpeg builds include GPL components such as libx264, and the licensing position changes if a binary is ever shipped inside the desktop shell. See [§5.1 of the commercial model](docs/product/COMMERCIAL-MODEL.md#51-codec-licensing-will-bite-before-the-licence-does).

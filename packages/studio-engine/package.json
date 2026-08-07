@@ -8,6 +8,6 @@
   },
   "exports": {
     ".": "./src/index.ts"
-  }
+  },
+  "license": "Elastic-2.0"
 }
-

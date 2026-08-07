@@ -34,5 +34,6 @@
     "smoke:agent-export": "npm --prefix apps/studio run smoke:agent-export",
     "smoke:audio-mix": "npm --prefix apps/studio run smoke:audio-mix",
     "smoke:human-export": "npm --prefix apps/studio run smoke:human-export"
-  }
+  },
+  "license": "Elastic-2.0"
 }

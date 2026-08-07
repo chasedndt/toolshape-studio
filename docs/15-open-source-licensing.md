@@ -1,5 +1,12 @@
 # Open-source and licensing strategy
 
+> **Superseded for Toolshape Studio.** Studio ships under the Elastic License 2.0;
+> see [`product/COMMERCIAL-MODEL.md`](product/COMMERCIAL-MODEL.md) for the decision
+> and its reasoning. This document is kept because its analysis of irrevocability
+> and contributor strategy still holds, and reasoning that reached a different
+> conclusion is worth being able to re-read. Its Apache-2.0 recommendation does not
+> apply to this repository.
+
 **This is strategy material, not legal advice.** Obtain counsel before publishing or relicensing.
 
 ## The key fact
